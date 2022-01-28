@@ -15,12 +15,14 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
+from main import views
 
 from moine_back.settings import IS_LOCAL_DEV
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("hijack/", include("hijack.urls")),
+    path("api/version", views.version),
 ]
 
 if IS_LOCAL_DEV:
