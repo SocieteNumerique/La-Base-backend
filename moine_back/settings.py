@@ -129,7 +129,7 @@ STATIC_URL = "static/"
 if IS_LOCAL_DEV:
     STATIC_ROOT = BASE_DIR / "collected_static"
 else:
-    STATIC_ROOT = getconf.getstr("staticfiles.static_root")
+    STATIC_ROOT = config.getstr("staticfiles.static_root")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
