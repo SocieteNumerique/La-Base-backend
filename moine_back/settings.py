@@ -16,7 +16,7 @@ from pathlib import Path
 
 # local config
 config = getconf.ConfigGetter(
-    "myproj", ["local_settings.conf", "/etc/telescoop/PROJECT/backend-settings.ini"]
+    "myproj", ["local_settings.conf", "/etc/telescoop/moine/backend-settings.ini"]
 )
 
 BASE_DIR = Path(__file__).resolve().parent.parent
