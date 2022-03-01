@@ -88,7 +88,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
 class ShortBaseSerializer(BaseBaseSerializer):
     class Meta(BaseBaseSerializer.Meta):
         abstract = False
-        fields = ["title", "owner", "is_short"]
+        fields = ["id", "title", "owner", "is_short"]
 
     is_short = serializers.ReadOnlyField(default=True)
 
@@ -96,4 +96,4 @@ class ShortBaseSerializer(BaseBaseSerializer):
 class FullBaseSerializer(BaseBaseSerializer):
     class Meta(BaseBaseSerializer.Meta):
         abstract = False
-        fields = ["title", "owner", "categories"]
+        fields = ["id", "title", "owner", "categories"]

@@ -15,7 +15,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
-from main.views import main_views, base_views
+from main.views import main_views, base_views, ressource_views
 
 from moine_back.settings import IS_LOCAL_DEV
 
@@ -31,6 +31,11 @@ urlpatterns = [
     path(
         "api/bases/<int:pk>",
         base_views.BaseView.as_view({"get": "retrieve", "delete": "destroy"}),
+        name="base-by-id",
+    ),
+    path(
+        "api/ressources/<int:pk>",
+        ressource_views.RessourceView.as_view({"get": "retrieve", "delete": "destroy"}),
         name="base-by-id",
     ),
     path("api/auth/", include("telescoop_auth.urls")),

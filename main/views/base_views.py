@@ -1,4 +1,3 @@
-from django.http import JsonResponse
 from rest_framework import mixins, viewsets
 
 from main.models import Base
@@ -19,14 +18,3 @@ class BaseView(
         if self.kwargs.get("pk"):
             return FullBaseSerializer
         return ShortBaseSerializer
-
-
-def bases(_):
-    return JsonResponse(
-        {
-            "bases": [
-                {"id": 1, "name": "ANCT", "items": [1, 2, 3]},
-                {"id": 2, "name": "La MedNum", "items": [2, 4, 5]},
-            ]
-        }
-    )
