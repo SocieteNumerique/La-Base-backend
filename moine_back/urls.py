@@ -15,14 +15,25 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
-from main import views
+from main.views import main_views, base_views
 
 from moine_back.settings import IS_LOCAL_DEV
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("hijack/", include("hijack.urls")),
-    path("api/version", views.version),
+    path("api/version", main_views.version),
+    path(
+        "api/bases",
+        base_views.BaseView.as_view({"post": "create", "get": "list"}),
+        name="bases",
+    ),
+    path(
+        "api/bases/<int:pk>",
+        base_views.BaseView.as_view({"get": "retrieve", "delete": "destroy"}),
+        name="base-by-id",
+    ),
+    path("api/auth/", include("telescoop_auth.urls")),
 ]
 
 if IS_LOCAL_DEV:

@@ -43,6 +43,9 @@ INSTALLED_APPS = [
     "debug_toolbar",
     "hijack",
     "hijack.contrib.admin",
+    "telescoop_auth",
+    "main",
+    "rest_framework",
 ]
 
 if IS_LOCAL_DEV:
@@ -157,7 +160,25 @@ if not IS_LOCAL_DEV:
 
 # CORS
 if IS_LOCAL_DEV:
-    CORS_ALLOW_ALL_ORIGINS = True
+    CORS_ALLOWED_ORIGINS = ["http://localhost:3000"]
+    CORS_ALLOW_CREDENTIALS = True
+    CSRF_TRUSTED_ORIGINS = ["http://localhost:3000"]
 
 # django-hijack
 HIJACK_ALLOW_GET_REQUESTS = True
+
+# telescoop_auth
+AUTH_USER_MODEL = "telescoop_auth.User"
+
+# camel case for DRF
+REST_FRAMEWORK = {
+    "DEFAULT_RENDERER_CLASSES": (
+        "djangorestframework_camel_case.render.CamelCaseJSONRenderer",
+        "djangorestframework_camel_case.render.CamelCaseBrowsableAPIRenderer",
+    ),
+    "DEFAULT_PARSER_CLASSES": (
+        "djangorestframework_camel_case.parser.CamelCaseFormParser",
+        "djangorestframework_camel_case.parser.CamelCaseMultiPartParser",
+        "djangorestframework_camel_case.parser.CamelCaseJSONParser",
+    ),
+}
