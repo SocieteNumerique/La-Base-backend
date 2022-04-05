@@ -8,6 +8,7 @@ class ResourceView(
     mixins.RetrieveModelMixin,
     mixins.DestroyModelMixin,
     mixins.CreateModelMixin,
+    mixins.ListModelMixin,
     viewsets.GenericViewSet,
 ):
     serializer_class = FullResourceSerializer

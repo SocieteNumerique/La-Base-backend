@@ -36,13 +36,13 @@ class BaseResourceSerializer(serializers.ModelSerializer):
         model = Resource
         abstract = True
 
-    author = AuthSerializer(read_only=True)
+    creator = serializers.PrimaryKeyRelatedField(read_only=True)
     is_short = serializers.ReadOnlyField(default=True)
 
 
 class ShortResourceSerializer(BaseResourceSerializer):
     class Meta(BaseResourceSerializer.Meta):
-        fields = ["id", "title", "is_short"]
+        fields = ["id", "title"]
         abstract = False
 
     is_short = serializers.ReadOnlyField(default=True)
@@ -50,7 +50,6 @@ class ShortResourceSerializer(BaseResourceSerializer):
 
 class FullResourceSerializer(BaseResourceSerializer):
     class Meta(BaseResourceSerializer.Meta):
-        fields = ["id", "title", "author", "content"]
         fields = "__all__"
         abstract = False
 
@@ -74,4 +73,4 @@ class ShortBaseSerializer(BaseBaseSerializer):
 class FullBaseSerializer(BaseBaseSerializer):
     class Meta(BaseBaseSerializer.Meta):
         abstract = False
-        fields = ["id", "title", "owner", "categories"]
+        fields = ["id", "title", "owner"]

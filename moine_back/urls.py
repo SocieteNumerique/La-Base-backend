@@ -34,6 +34,11 @@ urlpatterns = [
         name="base-by-id",
     ),
     path(
+        "api/resources",
+        resource_views.ResourceView.as_view({"post": "create", "get": "list"}),
+        name="resources",
+    ),
+    path(
         "api/resources/<int:pk>",
         resource_views.ResourceView.as_view({"get": "retrieve", "delete": "destroy"}),
         name="base-by-id",
