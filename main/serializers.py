@@ -4,7 +4,7 @@ from django.core import exceptions
 from rest_framework import serializers
 from telescoop_auth.models import User
 
-from main.models import Ressource, Base, Category
+from main.models import Resource, Base
 
 
 class AuthSerializer(serializers.ModelSerializer):
@@ -18,6 +18,7 @@ class AuthSerializer(serializers.ModelSerializer):
             "is_admin",
         )
 
+    @staticmethod
     def validate_password(self, value):
         errors = None
         try:
@@ -30,50 +31,28 @@ class AuthSerializer(serializers.ModelSerializer):
         return make_password(value)
 
 
-class BaseRessourceSerializer(serializers.ModelSerializer):
+class BaseResourceSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Ressource
+        model = Resource
         abstract = True
 
     author = AuthSerializer(read_only=True)
     is_short = serializers.ReadOnlyField(default=True)
 
 
-class ShortRessourceSerializer(BaseRessourceSerializer):
-    class Meta(BaseRessourceSerializer.Meta):
+class ShortResourceSerializer(BaseResourceSerializer):
+    class Meta(BaseResourceSerializer.Meta):
         fields = ["id", "title", "is_short"]
         abstract = False
 
     is_short = serializers.ReadOnlyField(default=True)
 
 
-class FullRessourceSerializer(BaseRessourceSerializer):
-    class Meta(BaseRessourceSerializer.Meta):
+class FullResourceSerializer(BaseResourceSerializer):
+    class Meta(BaseResourceSerializer.Meta):
         fields = ["id", "title", "author", "content"]
+        fields = "__all__"
         abstract = False
-
-
-class BaseCategorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Category
-        abstract = True
-
-    base = serializers.PrimaryKeyRelatedField(read_only=True)
-    ressources = FullRessourceSerializer(many=True, read_only=True)
-
-
-class ShortCategorySerializer(BaseCategorySerializer):
-    class Meta(BaseCategorySerializer.Meta):
-        abstract = False
-        fields = ["title", "base", "is_short"]
-
-    is_short = serializers.ReadOnlyField(default=True)
-
-
-class FullCategorySerializer(BaseCategorySerializer):
-    class Meta(BaseCategorySerializer.Meta):
-        abstract = False
-        fields = ["title", "base", "ressources"]
 
 
 class BaseBaseSerializer(serializers.ModelSerializer):
@@ -81,7 +60,6 @@ class BaseBaseSerializer(serializers.ModelSerializer):
         model = Base
         abstract = True
 
-    categories = FullCategorySerializer(many=True, read_only=True)
     owner = AuthSerializer()
 
 
