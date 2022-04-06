@@ -32,9 +32,10 @@ class ContributorProfile(TimeStampedModel):
     name = models.CharField(max_length=100)
     base = models.ForeignKey(Base, models.CASCADE, related_name="contributor_profiles")
     contributors = models.ManyToManyField(User)
+    # TODO autorisations
 
-
-#     TODO autorisations
+    def __str__(self):
+        return f"{self.base} - {self.name}"
 
 
 class TagCategory(TimeStampedModel):
@@ -45,10 +46,17 @@ class TagCategory(TimeStampedModel):
 
     name = models.CharField(max_length=20)
     base = models.ForeignKey(Base, models.CASCADE, null=True, blank=True)
+    required_to_public = models.BooleanField(default=False)
+    is_multi_select = models.BooleanField(default=False)
+    is_draft = models.BooleanField(default=False)
+    accepts_free_tags = models.BooleanField(default=True)
     relates_to = models.CharField(
         max_length=10,
         choices=[("Resource", "Ressource"), ("User", "Utilisateur"), ("Base", "Base")],
-    )
+    )  # no user in v1
+
+    def __str__(self):
+        return f"{self.base or 'GLOBAL'} - {self.name}"
 
 
 class Tag(TimeStampedModel):
@@ -58,6 +66,12 @@ class Tag(TimeStampedModel):
     name = models.CharField(max_length=20)
     category = models.ForeignKey(TagCategory, on_delete=models.CASCADE)
     parent_tag = models.ForeignKey("self", models.CASCADE, null=True, blank=True)
+    is_free = models.BooleanField(default=False)
+    is_draft = models.BooleanField(default=False)
+    definition = models.TextField(null=True)
+
+    def __str__(self):
+        return f"{self.category.base or 'GLOBAL'} - {self.name}"
 
 
 class Resource(TimeStampedModel):
@@ -71,16 +85,31 @@ class Resource(TimeStampedModel):
     )
     root_base = models.ForeignKey(Base, on_delete=models.PROTECT)
     is_draft = models.BooleanField(default=True)
-    description = models.CharField(max_length=60)
+    description = models.CharField(
+        max_length=60, null=True, blank=True
+    )  # only if not in base, first
     zip_code = models.IntegerField(null=True, blank=True)
     url = models.URLField(null=True, blank=True)
     thumbnail = models.ImageField(null=True, blank=True)
-    linked_resources = models.ManyToManyField("self", null=True, blank=True)
+    linked_resources = models.ManyToManyField("self", blank=True)
     internal_producer = models.ManyToManyField(
-        User, related_name="internal_producers", null=True, blank=True
+        User, related_name="internal_producers", blank=True
     )
-    # category : is it dependant of the base ?
-    # tags
+    tags = models.ManyToManyField(Tag)
+
+    def missing_to_be_public(self):
+        filled_required_tag_categories = {
+            tag.category
+            for tag in self.tags.all()
+            if tag.category.required_to_public and tag.category.tag_set.count() > 0
+        }
+        return (
+            set(TagCategory.objects.filter(required_to_public=True).all())
+            - filled_required_tag_categories
+        )
+
+    def allowed_to_be_public(self):
+        return len(self.missing_to_be_public()) > 0
 
     def __str__(self):
         return self.title
@@ -98,3 +127,75 @@ class ExternalProducer(TimeStampedModel):
         Resource, models.CASCADE, related_name="external_producer"
     )
     # tags
+
+    def __str__(self):
+        return f"EXT - ${self.name}"
+
+
+class ContentBlock(TimeStampedModel):
+    class Meta:
+        verbose_name = "Bloc de contenu"
+        verbose_name_plural = "Blocs de contenu"
+
+    title = models.CharField(max_length=20)
+    annotation = models.TextField()
+    is_draft = models.BooleanField()
+    # TODO place and size in display grid
+
+
+class ContentFolder(ContentBlock):
+    class Meta:
+        verbose_name = "Dossier de contenu"
+        verbose_name_plural = "Dossiers de contenu"
+
+    parent_folder = models.ForeignKey("self", models.CASCADE, null=True, blank=True)
+
+
+class Content(ContentBlock):
+    class Meta:
+        verbose_name = "Contenu"
+        abstract = True
+
+    parent_folder = models.ForeignKey(
+        ContentFolder, models.CASCADE, null=True, blank=True
+    )
+
+
+class LinkedResourceContent(Content):
+    class Meta:
+        verbose_name = "Contenu : Ressource liée"
+        verbose_name_plural = "Contenus : Ressources liées"
+
+    resource = models.ForeignKey(Resource, models.SET_NULL, null=True, blank=True)
+
+
+class LinkContent(Content):
+    class Meta:
+        verbose_name = "Contenu : Lien externe"
+        verbose_name_plural = "Contenus : Liens externes"
+
+    link = models.URLField()
+    display_mode = models.CharField(
+        max_length=10,
+        choices=[
+            ("embedded", "Page intégrée"),
+            ("simple", "Lien simple"),
+            ("bookmark", "Marque-page"),
+        ],
+    )
+
+
+class TextResource(Content):
+    class Meta:
+        verbose_name = "Contenu : Texte"
+        verbose_name_plural = "Contenus : Textes"
+
+    text = models.TextField()  # TODO add rich text support ?
+
+
+class FileContent(Content):
+    class Meta:
+        verbose_name = "Contenu : Fichier importé"
+        verbose_name_plural = "Contenus : Fichiers importés"
+
+    file = models.FileField()
