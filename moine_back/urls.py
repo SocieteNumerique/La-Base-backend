@@ -15,14 +15,16 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
-from main.views import main_views, base_views, resource_views
 from rest_framework import routers
+
+from main.views import main_views, base_views, resource_views, index_views
 
 from moine_back.settings import IS_LOCAL_DEV
 
 router = routers.DefaultRouter()
 router.register(r"bases", base_views.BaseView)
 router.register(r"resources", resource_views.ResourceView)
+router.register(r"index", index_views.IndexView)
 
 urlpatterns = [
     path("admin/", admin.site.urls),
