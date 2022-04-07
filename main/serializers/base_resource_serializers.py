@@ -73,4 +73,4 @@ class ShortBaseSerializer(BaseBaseSerializer):
 class FullBaseSerializer(BaseBaseSerializer):
     class Meta(BaseBaseSerializer.Meta):
         abstract = False
-        fields = ["id", "title", "owner"]
+        fields = "__all__"

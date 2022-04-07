@@ -1,7 +1,10 @@
 from rest_framework import mixins, viewsets
 
 from main.models import Base
-from main.serializers import FullBaseSerializer, ShortBaseSerializer
+from main.serializers.base_resource_serializers import (
+    FullBaseSerializer,
+    ShortBaseSerializer,
+)
 
 
 class BaseView(
@@ -11,8 +14,7 @@ class BaseView(
     mixins.CreateModelMixin,
     viewsets.GenericViewSet,
 ):
-    def get_queryset(self):
-        return Base.objects.all()
+    queryset = Base.objects.all()
 
     def get_serializer_class(self):
         if self.kwargs.get("pk"):

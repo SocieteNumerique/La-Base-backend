@@ -1,7 +1,7 @@
 from rest_framework import mixins, viewsets
 
 from main.models import Resource
-from main.serializers import FullResourceSerializer
+from main.serializers.base_resource_serializers import FullResourceSerializer
 
 
 class ResourceView(
@@ -12,6 +12,4 @@ class ResourceView(
     viewsets.GenericViewSet,
 ):
     serializer_class = FullResourceSerializer
-
-    def get_queryset(self):
-        return Resource.objects.all()
+    queryset = Resource.objects.all()
