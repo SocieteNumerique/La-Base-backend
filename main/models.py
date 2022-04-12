@@ -95,7 +95,7 @@ class Resource(TimeStampedModel):
     internal_producer = models.ManyToManyField(
         User, related_name="internal_producers", blank=True
     )
-    tags = models.ManyToManyField(Tag)
+    tags = models.ManyToManyField(Tag, blank=True)
 
     def missing_to_be_public(self):
         filled_required_tag_categories = {
