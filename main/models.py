@@ -132,44 +132,41 @@ class ExternalProducer(TimeStampedModel):
         return f"EXT - ${self.name}"
 
 
+class ContentFolder(TimeStampedModel):
+    class Meta:
+        verbose_name = "Dossier de contenu"
+        verbose_name_plural = "Dossiers de contenu"
+
+    resource = models.ForeignKey(Resource, models.CASCADE)
+    title = models.CharField(max_length=20, null=True)
+
+
 class ContentBlock(TimeStampedModel):
     class Meta:
         verbose_name = "Bloc de contenu"
         verbose_name_plural = "Blocs de contenu"
 
-    title = models.CharField(max_length=20)
-    annotation = models.TextField()
-    is_draft = models.BooleanField()
-    # TODO place and size in display grid
-
-
-class ContentFolder(ContentBlock):
-    class Meta:
-        verbose_name = "Dossier de contenu"
-        verbose_name_plural = "Dossiers de contenu"
-
-    parent_folder = models.ForeignKey("self", models.CASCADE, null=True, blank=True)
-
-
-class Content(ContentBlock):
-    class Meta:
-        verbose_name = "Contenu"
-        abstract = True
-
+    title = models.CharField(max_length=20, null=True)
+    annotation = models.TextField(null=True, blank=True)
+    is_draft = models.BooleanField(default=False)
+    resource = models.ForeignKey(Resource, models.CASCADE)
     parent_folder = models.ForeignKey(
         ContentFolder, models.CASCADE, null=True, blank=True
     )
+    # TODO place and size in display grid
 
 
-class LinkedResourceContent(Content):
+class LinkedResourceContent(ContentBlock):
     class Meta:
         verbose_name = "Contenu : Ressource liée"
         verbose_name_plural = "Contenus : Ressources liées"
 
-    resource = models.ForeignKey(Resource, models.SET_NULL, null=True, blank=True)
+    linked_resource = models.ForeignKey(
+        Resource, models.SET_NULL, null=True, blank=True
+    )
 
 
-class LinkContent(Content):
+class LinkContent(ContentBlock):
     class Meta:
         verbose_name = "Contenu : Lien externe"
         verbose_name_plural = "Contenus : Liens externes"
@@ -185,15 +182,15 @@ class LinkContent(Content):
     )
 
 
-class TextResource(Content):
+class TextContent(ContentBlock):
     class Meta:
         verbose_name = "Contenu : Texte"
         verbose_name_plural = "Contenus : Textes"
 
-    text = models.TextField()  # TODO add rich text support ?
+    text = models.TextField()  # TODO add rich text support
 
 
-class FileContent(Content):
+class FileContent(ContentBlock):
     class Meta:
         verbose_name = "Contenu : Fichier importé"
         verbose_name_plural = "Contenus : Fichiers importés"
