@@ -15,6 +15,7 @@ content_fields = [
     "parent_folder",
     "created",
     "modified",
+    "type",
 ]
 content_read_only_fields = ["id", "created", "modified"]
 
@@ -32,10 +33,10 @@ class BaseContentSerializer(serializers.ModelSerializer):
         read_only_fields = content_read_only_fields
         abstract = True
 
-    content_type = serializers.SerializerMethodField()
+    type = serializers.SerializerMethodField()
 
     @staticmethod
-    def get_content_type(obj):
+    def get_type(obj):
         raise NotImplementedError
 
 
@@ -45,7 +46,7 @@ class LinkContentSerializer(BaseContentSerializer):
         model = LinkContent
 
     @staticmethod
-    def get_content_type(obj):
+    def get_type(obj):
         return "link"
 
 
@@ -55,7 +56,7 @@ class LinkedResourceContentSerializer(BaseContentSerializer):
         model = LinkedResourceContent
 
     @staticmethod
-    def get_content_type(obj):
+    def get_type(obj):
         return "linkedResource"
 
 
@@ -65,7 +66,7 @@ class TextContentSerializer(BaseContentSerializer):
         model = TextContent
 
     @staticmethod
-    def get_content_type(obj):
+    def get_type(obj):
         return "text"
 
 
