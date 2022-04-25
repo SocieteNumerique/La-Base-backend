@@ -10,23 +10,45 @@ class RecursiveField(serializers.BaseSerializer):
         return serializer.data
 
 
-class TagIndexSerializer(serializers.ModelSerializer):
+class BaseTagSerializer(serializers.ModelSerializer):
     class Meta:
+        abstract = True
         model = Tag
         fields = [
             "id",
             "name",
             "is_free",
-            "is_draft",
             "definition",
             "tags",
-            "parent_tag",
         ]
 
     tags = RecursiveField(many=True)
 
 
-class IndexSerializer(serializers.ModelSerializer):
+class BaseIndexSerializer(serializers.ModelSerializer):
+    class Meta:
+        abstract = True
+        model = TagCategory
+        fields = [
+            "id",
+            "name",
+            "base",
+            "is_multi_select",
+            "is_draft",
+            "accepts_free_tags",
+            "tags",
+        ]
+
+    tags = SerializerMethodField(method_name="root_tags")
+
+
+class TagIndexSerializer(BaseTagSerializer):
+    class Meta:
+        model = Tag
+        fields = BaseTagSerializer.Meta.fields
+
+
+class IndexSerializer(BaseIndexSerializer):
     class Meta:
         model = TagCategory
         fields = [
@@ -51,15 +73,7 @@ class IndexSerializer(serializers.ModelSerializer):
 class TagIndexAdminSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
-        fields = [
-            "id",
-            "name",
-            "is_free",
-            "is_draft",
-            "definition",
-            "tags",
-            "parent_tag",
-        ]
+        fields = BaseTagSerializer.Meta.fields + ["is_draft"]
 
     tags = SerializerMethodField(method_name="no_free_tag_set")
 
@@ -68,18 +82,10 @@ class TagIndexAdminSerializer(serializers.ModelSerializer):
         return TagIndexAdminSerializer(obj.tags.filter(is_free=False), many=True).data
 
 
-class IndexAdminSerializer(serializers.ModelSerializer):
+class IndexAdminSerializer(BaseIndexSerializer):
     class Meta:
         model = TagCategory
-        fields = [
-            "id",
-            "name",
-            "base",
-            "is_multi_select",
-            "is_draft",
-            "accepts_free_tags",
-            "tags",
-        ]
+        fields = BaseIndexSerializer.Meta.fields
 
     tags = SerializerMethodField(method_name="no_free_root_tags")
 

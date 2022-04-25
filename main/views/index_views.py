@@ -11,7 +11,7 @@ class IndexView(viewsets.GenericViewSet):
         return TagCategory.objects.filter(base_id__isnull=True)
 
     @staticmethod
-    def retrieve(request):
+    def list(request):
         query = Q()
         if request.GET.get("base"):
             print(request.GET.get("base"))
