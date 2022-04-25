@@ -53,6 +53,10 @@ class FullResourceSerializer(BaseResourceSerializer):
         fields = "__all__"
         abstract = False
 
+    @staticmethod
+    def get_contents(obj):
+        pass
+
 
 class BaseBaseSerializer(serializers.ModelSerializer):
     class Meta:
