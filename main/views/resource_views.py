@@ -16,7 +16,9 @@ class ResourceView(
     viewsets.GenericViewSet,
 ):
     serializer_class = FullResourceSerializer
-    queryset = Resource.objects.all()
+
+    def get_queryset(self):
+        return Resource.objects.all()
 
     @action(detail=True, methods=["GET"])
     def contents(self, request, pk=None):

@@ -17,7 +17,8 @@ class BaseView(
     mixins.CreateModelMixin,
     viewsets.GenericViewSet,
 ):
-    queryset = Base.objects.all()
+    def get_queryset(self):
+        return Base.objects.all()
 
     def get_serializer_class(self):
         if self.kwargs.get("pk"):

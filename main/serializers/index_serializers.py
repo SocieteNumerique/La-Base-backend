@@ -19,11 +19,11 @@ class TagIndexSerializer(serializers.ModelSerializer):
             "is_free",
             "is_draft",
             "definition",
-            "tag_set",
+            "tags",
             "parent_tag",
         ]
 
-    tag_set = RecursiveField(many=True)
+    tags = RecursiveField(many=True)
 
 
 class IndexSerializer(serializers.ModelSerializer):
@@ -36,15 +36,15 @@ class IndexSerializer(serializers.ModelSerializer):
             "is_multi_select",
             "is_draft",
             "accepts_free_tags",
-            "tag_set",
+            "tags",
         ]
 
-    tag_set = SerializerMethodField(method_name="root_tags")
+    tags = SerializerMethodField(method_name="root_tags")
 
     @staticmethod
     def root_tags(obj: TagCategory):
         return TagIndexSerializer(
-            obj.tag_set.filter(parent_tag_id__isnull=True, is_draft=False), many=True
+            obj.tags.filter(parent_tag_id__isnull=True, is_draft=False), many=True
         ).data
 
 
@@ -57,17 +57,15 @@ class TagIndexAdminSerializer(serializers.ModelSerializer):
             "is_free",
             "is_draft",
             "definition",
-            "tag_set",
+            "tags",
             "parent_tag",
         ]
 
-    tag_set = SerializerMethodField(method_name="no_free_tag_set")
+    tags = SerializerMethodField(method_name="no_free_tag_set")
 
     @staticmethod
     def no_free_tag_set(obj: TagCategory):
-        return TagIndexAdminSerializer(
-            obj.tag_set.filter(is_free=False), many=True
-        ).data
+        return TagIndexAdminSerializer(obj.tags.filter(is_free=False), many=True).data
 
 
 class IndexAdminSerializer(serializers.ModelSerializer):
@@ -80,13 +78,13 @@ class IndexAdminSerializer(serializers.ModelSerializer):
             "is_multi_select",
             "is_draft",
             "accepts_free_tags",
-            "tag_set",
+            "tags",
         ]
 
-    tag_set = SerializerMethodField(method_name="no_free_root_tags")
+    tags = SerializerMethodField(method_name="no_free_root_tags")
 
     @staticmethod
     def no_free_root_tags(obj: TagCategory):
         return TagIndexAdminSerializer(
-            obj.tag_set.filter(parent_tag_id__isnull=True, is_free=False), many=True
+            obj.tags.filter(parent_tag_id__isnull=True, is_free=False), many=True
         ).data

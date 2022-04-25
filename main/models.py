@@ -46,7 +46,7 @@ class TagCategory(TimeStampedModel):
 
     name = models.CharField(max_length=20)
     base = models.ForeignKey(Base, models.CASCADE, null=True, blank=True)
-    required_to_public = models.BooleanField(default=False)
+    required_to_be_public = models.BooleanField(default=False)
     is_multi_select = models.BooleanField(default=False)
     is_draft = models.BooleanField(default=False)
     accepts_free_tags = models.BooleanField(default=True)
@@ -64,8 +64,12 @@ class Tag(TimeStampedModel):
         unique_together = ("name", "category")
 
     name = models.CharField(max_length=20)
-    category = models.ForeignKey(TagCategory, on_delete=models.CASCADE)
-    parent_tag = models.ForeignKey("self", models.CASCADE, null=True, blank=True)
+    category = models.ForeignKey(
+        TagCategory, on_delete=models.CASCADE, related_name="tags"
+    )
+    parent_tag = models.ForeignKey(
+        "self", models.CASCADE, null=True, blank=True, related_name="tags"
+    )
     is_free = models.BooleanField(default=False)
     is_draft = models.BooleanField(default=False)
     definition = models.TextField(null=True)
@@ -92,24 +96,24 @@ class Resource(TimeStampedModel):
     url = models.URLField(null=True, blank=True)
     thumbnail = models.ImageField(null=True, blank=True)
     linked_resources = models.ManyToManyField("self", blank=True)
-    internal_producer = models.ManyToManyField(
-        User, related_name="internal_producers", blank=True
+    internal_producers = models.ManyToManyField(
+        User, blank=True, related_name="internal_producers"
     )
     tags = models.ManyToManyField(Tag, blank=True)
 
-    def missing_to_be_public(self):
+    def missing_categories_to_be_public(self):
         filled_required_tag_categories = {
             tag.category
             for tag in self.tags.all()
-            if tag.category.required_to_public and tag.category.tag_set.count() > 0
+            if tag.category.required_to_be_public and tag.category.tags.count() > 0
         }
         return (
-            set(TagCategory.objects.filter(required_to_public=True).all())
+            set(TagCategory.objects.filter(required_to_be_public=True).all())
             - filled_required_tag_categories
         )
 
-    def allowed_to_be_public(self):
-        return len(self.missing_to_be_public()) > 0
+    def is_allowed_to_be_public(self):
+        return len(self.missing_categories_to_be_public()) > 0
 
     def __str__(self):
         return self.title
@@ -132,13 +136,13 @@ class ExternalProducer(TimeStampedModel):
         return f"EXT - ${self.name}"
 
 
-class ContentFolder(TimeStampedModel):
+class ContentSection(TimeStampedModel):
     class Meta:
         verbose_name = "Dossier de contenu"
         verbose_name_plural = "Dossiers de contenu"
 
     resource = models.ForeignKey(Resource, models.CASCADE)
-    title = models.CharField(max_length=20, null=True)
+    title = models.CharField(max_length=20)
 
 
 class ContentBlock(TimeStampedModel):
@@ -151,7 +155,7 @@ class ContentBlock(TimeStampedModel):
     is_draft = models.BooleanField(default=False)
     resource = models.ForeignKey(Resource, models.CASCADE)
     parent_folder = models.ForeignKey(
-        ContentFolder, models.CASCADE, null=True, blank=True
+        ContentSection, models.CASCADE, null=True, blank=True
     )
     # TODO place and size in display grid
 

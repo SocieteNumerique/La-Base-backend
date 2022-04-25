@@ -7,7 +7,8 @@ from main.serializers.index_serializers import IndexSerializer
 
 
 class IndexView(viewsets.GenericViewSet):
-    queryset = TagCategory.objects.filter(base_id__isnull=True)
+    def get_queryset(self):
+        return TagCategory.objects.filter(base_id__isnull=True)
 
     @staticmethod
     def retrieve(request):
