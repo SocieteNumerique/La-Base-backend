@@ -27,7 +27,7 @@ DEBUG = IS_LOCAL_DEV
 
 if IS_LOCAL_DEV:
     SECRET_KEY = "django-insecure-zdvs0+i17^0*8w0nd%0mtoa69)%#%cp37=8t2^2s0ung)zp(51"
-    ALLOWED_HOSTS = []
+    ALLOWED_HOSTS = ["*"]
 else:
     SECRET_KEY = config.getstr("security.secret_key")
     ALLOWED_HOSTS = config.getlist("security.allowed_hosts")
