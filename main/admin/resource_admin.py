@@ -1,8 +1,12 @@
 from django.contrib import admin
 
-from main.models import Resource
+from main.models import Resource, TextContent
+
+
+class TextContentInline(admin.TabularInline):
+    model = TextContent
 
 
 @admin.register(Resource)
 class ResourceAdmin(admin.ModelAdmin):
-    pass
+    inlines = [TextContentInline]

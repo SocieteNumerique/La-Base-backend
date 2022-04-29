@@ -5,6 +5,7 @@ from main.models import (
     LinkedResourceContent,
     TextContent,
     ContentBlock,
+    Resource,
 )
 
 content_fields = [
@@ -90,7 +91,7 @@ class ReadContentSerializer(serializers.ModelSerializer):
         read_only_fields = CONTENT_READ_ONLY_FIELDS
         model = ContentBlock
 
-    def to_representation(self, instance):
+    def to_representation(self, instance: Resource):
         for block_child_model in [
             "textcontent",
             "linkcontent",
