@@ -5,6 +5,7 @@ from rest_framework import serializers
 from telescoop_auth.models import User
 
 from main.models import Resource, Base
+from main.serializers.content_serializers import ReadContentSerializer
 
 
 class AuthSerializer(serializers.ModelSerializer):
@@ -36,8 +37,11 @@ class BaseResourceSerializer(serializers.ModelSerializer):
         model = Resource
         abstract = True
 
-    creator = serializers.PrimaryKeyRelatedField(read_only=True)
+    creator = serializers.PrimaryKeyRelatedField(
+        read_only=True, default=serializers.CurrentUserDefault()
+    )
     is_short = serializers.ReadOnlyField(default=True)
+    contents = ReadContentSerializer(many=True)
 
 
 class ShortResourceSerializer(BaseResourceSerializer):
@@ -52,6 +56,8 @@ class FullResourceSerializer(BaseResourceSerializer):
     class Meta(BaseResourceSerializer.Meta):
         fields = "__all__"
         abstract = False
+
+    is_short = serializers.ReadOnlyField(default=False)
 
     @staticmethod
     def get_contents(obj):

@@ -32,6 +32,7 @@ class ContributorProfile(TimeStampedModel):
     name = models.CharField(max_length=100)
     base = models.ForeignKey(Base, models.CASCADE, related_name="contributor_profiles")
     contributors = models.ManyToManyField(User)
+
     # TODO autorisations
 
     def __str__(self):
@@ -44,16 +45,41 @@ class TagCategory(TimeStampedModel):
         verbose_name = "Catégorie de tags"
         verbose_name_plural = "Catégories de tags"
 
-    name = models.CharField(max_length=20)
-    base = models.ForeignKey(Base, models.CASCADE, null=True, blank=True)
-    required_to_be_public = models.BooleanField(default=False)
-    is_multi_select = models.BooleanField(default=False)
-    is_draft = models.BooleanField(default=False)
-    accepts_free_tags = models.BooleanField(default=True)
+    name = models.CharField(verbose_name="nom", max_length=20)
+    required_to_be_public = models.BooleanField(
+        verbose_name="remplissage obligatoire pour passer en public", default=False
+    )
+    maximum_tag_number = models.PositiveSmallIntegerField(
+        verbose_name="nombre maximum de tags liés", null=True, blank=True
+    )
+    is_multi_select = models.BooleanField(
+        verbose_name="plusieurs choix possibles", default=False
+    )
+    accepts_free_tags = models.BooleanField(
+        verbose_name="accepte des tags libres", default=True
+    )
     relates_to = models.CharField(
         max_length=10,
-        choices=[("Resource", "Ressource"), ("User", "Utilisateur"), ("Base", "Base")],
+        verbose_name="lié aux",
+        choices=[
+            ("Resource", "Ressources"),
+            ("User", "Utilisateurs"),
+            ("Base", "Bases"),
+        ],
     )  # no user in v1
+    is_draft = models.BooleanField(
+        verbose_name="est un brouillon",
+        default=False,
+        help_text="Une catégorie en brouillon est ignorée par l'appli",
+    )
+    base = models.ForeignKey(
+        Base,
+        models.CASCADE,
+        verbose_name="lié à la base",
+        null=True,
+        blank=True,
+        help_text="si une catégorie de tag n'est liée à aucune base, elle est globale",
+    )
 
     def __str__(self):
         return f"{self.base or 'GLOBAL'} - {self.name}"
@@ -63,15 +89,20 @@ class Tag(TimeStampedModel):
     class Meta:
         unique_together = ("name", "category")
 
-    name = models.CharField(max_length=20)
+    name = models.CharField(verbose_name="nom", max_length=20)
     category = models.ForeignKey(
         TagCategory, on_delete=models.CASCADE, related_name="tags"
     )
     parent_tag = models.ForeignKey(
-        "self", models.CASCADE, null=True, blank=True, related_name="tags"
+        "self",
+        models.CASCADE,
+        verbose_name="parent",
+        null=True,
+        blank=True,
+        related_name="tags",
     )
-    is_free = models.BooleanField(default=False)
-    is_draft = models.BooleanField(default=False)
+    is_free = models.BooleanField(verbose_name="est un tag libre", default=False)
+    is_draft = models.BooleanField(verbose_name="est un brouillon", default=False)
     definition = models.TextField(null=True)
 
     def __str__(self):
@@ -83,7 +114,6 @@ class Resource(TimeStampedModel):
         verbose_name = "Ressource"
 
     title = models.CharField(max_length=100)
-    content = models.TextField()
     creator = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True, related_name="creator"
     )
@@ -130,6 +160,7 @@ class ExternalProducer(TimeStampedModel):
     resource = models.ForeignKey(
         Resource, models.CASCADE, related_name="external_producer"
     )
+
     # tags
 
     def __str__(self):
@@ -153,7 +184,7 @@ class ContentBlock(TimeStampedModel):
     title = models.CharField(max_length=20, null=True)
     annotation = models.TextField(null=True, blank=True)
     is_draft = models.BooleanField(default=False)
-    resource = models.ForeignKey(Resource, models.CASCADE)
+    resource = models.ForeignKey(Resource, models.CASCADE, related_name="contents")
     parent_folder = models.ForeignKey(
         ContentSection, models.CASCADE, null=True, blank=True
     )
