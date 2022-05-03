@@ -10,3 +10,4 @@ class TextContentInline(admin.TabularInline):
 @admin.register(Resource)
 class ResourceAdmin(admin.ModelAdmin):
     inlines = [TextContentInline]
+    filter_horizontal = ["linked_resources"]

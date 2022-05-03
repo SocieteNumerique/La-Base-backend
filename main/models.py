@@ -46,10 +46,13 @@ class TagCategory(TimeStampedModel):
         verbose_name_plural = "Catégories de tags"
 
     name = models.CharField(verbose_name="nom", max_length=20)
+    description = models.CharField(
+        verbose_name="description", null=True, max_length=100
+    )
     required_to_be_public = models.BooleanField(
         verbose_name="remplissage obligatoire pour passer en public", default=False
     )
-    maximum_tag_number = models.PositiveSmallIntegerField(
+    maximum_tag_count = models.PositiveSmallIntegerField(
         verbose_name="nombre maximum de tags liés", null=True, blank=True
     )
     is_multi_select = models.BooleanField(
@@ -103,7 +106,7 @@ class Tag(TimeStampedModel):
     )
     is_free = models.BooleanField(verbose_name="est un tag libre", default=False)
     is_draft = models.BooleanField(verbose_name="est un brouillon", default=False)
-    definition = models.TextField(null=True)
+    definition = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.category.base or 'GLOBAL'} - {self.name}"

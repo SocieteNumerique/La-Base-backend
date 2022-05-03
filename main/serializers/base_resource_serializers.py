@@ -41,7 +41,7 @@ class BaseResourceSerializer(serializers.ModelSerializer):
         read_only=True, default=serializers.CurrentUserDefault()
     )
     is_short = serializers.ReadOnlyField(default=True)
-    contents = ReadContentSerializer(many=True)
+    contents = ReadContentSerializer(many=True, required=False)
 
 
 class ShortResourceSerializer(BaseResourceSerializer):
