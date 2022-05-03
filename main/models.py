@@ -180,15 +180,18 @@ class ContentBlock(TimeStampedModel):
     class Meta:
         verbose_name = "Bloc de contenu"
         verbose_name_plural = "Blocs de contenu"
+        ordering = ["order"]
+        unique_together = ("resource", "order")
 
     title = models.CharField(max_length=20, null=True)
     annotation = models.TextField(null=True, blank=True)
-    is_draft = models.BooleanField(default=False)
+    is_draft = models.BooleanField(default=True)
     resource = models.ForeignKey(Resource, models.CASCADE, related_name="contents")
     parent_folder = models.ForeignKey(
         ContentSection, models.CASCADE, null=True, blank=True
     )
-    # TODO place and size in display grid
+    nb_col = models.IntegerField(default=2)
+    order = models.IntegerField()
 
 
 class LinkedResourceContent(ContentBlock):
@@ -206,7 +209,7 @@ class LinkContent(ContentBlock):
         verbose_name = "Contenu : Lien externe"
         verbose_name_plural = "Contenus : Liens externes"
 
-    link = models.URLField()
+    link = models.URLField(blank=True, null=True)
     display_mode = models.CharField(
         max_length=10,
         choices=[
@@ -222,7 +225,7 @@ class TextContent(ContentBlock):
         verbose_name = "Contenu : Texte"
         verbose_name_plural = "Contenus : Textes"
 
-    text = models.TextField()  # TODO add rich text support
+    text = models.TextField(blank=True, null=True)  # TODO add rich text support
 
 
 class FileContent(ContentBlock):
