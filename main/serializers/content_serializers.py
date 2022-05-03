@@ -1,11 +1,12 @@
 from rest_framework import serializers
+from rest_framework.fields import CharField
+from copy import copy
 
 from main.models import (
     LinkContent,
     LinkedResourceContent,
     TextContent,
     ContentBlock,
-    Resource,
 )
 
 content_fields = [
@@ -17,6 +18,8 @@ content_fields = [
     "created",
     "modified",
     "type",
+    "nb_col",
+    "index",
 ]
 CONTENT_READ_ONLY_FIELDS = ["id", "created", "modified"]
 POSSIBLE_CONTENT_TYPES = ["text", "link", "linkedResource"]
@@ -24,7 +27,7 @@ POSSIBLE_CONTENT_TYPES = ["text", "link", "linkedResource"]
 
 class ContentBlockSerializer(serializers.ModelSerializer):
     class Meta:
-        fields = content_fields
+        fields = "__all__"
         read_only_fields = CONTENT_READ_ONLY_FIELDS
         model = ContentBlock
 
@@ -72,6 +75,17 @@ class TextContentSerializer(BaseContentSerializer):
         return "text"
 
 
+def content_block_instance_to_child_model(content_block):
+    for block_child_model in [
+        "textcontent",
+        "linkcontent",
+        "linkedresourcecontent",
+    ]:
+        if hasattr(content_block, block_child_model):
+            return block_child_model
+    raise ValueError("the contentBlock is not typed")
+
+
 def get_serializer_by_child_model(block_child_model):
     if block_child_model == "textcontent":
         return TextContentSerializer
@@ -91,24 +105,22 @@ class ReadContentSerializer(serializers.ModelSerializer):
         read_only_fields = CONTENT_READ_ONLY_FIELDS
         model = ContentBlock
 
-    def to_representation(self, instance: Resource):
-        for block_child_model in [
-            "textcontent",
-            "linkcontent",
-            "linkedresourcecontent",
-        ]:
-            if hasattr(instance, block_child_model):
-                serializer = get_serializer_by_child_model(block_child_model)
-                sub_content = getattr(instance, block_child_model)
-                return serializer(sub_content, context=self.context).data
-        raise ValueError("the contentBlock is not typed")
+    def to_representation(self, instance: ContentBlock):
+        block_child_model = content_block_instance_to_child_model(instance)
+        serializer = get_serializer_by_child_model(block_child_model)
+        sub_content = getattr(instance, block_child_model)
+        return serializer(sub_content, context=self.context).data
 
 
 class WriteContentSerializer(serializers.BaseSerializer):
+    type = CharField()
+
     def to_representation(self, instance):
-        if not isinstance(instance, dict):
-            raise ValueError("use ReadContentSerializer instead")
-        return instance
+        if isinstance(instance, dict):
+            return instance
+        elif isinstance(instance, ContentBlock):
+            return ReadContentSerializer().to_representation(instance)
+        return ReadContentSerializer().to_representation(instance.contentblock_ptr)
 
     @staticmethod
     def get_model_by_type(content_type):
@@ -121,33 +133,59 @@ class WriteContentSerializer(serializers.BaseSerializer):
         raise ValueError("invalid content_type")
 
     def to_internal_value(self, data):
-        if "content_type" not in data:
-            raise ValueError("content_type not found and required")
+        local_data = copy(data)
+        if "type" in data:
+            local_data.pop("type")
 
-        content_type = data["content_type"]
-        data.pop("content_type")
+        res = ContentBlockSerializer(partial=True).to_internal_value(local_data)
+
+        # At this point either
+        # - there was only generic fields, and we managed all the data
+        # - there is still data to me managed, and this data depends on the type of the contant
+
+        for key in res.keys():
+            local_data.pop(key)
+        if len(local_data) == 0:
+            return res
+
+        # at this point we need to use the appropriate serializer,
+        # so we need to know the content's type
+
+        if "type" not in data:
+            raise ValueError("type not found and required")
+
+        content_type = data["type"]
         if content_type not in POSSIBLE_CONTENT_TYPES:
             raise ValueError("invalid content_type")
 
         block_child_model = content_type_to_child_model(content_type)
-        serializer = get_serializer_by_child_model(block_child_model)()
-        res = serializer.to_internal_value(data)
-        res["content_type"] = content_type
+        child_serializer = get_serializer_by_child_model(block_child_model)(
+            partial=True
+        )
+        res.update(child_serializer.to_internal_value(local_data))
+        res["type"] = content_type
         return res
 
     def update(self, instance, validated_data):
-        # TODO
-        pass
+        local_data = copy(validated_data)
+        if "type" in local_data:
+            local_data.pop("type")
+        block = ContentBlockSerializer().update(instance, local_data)
+
+        block_child_model = content_block_instance_to_child_model(instance)
+        child_serializer = get_serializer_by_child_model(block_child_model)()
+
+        return child_serializer.update(getattr(block, block_child_model), local_data)
 
     def create(self, validated_data):
-        # TODO test
-        if "content_type" not in validated_data:
-            raise ValueError("content_type not found and required")
+        if "type" not in validated_data:
+            raise ValueError("type not found and required")
 
-        content_type = validated_data["content_type"]
-        validated_data.pop("content_type")
+        content_type = validated_data["type"]
         if content_type not in POSSIBLE_CONTENT_TYPES:
             raise ValueError("invalid content_type")
 
+        local_data = copy(validated_data)
+        local_data.pop("type")
         model = self.get_model_by_type(content_type)
-        return model.objects.create(**validated_data)
+        return model.objects.create(**local_data)
