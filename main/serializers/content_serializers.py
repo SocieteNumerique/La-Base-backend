@@ -19,7 +19,7 @@ content_fields = [
     "modified",
     "type",
     "nb_col",
-    "index",
+    "order",
 ]
 CONTENT_READ_ONLY_FIELDS = ["id", "created", "modified"]
 POSSIBLE_CONTENT_TYPES = ["text", "link", "linkedResource"]
