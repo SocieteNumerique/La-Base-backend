@@ -25,6 +25,12 @@ CONTENT_READ_ONLY_FIELDS = ["id", "created", "modified"]
 POSSIBLE_CONTENT_TYPES = ["text", "link", "linkedResource"]
 
 
+class ContentOrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        fields = ["id", "order", "section"]
+        model = ContentBlock
+
+
 class ContentBlockSerializer(serializers.ModelSerializer):
     class Meta:
         fields = "__all__"
