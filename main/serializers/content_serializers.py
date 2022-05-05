@@ -14,7 +14,7 @@ content_fields = [
     "title",
     "annotation",
     "resource_id",
-    "parent_folder",
+    "section",
     "created",
     "modified",
     "type",
