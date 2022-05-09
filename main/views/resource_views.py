@@ -8,6 +8,7 @@ from main.serializers.content_serializers import (
     ReadContentSerializer,
     WriteContentSerializer,
     ContentOrderSerializer,
+    ContentBySectionSerializer,
 )
 
 
@@ -27,7 +28,7 @@ class ResourceView(
     @action(detail=True, methods=["GET"])
     def contents(self, request, pk=None):
         obj: Resource = self.get_object()
-        serializer = ReadContentSerializer(obj.contents, many=True)
+        serializer = ContentBySectionSerializer(obj)
         return Response(serializer.data)
 
 

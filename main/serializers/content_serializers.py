@@ -7,6 +7,8 @@ from main.models import (
     LinkedResourceContent,
     TextContent,
     ContentBlock,
+    Resource,
+    ContentSection,
 )
 
 content_fields = [
@@ -195,3 +197,26 @@ class WriteContentSerializer(serializers.BaseSerializer):
         local_data.pop("type")
         model = self.get_model_by_type(content_type)
         return model.objects.create(**local_data)
+
+
+class ContentSectionToNestSerializer(serializers.ModelSerializer):
+    class Meta:
+        fields = ["contents"]
+        model = ContentSection
+
+    contents = ReadContentSerializer(many=True)
+
+
+class ContentBySectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        fields = ["sections", "other_contents"]
+        model = Resource
+
+    @staticmethod
+    def get_other_contents(obj: Resource):
+        return ReadContentSerializer(
+            obj.contents.filter(section__isnull=True).all(), many=True
+        ).data
+
+    sections = ContentSectionToNestSerializer(many=True)
+    other_contents = serializers.SerializerMethodField()
