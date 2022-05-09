@@ -24,14 +24,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 IS_LOCAL_DEV = bool(os.environ.get("TELESCOOP_DEV"))
 DEBUG = IS_LOCAL_DEV
 
-
 if IS_LOCAL_DEV:
     SECRET_KEY = "django-insecure-zdvs0+i17^0*8w0nd%0mtoa69)%#%cp37=8t2^2s0ung)zp(51"
     ALLOWED_HOSTS = ["*"]
 else:
     SECRET_KEY = config.getstr("security.secret_key")
     ALLOWED_HOSTS = config.getlist("security.allowed_hosts")
-
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -85,17 +83,25 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "moine_back.wsgi.application"
 
-
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+if IS_LOCAL_DEV:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
     }
-}
-
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": config.getstr("database.name"),
+            "USER": config.getstr("database.user"),
+            "password": config.getstr("database.password"),
+        }
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
@@ -115,7 +121,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/4.0/topics/i18n/
 
@@ -126,7 +131,6 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 
 USE_TZ = True
-
 
 STATIC_URL = "static/"
 if IS_LOCAL_DEV:
