@@ -26,6 +26,7 @@ router.register(r"bases", base_views.BaseView, basename="base")
 router.register(r"resources", resource_views.ResourceView, basename="resource")
 router.register(r"contents", resource_views.ContentView, basename="content")
 router.register(r"index", index_views.IndexView, basename="index")
+router.register(r"sections", resource_views.SectionView, basename="section")
 
 urlpatterns = [
     path("admin/", admin.site.urls),

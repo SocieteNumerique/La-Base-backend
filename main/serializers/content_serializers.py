@@ -207,6 +207,12 @@ class ContentSectionToNestSerializer(serializers.ModelSerializer):
     contents = ReadContentSerializer(many=True)
 
 
+class ContentSectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        fields = ["title", "resource"]
+        model = ContentSection
+
+
 class ContentBySectionSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ["sections", "other_contents"]

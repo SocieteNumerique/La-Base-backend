@@ -2,13 +2,14 @@ from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from main.models import Resource, ContentBlock
+from main.models import Resource, ContentBlock, ContentSection
 from main.serializers.base_resource_serializers import FullResourceSerializer
 from main.serializers.content_serializers import (
     ReadContentSerializer,
     WriteContentSerializer,
     ContentOrderSerializer,
     ContentBySectionSerializer,
+    ContentSectionSerializer,
 )
 
 
@@ -65,3 +66,17 @@ class ContentView(
 
     def get_queryset(self):
         return ContentBlock.objects.all()
+
+
+class SectionView(
+    mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet,
+    mixins.RetrieveModelMixin,
+):
+    def get_queryset(self):
+        return ContentSection.objects.all()
+
+    def get_serializer_class(self):
+        return ContentSectionSerializer
