@@ -10,4 +10,4 @@ gunicorn==20.1.0
 ipython==8.0.1
 Pillow==9.1.0
 rollbar==0.16.2
-telescoop-auth==0.0.1
+telescoop-auth==0.0.4
