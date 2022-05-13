@@ -1,9 +1,13 @@
 from django.contrib import admin
 
-from main.models import TagCategory
+from main.models import TagCategory, Tag
+
+
+class TagInline(admin.TabularInline):
+    model = Tag
 
 
 @admin.register(TagCategory)
 class TagCategoryAdmin(admin.ModelAdmin):
-    # list_display = ("name", "category")
-    pass
+    list_display = ("name",)
+    inlines = [TagInline]
