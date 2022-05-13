@@ -7,6 +7,8 @@ from main.models import (
     LinkedResourceContent,
     TextContent,
     ContentBlock,
+    Resource,
+    ContentSection,
 )
 
 content_fields = [
@@ -14,7 +16,7 @@ content_fields = [
     "title",
     "annotation",
     "resource_id",
-    "parent_folder",
+    "section",
     "created",
     "modified",
     "type",
@@ -23,6 +25,12 @@ content_fields = [
 ]
 CONTENT_READ_ONLY_FIELDS = ["id", "created", "modified"]
 POSSIBLE_CONTENT_TYPES = ["text", "link", "linkedResource"]
+
+
+class ContentOrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        fields = ["id", "order", "section"]
+        model = ContentBlock
 
 
 class ContentBlockSerializer(serializers.ModelSerializer):
@@ -189,3 +197,32 @@ class WriteContentSerializer(serializers.BaseSerializer):
         local_data.pop("type")
         model = self.get_model_by_type(content_type)
         return model.objects.create(**local_data)
+
+
+class ContentSectionToNestSerializer(serializers.ModelSerializer):
+    class Meta:
+        fields = ["contents"]
+        model = ContentSection
+
+    contents = ReadContentSerializer(many=True)
+
+
+class ContentSectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        fields = ["title", "resource"]
+        model = ContentSection
+
+
+class ContentBySectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        fields = ["sections", "other_contents"]
+        model = Resource
+
+    @staticmethod
+    def get_other_contents(obj: Resource):
+        return ReadContentSerializer(
+            obj.contents.filter(section__isnull=True).all(), many=True
+        ).data
+
+    sections = ContentSectionToNestSerializer(many=True)
+    other_contents = serializers.SerializerMethodField()

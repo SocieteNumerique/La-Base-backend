@@ -175,7 +175,7 @@ class ContentSection(TimeStampedModel):
         verbose_name = "Dossier de contenu"
         verbose_name_plural = "Dossiers de contenu"
 
-    resource = models.ForeignKey(Resource, models.CASCADE)
+    resource = models.ForeignKey(Resource, models.CASCADE, related_name="sections")
     title = models.CharField(max_length=20)
 
 
@@ -184,14 +184,14 @@ class ContentBlock(TimeStampedModel):
         verbose_name = "Bloc de contenu"
         verbose_name_plural = "Blocs de contenu"
         ordering = ["order"]
-        unique_together = ("resource", "order")
+        unique_together = ("resource", "order", "section")
 
     title = models.CharField(max_length=20, null=True)
     annotation = models.TextField(null=True, blank=True)
     is_draft = models.BooleanField(default=True)
     resource = models.ForeignKey(Resource, models.CASCADE, related_name="contents")
-    parent_folder = models.ForeignKey(
-        ContentSection, models.CASCADE, null=True, blank=True
+    section = models.ForeignKey(
+        ContentSection, models.CASCADE, null=True, blank=True, related_name="contents"
     )
     nb_col = models.IntegerField(default=2)
     order = models.IntegerField()
