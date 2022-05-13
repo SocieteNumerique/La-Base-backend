@@ -17,12 +17,14 @@ from django.contrib import admin
 from django.urls import include, path
 from rest_framework import routers
 
-from main.views import main_views, base_views, resource_views, index_views
+from main.views import main_views, base_views, resource_views, index_views, tag_views
 
 from moine_back.settings import IS_LOCAL_DEV
 
 router = routers.DefaultRouter()
 router.register(r"bases", base_views.BaseView, basename="base")
+router.register(r"tags", tag_views.TagView, basename="tag")
+router.register(r"tag_categories", tag_views.TagCategoryView, basename="tag_category")
 router.register(r"resources", resource_views.ResourceView, basename="resource")
 router.register(r"contents", resource_views.ContentView, basename="content")
 router.register(r"index", index_views.IndexView, basename="index")

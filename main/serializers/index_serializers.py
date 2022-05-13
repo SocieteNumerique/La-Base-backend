@@ -14,13 +14,7 @@ class BaseTagSerializer(serializers.ModelSerializer):
     class Meta:
         abstract = True
         model = Tag
-        fields = [
-            "id",
-            "name",
-            "is_free",
-            "definition",
-            "tags",
-        ]
+        fields = "__all__"
 
     tags = RecursiveField(many=True)
 
@@ -42,10 +36,9 @@ class BaseIndexSerializer(serializers.ModelSerializer):
     tags = SerializerMethodField(method_name="root_tags")
 
 
-class TagIndexSerializer(BaseTagSerializer):
-    class Meta:
-        model = Tag
-        fields = BaseTagSerializer.Meta.fields
+class TagSerializer(BaseTagSerializer):
+    class Meta(BaseTagSerializer.Meta):
+        abstract = False
 
 
 class IndexSerializer(BaseIndexSerializer):
@@ -65,7 +58,7 @@ class IndexSerializer(BaseIndexSerializer):
 
     @staticmethod
     def root_tags(obj: TagCategory):
-        return TagIndexSerializer(
+        return TagSerializer(
             obj.tags.filter(parent_tag_id__isnull=True, is_draft=False), many=True
         ).data
 
@@ -73,7 +66,6 @@ class IndexSerializer(BaseIndexSerializer):
 class TagIndexAdminSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
-        fields = BaseTagSerializer.Meta.fields + ["is_draft"]
 
     tags = SerializerMethodField(method_name="no_free_tag_set")
 
