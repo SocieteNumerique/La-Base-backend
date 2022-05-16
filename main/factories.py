@@ -41,6 +41,7 @@ class TagCategoryFactory(DjangoModelFactory):
     name = factory.Faker("name", locale="fr_FR")
     description = factory.Faker("paragraph", locale="fr_FR")
     relates_to = "Resource"
+    slug = factory.Faker("text", max_nb_chars=30)
 
     @factory.post_generation
     def create_tags(self, create, extracted, **kwargs):

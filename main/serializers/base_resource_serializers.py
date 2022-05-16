@@ -9,8 +9,7 @@ from main.models import Resource, Base, ExternalProducer, Tag
 
 class PrimaryKeyTagField(serializers.PrimaryKeyRelatedField):
     def get_queryset(self):
-        # request = self.context.get('request', None)
-        return Tag.objects.all()
+        return Tag.objects.filter(category__slug="externalProducer_00occupation")
 
 
 class ExternalProducerSerializer(serializers.ModelSerializer):

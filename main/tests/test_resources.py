@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.urls import reverse
 
-from main.factories import BaseFactory, ResourceFactory, TagFactory
+from main.factories import BaseFactory, ResourceFactory, TagFactory, TagCategoryFactory
 from main.models import ExternalProducer
 from main.tests.test_utils import authenticate
 
@@ -124,7 +124,10 @@ class TestResourceView(TestCase):
         self.assertEqual(ExternalProducer.objects.count(), 1)
 
         # can add a producer with a tag
-        tag = TagFactory.create()
+        external_producer_tag_category = TagCategoryFactory.create(
+            slug="externalProducer_00occupation"
+        )
+        tag = TagFactory.create(category=external_producer_tag_category)
         new_data = {
             "name": "Name",
             "emailContact": "bla@mail.com",
@@ -140,7 +143,7 @@ class TestResourceView(TestCase):
         self.assertEqual(producer["occupation"], tag.pk)
 
         # can edit a producer's tag and name
-        tag2 = TagFactory.create()
+        tag2 = TagFactory.create(category=external_producer_tag_category)
         new_data = {
             "name": "Other name",
             "emailContact": "bla@mail.com",
