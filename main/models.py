@@ -1,6 +1,12 @@
 from django.db import models
 from telescoop_auth.models import User
 
+RESOURCE_PRODUCER_STATES = [
+    ["me", "celui qui ajouté la ressource"],
+    ["know", "producteur connu"],
+    ["dont-know", "producteur inconnu"],
+]
+
 
 class TimeStampedModel(models.Model):
     """
@@ -45,9 +51,10 @@ class TagCategory(TimeStampedModel):
         verbose_name = "Catégorie de tags"
         verbose_name_plural = "Catégories de tags"
 
-    name = models.CharField(verbose_name="nom", max_length=20)
+    name = models.CharField(verbose_name="nom", max_length=40)
+    slug = models.CharField(verbose_name="Slug - à ne pas modifier", max_length=40)
     description = models.CharField(
-        verbose_name="description", null=True, max_length=100
+        verbose_name="description", null=True, max_length=100, blank=True
     )
     required_to_be_public = models.BooleanField(
         verbose_name="remplissage obligatoire pour passer en public", default=False
@@ -69,7 +76,9 @@ class TagCategory(TimeStampedModel):
             ("User", "Utilisateurs"),
             ("Base", "Bases"),
         ],
-    )  # no user in v1
+        null=True,
+        blank=True,
+    )  # can be null, for example for external producer occupation
     is_draft = models.BooleanField(
         verbose_name="est un brouillon",
         default=False,
@@ -120,7 +129,20 @@ class Resource(TimeStampedModel):
     creator = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True, related_name="creator"
     )
-    root_base = models.ForeignKey(Base, on_delete=models.PROTECT)
+    creator_bases = models.ManyToManyField(
+        Base,
+        verbose_name="Bases qui ont créé la ressource",
+        related_name="created_ressources",
+    )
+    root_base = models.ForeignKey(
+        Base,
+        verbose_name="Base à laquelle la ressource est rattachée",
+        on_delete=models.PROTECT,
+        related_name="ressources",
+    )
+    producer_state = models.CharField(
+        max_length=10, choices=RESOURCE_PRODUCER_STATES, default="me"
+    )
     is_draft = models.BooleanField(default=True)
     description = models.CharField(
         max_length=60, null=True, blank=True
@@ -161,10 +183,11 @@ class ExternalProducer(TimeStampedModel):
     email_contact = models.EmailField()
     validated = models.BooleanField(default=False)
     resource = models.ForeignKey(
-        Resource, models.CASCADE, related_name="external_producer"
+        Resource, models.CASCADE, related_name="external_producers"
     )
-
-    # tags
+    occupation = models.ForeignKey(
+        Tag, on_delete=models.SET_NULL, null=True, blank=True
+    )
 
     def __str__(self):
         return f"EXT - ${self.name}"
