@@ -153,6 +153,8 @@ class WriteContentSerializer(serializers.BaseSerializer):
 
         for key in res.keys():
             local_data.pop(key)
+        if "id" in local_data.keys():
+            local_data.pop("id")
         if len(local_data) == 0:
             return res
 
