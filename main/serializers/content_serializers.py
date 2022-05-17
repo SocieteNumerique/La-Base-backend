@@ -199,9 +199,12 @@ class WriteContentSerializer(serializers.BaseSerializer):
         return model.objects.create(**local_data)
 
 
+# ----------------------- Sections -----------------------
+
+
 class ContentSectionToNestSerializer(serializers.ModelSerializer):
     class Meta:
-        fields = ["contents"]
+        fields = ["id", "title", "is_foldable", "order", "contents"]
         model = ContentSection
 
     contents = ReadContentSerializer(many=True)
@@ -209,20 +212,13 @@ class ContentSectionToNestSerializer(serializers.ModelSerializer):
 
 class ContentSectionSerializer(serializers.ModelSerializer):
     class Meta:
-        fields = ["title", "resource"]
+        fields = ["id", "title", "is_foldable", "order", "resource"]
         model = ContentSection
 
 
 class ContentBySectionSerializer(serializers.ModelSerializer):
     class Meta:
-        fields = ["sections", "other_contents"]
+        fields = ["sections"]
         model = Resource
 
-    @staticmethod
-    def get_other_contents(obj: Resource):
-        return ReadContentSerializer(
-            obj.contents.filter(section__isnull=True).all(), many=True
-        ).data
-
     sections = ContentSectionToNestSerializer(many=True)
-    other_contents = serializers.SerializerMethodField()
