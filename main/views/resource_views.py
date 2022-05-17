@@ -13,6 +13,24 @@ from main.serializers.content_serializers import (
 )
 
 
+def order_action(model, serializer_class, request):
+    res_data = []
+    for instance_id, data in request.data.items():
+        instance = model.objects.get(pk=instance_id)
+        serializer = serializer_class(instance, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        if getattr(instance, "_prefetched_objects_cache", None):
+            # If 'prefetch_related' has been applied to a queryset, we need to
+            # forcibly invalidate the prefetch cache on the instance.
+            instance._prefetched_objects_cache = {}
+
+        res_data.append(serializer.data)
+    queryset = model.objects.filter(id__in=request.data.keys()).all()
+    return Response(serializer_class(queryset, many=True).data)
+
+
 class ResourceView(
     mixins.RetrieveModelMixin,
     mixins.DestroyModelMixin,
@@ -41,6 +59,9 @@ class ContentView(
     viewsets.GenericViewSet,
     mixins.ListModelMixin,
 ):
+    def get_queryset(self):
+        return ContentBlock.objects.all()
+
     def get_serializer_class(self):
         if self.action in ["retrieve", "list"]:
             return ReadContentSerializer
@@ -48,35 +69,22 @@ class ContentView(
 
     @action(detail=False, methods=["PATCH"])
     def order(self, request):
-        res_data = []
-        for content_id, data in request.data.items():
-            content = ContentBlock.objects.get(pk=content_id)
-            serializer = ContentOrderSerializer(content, data=data, partial=True)
-            serializer.is_valid(raise_exception=True)
-            self.perform_update(serializer)
-
-            if getattr(content, "_prefetched_objects_cache", None):
-                # If 'prefetch_related' has been applied to a queryset, we need to
-                # forcibly invalidate the prefetch cache on the instance.
-                content._prefetched_objects_cache = {}
-
-            res_data.append(serializer.data)
-        queryset = ContentBlock.objects.filter(id__in=request.data.keys()).all()
-        return Response(ContentOrderSerializer(queryset, many=True).data)
-
-    def get_queryset(self):
-        return ContentBlock.objects.all()
+        return order_action(ContentBlock, ContentOrderSerializer, request)
 
 
 class SectionView(
+    viewsets.GenericViewSet,
+    mixins.RetrieveModelMixin,
     mixins.CreateModelMixin,
     mixins.UpdateModelMixin,
     mixins.DestroyModelMixin,
-    viewsets.GenericViewSet,
-    mixins.RetrieveModelMixin,
 ):
     def get_queryset(self):
         return ContentSection.objects.all()
 
     def get_serializer_class(self):
         return ContentSectionSerializer
+
+    @action(detail=False, methods=["PATCH"])
+    def order(self, request):
+        return order_action(ContentSection, ContentSectionSerializer, request)
