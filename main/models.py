@@ -16,7 +16,7 @@ class TimeStampedModel(models.Model):
     """
 
     created = models.DateTimeField(auto_now_add=True)
-    modified = models.DateField(auto_now=True)
+    modified = models.DateTimeField(auto_now=True)
 
     class Meta:
         abstract = True
@@ -48,11 +48,16 @@ class ContributorProfile(TimeStampedModel):
 class TagCategory(TimeStampedModel):
     class Meta:
         unique_together = ("name", "base")
+        ordering = ("slug",)
         verbose_name = "Catégorie de tags"
         verbose_name_plural = "Catégories de tags"
 
     name = models.CharField(verbose_name="nom", max_length=40)
-    slug = models.CharField(verbose_name="Slug - à ne pas modifier", max_length=40)
+    slug = models.CharField(
+        verbose_name="Slug - à ne pas modifier",
+        max_length=40,
+        help_text="Convention : familleDeLaCatégorie + _ + ordreÀDeuxChiffresDansLaFamille + slugDeLaCatégorie, ex indexation_03format",
+    )
     description = models.CharField(
         verbose_name="description", null=True, max_length=100, blank=True
     )
@@ -143,6 +148,8 @@ class Resource(TimeStampedModel):
     producer_state = models.CharField(
         max_length=10, choices=RESOURCE_PRODUCER_STATES, default="me"
     )
+    is_linked_to_a_territory = models.BooleanField(null=True, blank=True)
+    access_requires_user_account = models.BooleanField(null=True, blank=True)
     is_draft = models.BooleanField(default=True)
     description = models.CharField(
         max_length=60, null=True, blank=True
