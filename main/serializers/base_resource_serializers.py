@@ -67,7 +67,7 @@ class BaseResourceSerializer(serializers.ModelSerializer):
 
     creator_bases = PrimaryKeyBaseField(required=False, allow_null=True, many=True)
     is_short = serializers.ReadOnlyField(default=True)
-    external_producers = ExternalProducerSerializer(many=True)
+    external_producers = ExternalProducerSerializer(many=True, required=False)
     # contents = ReadContentSerializer(many=True, required=False)
 
 
