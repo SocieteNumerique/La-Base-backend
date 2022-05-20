@@ -6,6 +6,12 @@ RESOURCE_PRODUCER_STATES = [
     ["know", "producteur connu"],
     ["dont-know", "producteur inconnu"],
 ]
+RESOURCE_STATE_CHOICES = [
+    ("public", "public"),
+    ("private", "Privé"),
+    ("restricted", "Restreint"),
+    ("draft", "Brouillon"),
+]
 
 
 class TimeStampedModel(models.Model):
@@ -131,6 +137,9 @@ class Resource(TimeStampedModel):
         verbose_name = "Ressource"
 
     title = models.CharField(max_length=100)
+    state = models.CharField(
+        default="draft", choices=RESOURCE_STATE_CHOICES, max_length=10
+    )
     creator = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True, related_name="creator"
     )
