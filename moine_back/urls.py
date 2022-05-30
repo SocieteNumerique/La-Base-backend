@@ -16,6 +16,8 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 from rest_framework import routers
+from django.conf import settings
+from django.conf.urls.static import static
 
 from main.views import main_views, base_views, resource_views, index_views, tag_views
 
@@ -36,6 +38,7 @@ urlpatterns = [
     path("api/version", main_views.version),
     path("api/auth/", include("telescoop_auth.urls")),
     path("api/", include(router.urls)),
+    *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),
 ]
 
 if IS_LOCAL_DEV:
