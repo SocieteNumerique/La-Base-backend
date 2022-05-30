@@ -73,7 +73,7 @@ class BaseResourceSerializer(serializers.ModelSerializer):
 
 class ShortResourceSerializer(BaseResourceSerializer):
     class Meta(BaseResourceSerializer.Meta):
-        fields = ["id", "title"]
+        fields = ["id", "title", "is_short"]
         abstract = False
 
     is_short = serializers.ReadOnlyField(default=True)
