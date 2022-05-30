@@ -31,6 +31,24 @@ content_fields = [
 CONTENT_READ_ONLY_FIELDS = ["id", "created", "modified"]
 POSSIBLE_CONTENT_TYPES = ["text", "link", "linkedResource", "file"]
 
+ALLOWED_TAGS = [
+    "a",
+    "abbr",
+    "acronym",
+    "b",
+    "blockquote",
+    "code",
+    "em",
+    "i",
+    "li",
+    "ol",
+    "strong",
+    "ul",
+    "h4",
+    "h5",
+    "h6",
+]
+
 
 class ContentOrderSerializer(serializers.ModelSerializer):
     class Meta:
@@ -86,6 +104,12 @@ class TextContentSerializer(BaseContentSerializer):
     @staticmethod
     def get_type(obj):
         return "text"
+
+    def to_internal_value(self, data):
+        import bleach
+
+        data["text"] = bleach.clean(data["text"])
+        return super().to_internal_value(data)
 
 
 class Base64FileField(serializers.FileField):
