@@ -55,7 +55,7 @@ class BaseContentSerializer(serializers.ModelSerializer):
 
 class LinkContentSerializer(BaseContentSerializer):
     class Meta(BaseContentSerializer.Meta):
-        fields = BaseContentSerializer.Meta.fields + ["link", "display_mode"]
+        fields = BaseContentSerializer.Meta.fields + ["link", "with_preview"]
         model = LinkContent
 
     @staticmethod
@@ -65,7 +65,7 @@ class LinkContentSerializer(BaseContentSerializer):
 
 class LinkedResourceContentSerializer(BaseContentSerializer):
     class Meta(BaseContentSerializer.Meta):
-        fields = BaseContentSerializer.Meta.fields + ["linked_resource_id"]
+        fields = BaseContentSerializer.Meta.fields + ["linked_resource"]
         model = LinkedResourceContent
 
     @staticmethod
@@ -109,7 +109,7 @@ def content_type_to_child_model(content_type):
 
 class ReadContentSerializer(serializers.ModelSerializer):
     class Meta:
-        fields = content_fields + ["link", "display_mode", "linked_resource_id", "text"]
+        fields = content_fields + ["link", "display_mode", "linked_resource", "text"]
         read_only_fields = CONTENT_READ_ONLY_FIELDS
         model = ContentBlock
 
