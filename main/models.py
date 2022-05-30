@@ -112,7 +112,7 @@ class Tag(TimeStampedModel):
     class Meta:
         unique_together = ("name", "category")
 
-    name = models.CharField(verbose_name="nom", max_length=20)
+    name = models.CharField(verbose_name="nom", max_length=60)
     category = models.ForeignKey(
         TagCategory, on_delete=models.CASCADE, related_name="tags"
     )
@@ -146,13 +146,13 @@ class Resource(TimeStampedModel):
     creator_bases = models.ManyToManyField(
         Base,
         verbose_name="Bases qui ont créé la ressource",
-        related_name="created_ressources",
+        related_name="created_resources",
     )
     root_base = models.ForeignKey(
         Base,
         verbose_name="Base à laquelle la ressource est rattachée",
         on_delete=models.PROTECT,
-        related_name="ressources",
+        related_name="resources",
     )
     producer_state = models.CharField(
         max_length=10, choices=RESOURCE_PRODUCER_STATES, default="me"

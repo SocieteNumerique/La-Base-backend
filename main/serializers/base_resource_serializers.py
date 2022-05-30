@@ -117,6 +117,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
         abstract = True
 
     owner = AuthSerializer()
+    resources = ShortResourceSerializer(many=True)
 
 
 class ShortBaseSerializer(BaseBaseSerializer):
@@ -130,4 +131,4 @@ class ShortBaseSerializer(BaseBaseSerializer):
 class FullBaseSerializer(BaseBaseSerializer):
     class Meta(BaseBaseSerializer.Meta):
         abstract = False
-        fields = "__all__"
+        fields = ["id", "title", "owner", "resources"]
