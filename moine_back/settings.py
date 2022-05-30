@@ -133,8 +133,10 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
+MEDIA_URL = "media/"
 if IS_LOCAL_DEV:
     STATIC_ROOT = BASE_DIR / "collected_static"
+    MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 else:
     STATIC_ROOT = config.getstr("staticfiles.static_root")
 

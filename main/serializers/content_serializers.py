@@ -1,6 +1,10 @@
+from django.db.models.fields.files import FieldFile
 from rest_framework import serializers
 from rest_framework.fields import CharField
 from copy import copy
+from django.core.files.base import ContentFile
+import base64
+import uuid
 
 from main.models import (
     LinkContent,
@@ -9,6 +13,7 @@ from main.models import (
     ContentBlock,
     Resource,
     ContentSection,
+    FileContent,
 )
 
 content_fields = [
@@ -24,7 +29,7 @@ content_fields = [
     "order",
 ]
 CONTENT_READ_ONLY_FIELDS = ["id", "created", "modified"]
-POSSIBLE_CONTENT_TYPES = ["text", "link", "linkedResource"]
+POSSIBLE_CONTENT_TYPES = ["text", "link", "linkedResource", "file"]
 
 
 class ContentOrderSerializer(serializers.ModelSerializer):
@@ -83,11 +88,51 @@ class TextContentSerializer(BaseContentSerializer):
         return "text"
 
 
+class Base64FileField(serializers.FileField):
+    def to_internal_value(self, data):
+        if "base_64" in data and isinstance(data["base_64"], str):
+            if "data:" in data["base_64"] and ";base64," in data["base_64"]:
+                _, file_base64 = data["base_64"].split(";base64,")
+            else:
+                file_base64 = data["base_64"]
+
+            try:
+                decoded_file = base64.b64decode(file_base64)
+            except TypeError:
+                self.fail("invalid_file")
+
+            file_name_uid = str(uuid.uuid4())[:12]
+            complete_file_name = f"{file_name_uid}_{data['name']}"
+            res = ContentFile(decoded_file, name=complete_file_name)
+
+            return super().to_internal_value(res)
+        if "link" in data and isinstance(data["link"], str):
+            return super().to_internal_value(data["link"])
+        self.fail("neither 'base64' nor 'link' found in data")
+
+    def to_representation(self, instance: FieldFile):
+        full_link = self.context.get("request").build_absolute_uri(instance.url)
+        return {"name": instance.name, "link": full_link}
+
+
+class FileContentSerializer(BaseContentSerializer):
+    class Meta(BaseContentSerializer.Meta):
+        fields = BaseContentSerializer.Meta.fields + ["file"]
+        model = FileContent
+
+    file = Base64FileField()
+
+    @staticmethod
+    def get_type(obj):
+        return "file"
+
+
 def content_block_instance_to_child_model(content_block):
     for block_child_model in [
         "textcontent",
         "linkcontent",
         "linkedresourcecontent",
+        "filecontent",
     ]:
         if hasattr(content_block, block_child_model):
             return block_child_model
@@ -101,6 +146,8 @@ def get_serializer_by_child_model(block_child_model):
         return LinkedResourceContentSerializer
     if block_child_model == "linkcontent":
         return LinkContentSerializer
+    if block_child_model == "filecontent":
+        return FileContentSerializer
 
 
 def content_type_to_child_model(content_type):
@@ -127,8 +174,12 @@ class WriteContentSerializer(serializers.BaseSerializer):
         if isinstance(instance, dict):
             return instance
         elif isinstance(instance, ContentBlock):
-            return ReadContentSerializer().to_representation(instance)
-        return ReadContentSerializer().to_representation(instance.contentblock_ptr)
+            return ReadContentSerializer(context=self.context).to_representation(
+                instance
+            )
+        return ReadContentSerializer(context=self.context).to_representation(
+            instance.contentblock_ptr
+        )
 
     @staticmethod
     def get_model_by_type(content_type):
@@ -138,6 +189,8 @@ class WriteContentSerializer(serializers.BaseSerializer):
             return LinkedResourceContent
         if content_type == "link":
             return LinkContent
+        if content_type == "file":
+            return FileContent
         raise ValueError("invalid content_type")
 
     def to_internal_value(self, data):
@@ -170,7 +223,7 @@ class WriteContentSerializer(serializers.BaseSerializer):
 
         block_child_model = content_type_to_child_model(content_type)
         child_serializer = get_serializer_by_child_model(block_child_model)(
-            partial=True
+            partial=True, context=self.context
         )
         res.update(child_serializer.to_internal_value(local_data))
         res["type"] = content_type

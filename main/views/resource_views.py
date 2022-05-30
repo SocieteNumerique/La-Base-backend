@@ -47,7 +47,7 @@ class ResourceView(
     @action(detail=True, methods=["GET"])
     def contents(self, request, pk=None):
         obj: Resource = self.get_object()
-        serializer = ContentBySectionSerializer(obj)
+        serializer = ContentBySectionSerializer(obj, context={"request": self.request})
         return Response(serializer.data)
 
 
@@ -61,6 +61,11 @@ class ContentView(
 ):
     def get_queryset(self):
         return ContentBlock.objects.all()
+
+    def get_serializer_context(self):
+        context = super(ContentView, self).get_serializer_context()
+        context.update({"request": self.request})
+        return context
 
     def get_serializer_class(self):
         if self.action in ["retrieve", "list"]:
