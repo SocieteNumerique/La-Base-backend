@@ -188,3 +188,12 @@ REST_FRAMEWORK = {
         "djangorestframework_camel_case.parser.CamelCaseJSONParser",
     ),
 }
+
+# File storage
+if not IS_LOCAL_DEV:
+    DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+    AWS_S3_ACCESS_KEY_ID = config.getstr("external_file_storage.access")
+    AWS_S3_SECRET_ACCESS_KEY = config.getstr("external_file_storage.secret")
+    AWS_S3_ENDPOINT_URL = config.getstr("external_file_storage.endpoint_url")
+    AWS_STORAGE_BUCKET_NAME = config.getstr("external_file_storage.bucket")
+    AWS_S3_REGION_NAME = "paris"
