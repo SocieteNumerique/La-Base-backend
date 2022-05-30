@@ -29,7 +29,6 @@ class BaseIndexSerializer(serializers.ModelSerializer):
             "slug",
             "base",
             "maximum_tag_count",
-            "is_multi_select",
             "is_draft",
             "accepts_free_tags",
             "tags",
