@@ -254,14 +254,7 @@ class LinkContent(ContentBlock):
         verbose_name_plural = "Contenus : Liens externes"
 
     link = models.URLField(blank=True, null=True)
-    display_mode = models.CharField(
-        max_length=10,
-        choices=[
-            ("embedded", "Page intégrée"),
-            ("simple", "Lien simple"),
-            ("bookmark", "Marque-page"),
-        ],
-    )
+    with_preview = models.BooleanField(default=False)
 
 
 class TextContent(ContentBlock):
