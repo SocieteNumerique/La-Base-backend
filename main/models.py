@@ -73,9 +73,6 @@ class TagCategory(TimeStampedModel):
     maximum_tag_count = models.PositiveSmallIntegerField(
         verbose_name="nombre maximum de tags liés", null=True, blank=True
     )
-    is_multi_select = models.BooleanField(
-        verbose_name="plusieurs choix possibles", default=False
-    )
     accepts_free_tags = models.BooleanField(
         verbose_name="accepte des tags libres", default=True
     )
