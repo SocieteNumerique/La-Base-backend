@@ -35,3 +35,5 @@ wheels/
 # Backup
 *.sqlite
 .vscode
+
+local_settings.conf
