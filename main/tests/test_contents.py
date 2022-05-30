@@ -31,7 +31,7 @@ class TestResourceView(TestCase):
         self.assertEqual(response.status_code, 201)
 
     @authenticate
-    def test_write_text_content_with_script(self):
+    def test_write_text_content_with_evil_script(self):
         response = self.client.post(
             self.url,
             {
@@ -47,3 +47,21 @@ class TestResourceView(TestCase):
         text = response.json()["text"]
         self.assertFalse("<script>" in text)
         self.assertTrue("<strong>" in text)
+
+    @authenticate
+    def test_write_text_content_with_sane_script(self):
+        response = self.client.post(
+            self.url,
+            {
+                "type": "text",
+                "text": "<h4>fdasf</h4><p></p><p>fadsf</p>",
+                "section": self.section.pk,
+                "order": 0,
+                "resource": self.resource.pk,
+            },
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 201)
+        text = response.json()["text"]
+        self.assertTrue("<h4>" in text)
+        self.assertTrue("<p>" in text)

@@ -47,6 +47,7 @@ ALLOWED_TAGS = [
     "h4",
     "h5",
     "h6",
+    "p",
 ]
 
 
@@ -108,7 +109,7 @@ class TextContentSerializer(BaseContentSerializer):
     def to_internal_value(self, data):
         import bleach
 
-        data["text"] = bleach.clean(data["text"])
+        data["text"] = bleach.clean(data["text"], tags=ALLOWED_TAGS)
         return super().to_internal_value(data)
 
 
