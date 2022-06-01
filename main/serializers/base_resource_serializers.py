@@ -69,11 +69,16 @@ class BaseResourceSerializer(serializers.ModelSerializer):
     is_short = serializers.ReadOnlyField(default=True)
     external_producers = ExternalProducerSerializer(many=True, required=False)
     # contents = ReadContentSerializer(many=True, required=False)
+    can_write = serializers.SerializerMethodField()
+
+    @staticmethod
+    def get_can_write(obj: Resource):
+        return getattr(obj, "can_write", False)
 
 
 class ShortResourceSerializer(BaseResourceSerializer):
     class Meta(BaseResourceSerializer.Meta):
-        fields = ["id", "title", "is_short"]
+        fields = ["id", "title", "description", "is_short"]
         abstract = False
 
     is_short = serializers.ReadOnlyField(default=True)
@@ -81,7 +86,13 @@ class ShortResourceSerializer(BaseResourceSerializer):
 
 class FullResourceSerializer(BaseResourceSerializer):
     class Meta(BaseResourceSerializer.Meta):
-        fields = "__all__"
+        fields = [field.name for field in Resource._meta.fields] + [
+            "can_write",
+            "creator_bases",
+            "external_producers",
+            "is_short",
+            "tags",
+        ]
         abstract = False
 
     is_short = serializers.ReadOnlyField(default=False)
@@ -118,6 +129,11 @@ class BaseBaseSerializer(serializers.ModelSerializer):
 
     owner = AuthSerializer()
     resources = ShortResourceSerializer(many=True)
+    can_write = serializers.SerializerMethodField()
+
+    @staticmethod
+    def get_can_write(obj: Resource):
+        return getattr(obj, "can_write", False)
 
 
 class ShortBaseSerializer(BaseBaseSerializer):
@@ -131,4 +147,4 @@ class ShortBaseSerializer(BaseBaseSerializer):
 class FullBaseSerializer(BaseBaseSerializer):
     class Meta(BaseBaseSerializer.Meta):
         abstract = False
-        fields = ["id", "title", "owner", "resources"]
+        fields = ["id", "title", "owner", "resources", "can_write"]

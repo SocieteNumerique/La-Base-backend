@@ -32,6 +32,7 @@ class Base(TimeStampedModel):
     title = models.CharField(max_length=100)
     owner = models.ForeignKey(User, models.CASCADE, related_name="owner")
     admins = models.ManyToManyField(User, related_name="admins")
+    is_public = models.BooleanField(default=False)
 
     def __str__(self):
         return self.title
@@ -157,6 +158,7 @@ class Resource(TimeStampedModel):
     is_linked_to_a_territory = models.BooleanField(null=True, blank=True)
     access_requires_user_account = models.BooleanField(null=True, blank=True)
     is_draft = models.BooleanField(default=True)
+    is_public = models.BooleanField(default=False)
     description = models.CharField(
         max_length=60, null=True, blank=True
     )  # only if not in base, first
