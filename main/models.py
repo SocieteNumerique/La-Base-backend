@@ -29,10 +29,14 @@ class TimeStampedModel(models.Model):
 
 
 class Base(TimeStampedModel):
-    title = models.CharField(max_length=100)
-    owner = models.ForeignKey(User, models.CASCADE, related_name="owner")
-    admins = models.ManyToManyField(User, related_name="admins")
-    is_public = models.BooleanField(default=False)
+    title = models.CharField(max_length=100, verbose_name="titre")
+    owner = models.ForeignKey(
+        User, models.CASCADE, related_name="owner", verbose_name="propriétaire"
+    )
+    admins = models.ManyToManyField(
+        User, verbose_name="administrateurs", related_name="admins", blank=True
+    )
+    is_public = models.BooleanField(default=False, verbose_name="La base est publique")
 
     def __str__(self):
         return self.title

@@ -19,7 +19,14 @@ from rest_framework import routers
 from django.conf import settings
 from django.conf.urls.static import static
 
-from main.views import main_views, base_views, resource_views, index_views, tag_views
+from main.views import (
+    main_views,
+    base_views,
+    resource_views,
+    index_views,
+    tag_views,
+    search_view,
+)
 
 from moine_back.settings import IS_LOCAL_DEV
 
@@ -36,6 +43,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("hijack/", include("hijack.urls")),
     path("api/version", main_views.version),
+    path("api/search/<str:data_type>", search_view.search),
     path("api/auth/", include("telescoop_auth.urls")),
     path("api/", include(router.urls)),
     *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),
