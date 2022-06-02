@@ -4,7 +4,10 @@ from django.urls import reverse
 
 from main.factories import BaseFactory, ResourceFactory, UserFactory
 from main.models import RESOURCE_STATE_CHOICES
-from main.permissions import bases_queryset_for_user, resources_queryset_for_user
+from main.query_changes.permissions import (
+    bases_queryset_for_user,
+    resources_queryset_for_user,
+)
 from main.tests.test_utils import authenticate
 
 

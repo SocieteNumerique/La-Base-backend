@@ -4,14 +4,14 @@ from telescoop_auth.models import User
 from main.models import Base, Resource
 
 
-def bases_queryset_for_user(user: User):
+def bases_queryset_for_user(user: User, init_queryset=Base.objects):
     if user.is_superuser:
-        return Base.objects.all().annotate(can_write=Value(True))
+        return init_queryset.annotate(can_write=Value(True))
 
     if user.is_anonymous:
-        return Base.objects.filter(is_public=True).annotate(can_write=Value(False))
+        return init_queryset.filter(is_public=True).annotate(can_write=Value(False))
 
-    qs = Base.objects.filter(Q(is_public=True) | Q(owner=user) | Q(admins=user))
+    qs = init_queryset.filter(Q(is_public=True) | Q(owner=user) | Q(admins=user))
     return qs.annotate(
         can_write=Case(
             When(Q(owner=user) | Q(admins=user), then=Value(True)), default=Value(False)
@@ -19,16 +19,16 @@ def bases_queryset_for_user(user: User):
     )
 
 
-def resources_queryset_for_user(user: User):
+def resources_queryset_for_user(user: User, init_queryset=Resource.objects):
     if user.is_superuser:
-        return Resource.objects.all().annotate(can_write=Value(True))
+        return init_queryset.annotate(can_write=Value(True))
 
     if user.is_anonymous:
-        return Resource.objects.filter(is_public=True, is_draft=False).annotate(
+        return init_queryset.filter(is_public=True, is_draft=False).annotate(
             can_write=Value(False)
         )
 
-    qs = Resource.objects.filter(
+    qs = init_queryset.filter(
         Q(is_public=True, is_draft=False)
         | Q(root_base__owner=user)
         | Q(root_base__admins=user)
