@@ -1,7 +1,10 @@
 from django.conf import settings
 from django.db.models import Q
 
-from main.permissions import bases_queryset_for_user, resources_queryset_for_user
+from main.query_changes.permissions import (
+    bases_queryset_for_user,
+    resources_queryset_for_user,
+)
 
 BASES_SEARCH_FIELDS = ["title"]
 RESOURCES_SEARCH_FIELDS = ["title", "description"]

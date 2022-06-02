@@ -5,7 +5,11 @@ from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
 
 from main.models import Resource, ContentBlock, ContentSection
-from main.permissions import resources_queryset_for_user, bases_queryset_for_user
+from main.query_changes.permissions import (
+    resources_queryset_for_user,
+    bases_queryset_for_user,
+)
+from main.query_changes.stats_annotations import resources_queryset_with_stats
 from main.serializers.base_resource_serializers import FullResourceSerializer
 from main.serializers.content_serializers import (
     ReadContentSerializer,
@@ -75,7 +79,9 @@ class ResourceView(
     permission_classes = [UserCanWriteOnBaseForPost]
 
     def get_queryset(self):
-        return resources_queryset_for_user(self.request.user)
+        return resources_queryset_with_stats(
+            resources_queryset_for_user(self.request.user)
+        )
 
     @action(detail=True, methods=["GET"])
     def contents(self, request, pk=None):

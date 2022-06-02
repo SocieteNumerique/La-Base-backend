@@ -4,7 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from main.models import TagCategory
-from main.permissions import bases_queryset_for_user
+from main.query_changes.permissions import bases_queryset_for_user
 from main.serializers.base_resource_serializers import (
     FullBaseSerializer,
     ShortBaseSerializer,
@@ -47,4 +47,10 @@ class BaseView(
     def index(self, request, pk=None):
         index = TagCategory.objects.filter(base_id=pk)
         serializer = IndexAdminSerializer(index, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["get"])
+    def short(self, request, pk=None):
+        instance = self.get_object()
+        serializer = ShortBaseSerializer(instance)
         return Response(serializer.data)

@@ -4,10 +4,13 @@ from django.core import exceptions
 from rest_framework import serializers
 from telescoop_auth.models import User
 
+from main.query_changes.stats_annotations import resources_queryset_with_stats
+from main.serializers.custom import MoreFieldsModelSerializer
+
 from main.models import Resource, Base, ExternalProducer, Tag
 
 
-class PrimaryKeyTagField(serializers.PrimaryKeyRelatedField):
+class PrimaryKeyOccupationTagField(serializers.PrimaryKeyRelatedField):
     def get_queryset(self):
         return Tag.objects.filter(category__slug="externalProducer_00occupation")
 
@@ -17,7 +20,7 @@ class ExternalProducerSerializer(serializers.ModelSerializer):
         model = ExternalProducer
         fields = "__all__"
 
-    occupation = PrimaryKeyTagField()
+    occupation = PrimaryKeyOccupationTagField()
 
 
 class AuthSerializer(serializers.ModelSerializer):
@@ -56,10 +59,17 @@ class PrimaryKeyBaseField(serializers.PrimaryKeyRelatedField):
         return Base.objects.all()
 
 
-class BaseResourceSerializer(serializers.ModelSerializer):
+class BaseResourceSerializer(MoreFieldsModelSerializer):
     class Meta:
         model = Resource
         abstract = True
+        read_only_fields = [
+            "is_labeled",
+            "stats",
+            "content_stats",
+            "supports",
+            "can_write",
+        ]
 
     creator = PrimaryKeyCreatorField(
         default=serializers.CurrentUserDefault(), required=False, allow_null=True
@@ -68,17 +78,51 @@ class BaseResourceSerializer(serializers.ModelSerializer):
     creator_bases = PrimaryKeyBaseField(required=False, allow_null=True, many=True)
     is_short = serializers.ReadOnlyField(default=True)
     external_producers = ExternalProducerSerializer(many=True, required=False)
-    # contents = ReadContentSerializer(many=True, required=False)
     can_write = serializers.SerializerMethodField()
+    is_labeled = serializers.ReadOnlyField(default=False)  # TODO actually use db
+    stats = serializers.SerializerMethodField(read_only=True)
+    content_stats = serializers.SerializerMethodField(read_only=True)
+    supports = serializers.SerializerMethodField(read_only=True)
 
     @staticmethod
     def get_can_write(obj: Resource):
         return getattr(obj, "can_write", False)
 
+    @staticmethod
+    def get_stats(obj: Resource):
+        # TODO actually save / compute that
+        res = {"views": None, "pinned": None}
+        return res
+
+    @staticmethod
+    def get_content_stats(obj: Resource):
+        return {
+            "files": getattr(obj, "nb_files", None),
+            "links": getattr(obj, "nb_links", None),
+        }
+
+    @staticmethod
+    def get_supports(obj: Resource):
+        res = []
+        tags = obj.tags.filter(category__slug="indexation_01RessType")
+        for tag in tags:
+            res.append(tag.name)
+        return res
+
 
 class ShortResourceSerializer(BaseResourceSerializer):
     class Meta(BaseResourceSerializer.Meta):
-        fields = ["id", "title", "description", "is_short"]
+        fields = [
+            "id",
+            "title",
+            "is_short",
+            "description",
+            "is_labeled",
+            "stats",
+            "content_stats",
+            "supports",
+            "root_base",
+        ]
         abstract = False
 
     is_short = serializers.ReadOnlyField(default=True)
@@ -86,12 +130,13 @@ class ShortResourceSerializer(BaseResourceSerializer):
 
 class FullResourceSerializer(BaseResourceSerializer):
     class Meta(BaseResourceSerializer.Meta):
-        fields = [field.name for field in Resource._meta.fields] + [
+        fields = "__all__"
+        extra_fields = [
+            "is_labeled",
+            "stats",
+            "content_stats",
+            "supports",
             "can_write",
-            "creator_bases",
-            "external_producers",
-            "is_short",
-            "tags",
         ]
         abstract = False
 
@@ -128,12 +173,17 @@ class BaseBaseSerializer(serializers.ModelSerializer):
         abstract = True
 
     owner = AuthSerializer()
-    resources = ShortResourceSerializer(many=True)
+    resources = serializers.SerializerMethodField()
     can_write = serializers.SerializerMethodField()
 
     @staticmethod
-    def get_can_write(obj: Resource):
+    def get_can_write(obj: Base):
         return getattr(obj, "can_write", False)
+
+    @staticmethod
+    def get_resources(obj: Base):
+        annotated_qs = resources_queryset_with_stats(obj.resources).all()
+        return ShortResourceSerializer(annotated_qs, many=True).data
 
 
 class ShortBaseSerializer(BaseBaseSerializer):
