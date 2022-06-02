@@ -5,6 +5,9 @@ from main.models import Base, Resource
 
 
 def bases_queryset_for_user(user: User):
+    if user.is_superuser:
+        return Base.objects.all().annotate(can_write=Value(True))
+
     if user.is_anonymous:
         return Base.objects.filter(is_public=True).annotate(can_write=Value(False))
 
@@ -17,6 +20,9 @@ def bases_queryset_for_user(user: User):
 
 
 def resources_queryset_for_user(user: User):
+    if user.is_superuser:
+        return Resource.objects.all().annotate(can_write=Value(True))
+
     if user.is_anonymous:
         return Resource.objects.filter(is_public=True, is_draft=False).annotate(
             can_write=Value(False)
