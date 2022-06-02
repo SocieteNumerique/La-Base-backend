@@ -160,7 +160,7 @@ class Resource(TimeStampedModel):
     is_draft = models.BooleanField(default=True)
     is_public = models.BooleanField(default=False)
     description = models.CharField(
-        max_length=60, null=True, blank=True
+        max_length=560, null=True, blank=True
     )  # only if not in base, first
     zip_code = models.IntegerField(null=True, blank=True)
     url = models.URLField(null=True, blank=True)

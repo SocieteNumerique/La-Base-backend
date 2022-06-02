@@ -134,3 +134,19 @@ class TestPermissions(TestCase):
             content_type="application/json",
         )
         self.assertEqual(res.status_code, 201)
+
+    @authenticate
+    def test_superusers_can_access_and_change_everything(self):
+        authenticate.user.is_superuser = True
+        authenticate.user.save()
+        base = BaseFactory.create()
+        self.assertEqual(bases_queryset_for_user(authenticate.user).count(), 1)
+        url = reverse("base-detail", args=[base.pk])
+        data = self.client.get(url).json()
+        self.assertEqual(data["canWrite"], True)
+
+        resource = ResourceFactory.create()
+        self.assertEqual(resources_queryset_for_user(authenticate.user).count(), 1)
+        url = reverse("resource-detail", args=[resource.pk])
+        data = self.client.get(url).json()
+        self.assertEqual(data["canWrite"], True)
