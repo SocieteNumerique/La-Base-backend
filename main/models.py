@@ -274,3 +274,4 @@ class FileContent(ContentBlock):
         verbose_name_plural = "Contenus : Fichiers importés"
 
     file = models.FileField()
+    with_preview = models.BooleanField(default=False)

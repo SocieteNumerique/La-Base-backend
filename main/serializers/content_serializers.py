@@ -1,10 +1,13 @@
+import re
+import base64
+import uuid
+import mimetypes
+from copy import copy
+
 from django.db.models.fields.files import FieldFile
 from rest_framework import serializers
 from rest_framework.fields import CharField
-from copy import copy
 from django.core.files.base import ContentFile
-import base64
-import uuid
 
 from main.models import (
     LinkContent,
@@ -137,12 +140,17 @@ class Base64FileField(serializers.FileField):
 
     def to_representation(self, instance: FieldFile):
         full_link = self.context.get("request").build_absolute_uri(instance.url)
-        return {"name": instance.name, "link": full_link}
+        name_without_uuid = re.match("^[^_]*_(.*)$", instance.name).group(1)
+        return {
+            "name": name_without_uuid,
+            "link": full_link,
+            "mime_type": mimetypes.guess_type(instance.name)[0],
+        }
 
 
 class FileContentSerializer(BaseContentSerializer):
     class Meta(BaseContentSerializer.Meta):
-        fields = BaseContentSerializer.Meta.fields + ["file"]
+        fields = BaseContentSerializer.Meta.fields + ["file", "with_preview"]
         model = FileContent
 
     file = Base64FileField()
@@ -181,7 +189,7 @@ def content_type_to_child_model(content_type):
 
 class ReadContentSerializer(serializers.ModelSerializer):
     class Meta:
-        fields = content_fields + ["link", "display_mode", "linked_resource", "text"]
+        fields = content_fields + ["link", "with_preview", "linked_resource", "text"]
         read_only_fields = CONTENT_READ_ONLY_FIELDS
         model = ContentBlock
 
