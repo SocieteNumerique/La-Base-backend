@@ -222,7 +222,7 @@ class ContentSection(TimeStampedModel):
     resource = models.ForeignKey(Resource, models.CASCADE, related_name="sections")
     title = models.CharField(max_length=20, null=True, blank=True)
     is_foldable = models.BooleanField(default=False)
-    order = models.IntegerField()
+    order = models.BigIntegerField()
 
 
 class ContentBlock(TimeStampedModel):
@@ -238,7 +238,7 @@ class ContentBlock(TimeStampedModel):
     resource = models.ForeignKey(Resource, models.CASCADE, related_name="contents")
     section = models.ForeignKey(ContentSection, models.CASCADE, related_name="contents")
     nb_col = models.IntegerField(default=2)
-    order = models.IntegerField()
+    order = models.BigIntegerField()
 
 
 class LinkedResourceContent(ContentBlock):
