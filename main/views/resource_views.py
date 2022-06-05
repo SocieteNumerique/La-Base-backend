@@ -83,6 +83,13 @@ class ResourceView(
             resources_queryset_for_user(self.request.user)
         )
 
+    def update(self, request, *args, **kwargs):
+        """If cover_image has a link, it has not changed, ignore it."""
+        cover_image = request.data.get("cover_image")
+        if cover_image and cover_image.get("link"):
+            request.data.pop("cover_image")
+        return super().update(request, *args, **kwargs)
+
     @action(detail=True, methods=["GET"])
     def contents(self, request, pk=None):
         obj: Resource = self.get_object()

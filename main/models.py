@@ -1,3 +1,5 @@
+import datetime
+
 from django.db import models
 from telescoop_auth.models import User
 
@@ -142,6 +144,8 @@ class Resource(TimeStampedModel):
     state = models.CharField(
         default="draft", choices=RESOURCE_STATE_CHOICES, max_length=10
     )
+    cover_image = models.FileField(null=True, blank=True)
+    resource_created_on = models.DateField(default=datetime.date.today)
     creator = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True, related_name="creator"
     )

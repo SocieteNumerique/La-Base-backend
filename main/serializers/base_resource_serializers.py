@@ -5,6 +5,7 @@ from rest_framework import serializers
 from telescoop_auth.models import User
 
 from main.query_changes.stats_annotations import resources_queryset_with_stats
+from main.serializers.content_serializers import Base64FileField
 from main.serializers.custom import MoreFieldsModelSerializer
 
 from main.models import Resource, Base, ExternalProducer, Tag
@@ -74,7 +75,7 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
     creator = PrimaryKeyCreatorField(
         default=serializers.CurrentUserDefault(), required=False, allow_null=True
     )
-
+    cover_image = Base64FileField(required=False, allow_null=True)
     creator_bases = PrimaryKeyBaseField(required=False, allow_null=True, many=True)
     is_short = serializers.ReadOnlyField(default=True)
     external_producers = ExternalProducerSerializer(many=True, required=False)
@@ -143,6 +144,9 @@ class FullResourceSerializer(BaseResourceSerializer):
     is_short = serializers.ReadOnlyField(default=False)
 
     def update(self, instance: Resource, validated_data):
+        """
+        Handle external producers
+        """
         if "external_producers" in validated_data:
             ext_producers = validated_data.pop("external_producers")
             new_producers = []

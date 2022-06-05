@@ -118,6 +118,9 @@ class TextContentSerializer(BaseContentSerializer):
 
 class Base64FileField(serializers.FileField):
     def to_internal_value(self, data):
+        if data is None:
+            return None
+
         if "base_64" in data and isinstance(data["base_64"], str):
             if "data:" in data["base_64"] and ";base64," in data["base_64"]:
                 _, file_base64 = data["base_64"].split(";base64,")
@@ -139,6 +142,8 @@ class Base64FileField(serializers.FileField):
         self.fail("neither 'base64' nor 'link' found in data")
 
     def to_representation(self, instance: FieldFile):
+        if not instance.name:
+            return None
         full_link = self.context.get("request").build_absolute_uri(instance.url)
         name_without_uuid = re.match("^[^_]*_(.*)$", instance.name).group(1)
         return {
