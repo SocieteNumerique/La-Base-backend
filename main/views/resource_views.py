@@ -10,7 +10,10 @@ from main.query_changes.permissions import (
     bases_queryset_for_user,
 )
 from main.query_changes.stats_annotations import resources_queryset_with_stats
-from main.serializers.base_resource_serializers import FullResourceSerializer
+from main.serializers.base_resource_serializers import (
+    FullResourceSerializer,
+    ShortResourceSerializer,
+)
 from main.serializers.content_serializers import (
     ReadContentSerializer,
     WriteContentSerializer,
@@ -94,6 +97,12 @@ class ResourceView(
     def contents(self, request, pk=None):
         obj: Resource = self.get_object()
         serializer = ContentBySectionSerializer(obj, context={"request": self.request})
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["get"])
+    def short(self, request, pk=None):
+        instance = self.get_object()
+        serializer = ShortResourceSerializer(instance)
         return Response(serializer.data)
 
 
