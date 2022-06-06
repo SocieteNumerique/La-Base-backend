@@ -189,6 +189,7 @@ class Resource(TimeStampedModel):
     groups = models.ManyToManyField(
         "UserGroup", blank=True, through="ResourceUserGroup"
     )
+    is_grid_view_enabled = models.BooleanField(default=False)
 
     def missing_categories_to_be_public(self):
         filled_required_tag_categories = {
