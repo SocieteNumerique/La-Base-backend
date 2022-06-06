@@ -197,3 +197,7 @@ if not IS_LOCAL_DEV:
     AWS_S3_ENDPOINT_URL = config.getstr("external_file_storage.endpoint_url")
     AWS_STORAGE_BUCKET_NAME = config.getstr("external_file_storage.bucket")
     AWS_S3_REGION_NAME = "paris"
+
+# django debug toolbar
+if IS_LOCAL_DEV:
+    INTERNAL_IPS = ["127.0.0.1", "localhost"]
