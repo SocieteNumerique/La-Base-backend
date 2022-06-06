@@ -4,7 +4,7 @@ from factory.django import DjangoModelFactory
 import factory
 from telescoop_auth.models import User
 
-from main.models import Tag, TagCategory, Base, Resource
+from main.models import Tag, TagCategory, Base, Resource, UserGroup
 
 factory.Faker._DEFAULT_LOCALE = "fr_FR"
 
@@ -65,3 +65,10 @@ class ResourceFactory(DjangoModelFactory):
     root_base = factory.SubFactory(BaseFactory)
     description = factory.Faker("text", max_nb_chars=60)
     is_draft = False
+
+
+class UserGroupFactory(DjangoModelFactory):
+    class Meta:
+        model = UserGroup
+
+    name = factory.Faker("text", max_nb_chars=30)

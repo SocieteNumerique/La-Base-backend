@@ -70,6 +70,8 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
             "content_stats",
             "supports",
             "can_write",
+            "label_state",
+            "label_details",
         ]
 
     creator = PrimaryKeyCreatorField(
@@ -193,7 +195,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
 class ShortBaseSerializer(BaseBaseSerializer):
     class Meta(BaseBaseSerializer.Meta):
         abstract = False
-        fields = ["id", "title", "owner", "is_short"]
+        fields = ["id", "title", "owner", "is_short", "can_write"]
 
     is_short = serializers.ReadOnlyField(default=True)
 

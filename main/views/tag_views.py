@@ -18,6 +18,10 @@ class TagView(
     def get_queryset(self):
         return Tag.objects.all()
 
+    def create(self, request, *args, **kwargs):
+        request.data["is_free"] = True
+        return super().create(request, *args, **kwargs)
+
 
 class TagCategoryView(
     mixins.RetrieveModelMixin,

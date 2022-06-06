@@ -33,11 +33,18 @@ def resources_queryset_for_user(user: User, init_queryset=Resource.objects):
         | Q(root_base__owner=user)
         | Q(root_base__admins=user)
         | Q(creator=user)
+        | Q(groups__users=user)
     )
     return qs.annotate(
         can_write=Case(
             When(
-                Q(root_base__owner=user) | Q(root_base__admins=user) | Q(creator=user),
+                Q(root_base__owner=user)
+                | Q(root_base__admins=user)
+                | Q(creator=user)
+                | (
+                    Q(resource_user_groups__group__users=user)
+                    & Q(resource_user_groups__can_write=True)
+                ),
                 then=Value(True),
             ),
             default=Value(False),

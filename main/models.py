@@ -1,6 +1,7 @@
 import datetime
 
 from django.db import models
+from django.db.models import Count
 from telescoop_auth.models import User
 
 RESOURCE_PRODUCER_STATES = [
@@ -13,6 +14,12 @@ RESOURCE_STATE_CHOICES = [
     ("private", "Privé"),
     ("restricted", "Restreint"),
     ("draft", "Brouillon"),
+]
+RESOURCE_LABEL_CHOICES = [
+    ("", "Non demandé"),
+    ("pending", "En cours"),
+    ("refused", "Refusé"),
+    ("accepted", "Accepté"),
 ]
 
 
@@ -42,20 +49,6 @@ class Base(TimeStampedModel):
 
     def __str__(self):
         return self.title
-
-
-class ContributorProfile(TimeStampedModel):
-    class Meta:
-        verbose_name = "Profil de contributeur"
-
-    name = models.CharField(max_length=100)
-    base = models.ForeignKey(Base, models.CASCADE, related_name="contributor_profiles")
-    contributors = models.ManyToManyField(User)
-
-    # TODO autorisations
-
-    def __str__(self):
-        return f"{self.base} - {self.name}"
 
 
 class TagCategory(TimeStampedModel):
@@ -112,9 +105,18 @@ class TagCategory(TimeStampedModel):
         return f"{self.base or 'GLOBAL'} - {self.name}"
 
 
+class TagManager(models.Manager):
+    def get_queryset(self):
+        return Tag.default_manager.all().annotate(count=Count("ressources"))
+
+
 class Tag(TimeStampedModel):
     class Meta:
+        ordering = ("name",)
         unique_together = ("name", "category")
+
+    default_manager = models.Manager()
+    objects = TagManager()
 
     name = models.CharField(verbose_name="nom", max_length=60)
     category = models.ForeignKey(
@@ -159,6 +161,8 @@ class Resource(TimeStampedModel):
         verbose_name="Base à laquelle la ressource est rattachée",
         on_delete=models.PROTECT,
         related_name="resources",
+        null=True,  # when root_base is null, the resource is "owned" by admins
+        blank=True,
     )
     producer_state = models.CharField(
         max_length=10, choices=RESOURCE_PRODUCER_STATES, default="me"
@@ -177,7 +181,14 @@ class Resource(TimeStampedModel):
     internal_producers = models.ManyToManyField(
         User, blank=True, related_name="internal_producers"
     )
-    tags = models.ManyToManyField(Tag, blank=True)
+    tags = models.ManyToManyField(Tag, blank=True, related_name="ressources")
+    label_state = models.CharField(
+        max_length=10, default="", blank=True, choices=RESOURCE_LABEL_CHOICES
+    )
+    label_details = models.TextField(blank=True, null=True)
+    groups = models.ManyToManyField(
+        "UserGroup", blank=True, through="ResourceUserGroup"
+    )
 
     def missing_categories_to_be_public(self):
         filled_required_tag_categories = {
@@ -279,3 +290,23 @@ class FileContent(ContentBlock):
 
     file = models.FileField()
     with_preview = models.BooleanField(default=False)
+
+
+class UserGroup(TimeStampedModel):
+    name = models.CharField(max_length=100, verbose_name="nom du groupe")
+    users = models.ManyToManyField(User)
+
+
+class ResourceUserGroup(TimeStampedModel):
+    """
+    We have it in a separate model instead of M2M
+    so that we can handle write access.
+    """
+
+    resource = models.ForeignKey(
+        Resource, on_delete=models.CASCADE, related_name="resource_user_groups"
+    )
+    group = models.ForeignKey(
+        UserGroup, on_delete=models.CASCADE, related_name="resource_user_groups"
+    )
+    can_write = models.BooleanField(default=False, verbose_name="accès en écriture")
