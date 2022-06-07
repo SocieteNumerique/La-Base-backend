@@ -20,6 +20,8 @@ def bases_queryset_for_user(user: User, init_queryset=Base.objects):
 
 
 def resources_queryset_for_user(user: User, init_queryset=Resource.objects):
+    init_queryset = init_queryset.prefetch_related("root_base").prefetch_related("tags")
+
     if user.is_superuser:
         return init_queryset.annotate(can_write=Value(True))
 

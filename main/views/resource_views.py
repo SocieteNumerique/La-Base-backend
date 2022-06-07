@@ -38,7 +38,7 @@ class ResourceHasWriteAccessFilter(filters.BaseFilterBackend):
 
 class UserCanWriteOnBaseForPost(BasePermission):
     def has_permission(self, request, view):
-        if request.method != "POST":
+        if request.method != "POST" or not request.data:
             return True
 
         if (

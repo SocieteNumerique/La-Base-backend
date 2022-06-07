@@ -74,17 +74,18 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
             "label_details",
         ]
 
+    can_write = serializers.SerializerMethodField()
+    content_stats = serializers.SerializerMethodField(read_only=True)
+    cover_image = Base64FileField(required=False, allow_null=True)
     creator = PrimaryKeyCreatorField(
         default=serializers.CurrentUserDefault(), required=False, allow_null=True
     )
-    cover_image = Base64FileField(required=False, allow_null=True)
     creator_bases = PrimaryKeyBaseField(required=False, allow_null=True, many=True)
-    is_short = serializers.ReadOnlyField(default=True)
     external_producers = ExternalProducerSerializer(many=True, required=False)
-    can_write = serializers.SerializerMethodField()
     is_labeled = serializers.ReadOnlyField(default=False)  # TODO actually use db
+    is_short = serializers.ReadOnlyField(default=True)
+    root_base_title = serializers.SerializerMethodField()
     stats = serializers.SerializerMethodField(read_only=True)
-    content_stats = serializers.SerializerMethodField(read_only=True)
     supports = serializers.SerializerMethodField(read_only=True)
 
     @staticmethod
@@ -103,6 +104,10 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
             "files": getattr(obj, "nb_files", None),
             "links": getattr(obj, "nb_links", None),
         }
+
+    @staticmethod
+    def get_root_base_title(obj: Resource):
+        return obj.root_base.title
 
     @staticmethod
     def get_supports(obj: Resource):
@@ -125,6 +130,7 @@ class ShortResourceSerializer(BaseResourceSerializer):
             "content_stats",
             "supports",
             "root_base",
+            "root_base_title",
         ]
         abstract = False
 
