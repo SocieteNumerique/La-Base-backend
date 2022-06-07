@@ -38,13 +38,17 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "debug_toolbar",
     "hijack",
     "hijack.contrib.admin",
     "telescoop_auth",
     "main",
     "rest_framework",
 ]
+if IS_LOCAL_DEV:
+    INSTALLED_APPS.append("debug_toolbar")
+else:
+    # this is necessary for text search
+    INSTALLED_APPS.append("django.contrib.postgres")
 
 if IS_LOCAL_DEV:
     INSTALLED_APPS.append("corsheaders")
