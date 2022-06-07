@@ -248,7 +248,7 @@ class ContentBlock(TimeStampedModel):
         ordering = ["order"]
         unique_together = ("order", "section")
 
-    title = models.CharField(max_length=25, null=True)
+    title = models.CharField(max_length=50, null=True)
     annotation = models.TextField(null=True, blank=True)
     is_draft = models.BooleanField(default=True)
     resource = models.ForeignKey(Resource, models.CASCADE, related_name="contents")
