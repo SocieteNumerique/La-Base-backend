@@ -2,6 +2,7 @@ from django.contrib.auth import password_validation
 from django.contrib.auth.hashers import make_password
 from django.core import exceptions
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from telescoop_auth.models import User
 
 from main.query_changes.stats_annotations import resources_queryset_with_stats
@@ -184,9 +185,16 @@ class BaseBaseSerializer(serializers.ModelSerializer):
         model = Base
         abstract = True
 
-    owner = AuthSerializer()
+    owner = AuthSerializer(required=False)
     resources = serializers.SerializerMethodField()
     can_write = serializers.SerializerMethodField()
+
+    def create(self, validated_data):
+        user = self.context["request"].user
+        if user.is_anonymous:
+            raise ValidationError("Anonymous cannot create a base")
+        validated_data["owner"] = user
+        return super().create(validated_data)
 
     @staticmethod
     def get_can_write(obj: Base):
