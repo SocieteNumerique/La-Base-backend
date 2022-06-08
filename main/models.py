@@ -51,6 +51,21 @@ class Base(TimeStampedModel):
         return self.title
 
 
+class Collection(TimeStampedModel):
+    class Meta:
+        ordering = ("name",)
+        unique_together = ("name", "base")
+
+    name = models.CharField(max_length=25, verbose_name="nom")
+    base = models.ForeignKey(Base, on_delete=models.CASCADE, related_name="collections")
+    resources = models.ManyToManyField(
+        "Resource", blank=True, related_name="collections"
+    )
+
+    def __str__(self):
+        return f"{self.name} - base {self.base.title}"
+
+
 class TagCategory(TimeStampedModel):
     class Meta:
         unique_together = ("name", "base")
@@ -190,6 +205,16 @@ class Resource(TimeStampedModel):
         "UserGroup", blank=True, through="ResourceUserGroup"
     )
     is_grid_view_enabled = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        """
+        Check whether the resource has changed root base,
+        if so we remove it from former collections.
+        """
+        if self.pk and self.root_base != Resource.objects.get(pk=self.pk).root_base:
+            for collection in self.collections.all():
+                collection.resources.remove(self)
+        return super().save(*args, **kwargs)
 
     def missing_categories_to_be_public(self):
         filled_required_tag_categories = {

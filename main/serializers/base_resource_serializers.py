@@ -9,7 +9,7 @@ from main.query_changes.stats_annotations import resources_queryset_with_stats
 from main.serializers.content_serializers import Base64FileField
 from main.serializers.custom import MoreFieldsModelSerializer
 
-from main.models import Resource, Base, ExternalProducer, Tag
+from main.models import Resource, Base, ExternalProducer, Tag, Collection
 
 
 class PrimaryKeyOccupationTagField(serializers.PrimaryKeyRelatedField):
@@ -180,6 +180,25 @@ class FullResourceSerializer(BaseResourceSerializer):
         pass
 
 
+class PrimaryKeyResourcesForCollectionField(serializers.PrimaryKeyRelatedField):
+    def get_queryset(self):
+        """Limit to resource that are linked to the base the collection belongs to."""
+        collection_pk = self.context["request"].parser_context["kwargs"]["pk"]
+        collection = Collection.objects.get(pk=collection_pk)
+        base = collection.base
+        return Resource.objects.filter(root_base=base)
+
+
+class CollectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Collection
+        fields = ["name", "resources", "base"]
+
+    resources = PrimaryKeyResourcesForCollectionField(
+        many=True, required=False, allow_null=True
+    )
+
+
 class BaseBaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Base
@@ -188,6 +207,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
     owner = AuthSerializer(required=False)
     resources = serializers.SerializerMethodField()
     can_write = serializers.SerializerMethodField()
+    collections = CollectionSerializer(many=True)
 
     def create(self, validated_data):
         user = self.context["request"].user
@@ -217,4 +237,4 @@ class ShortBaseSerializer(BaseBaseSerializer):
 class FullBaseSerializer(BaseBaseSerializer):
     class Meta(BaseBaseSerializer.Meta):
         abstract = False
-        fields = ["id", "title", "owner", "resources", "can_write"]
+        fields = ["id", "title", "owner", "resources", "collections", "can_write"]
