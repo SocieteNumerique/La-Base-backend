@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.db.models import Q
-from telescoop_auth.models import User
+from main.models import User
 
 from main.query_changes.permissions import (
     bases_queryset_for_user,

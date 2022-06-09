@@ -3,7 +3,7 @@ from django.contrib.auth.hashers import make_password
 from django.core import exceptions
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from telescoop_auth.models import User
+from main.models import User
 
 from main.query_changes.stats_annotations import resources_queryset_with_stats
 from main.serializers.content_serializers import Base64FileField
