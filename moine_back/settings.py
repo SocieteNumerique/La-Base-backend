@@ -177,9 +177,7 @@ if IS_LOCAL_DEV:
 # django-hijack
 HIJACK_ALLOW_GET_REQUESTS = True
 
-# telescoop_auth
-AUTH_USER_MODEL = "telescoop_auth.User"
-# AUTH_USER_MODEL = "main.User"
+AUTH_USER_MODEL = "main.User"
 
 # camel case for DRF
 REST_FRAMEWORK = {
