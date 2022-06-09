@@ -1,5 +1,5 @@
 from django.db.models import Q, When, Case, Value
-from telescoop_auth.models import User
+from main.models import User
 
 from main.models import Base, Resource
 

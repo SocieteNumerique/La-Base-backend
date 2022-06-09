@@ -2,7 +2,7 @@ from typing import Optional
 
 from factory.django import DjangoModelFactory
 import factory
-from telescoop_auth.models import User
+from main.models import User
 
 from main.models import Tag, TagCategory, Base, Resource, UserGroup
 
