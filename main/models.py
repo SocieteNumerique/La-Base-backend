@@ -42,6 +42,8 @@ class User(AbstractBaseUser):
     is_superuser = models.BooleanField(default=False)
     activation_key = models.UUIDField(default=uuid.uuid4, editable=False)
 
+    tags = models.ManyToManyField("Tag", blank=True, related_name="users")
+
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 
@@ -88,6 +90,7 @@ class Base(TimeStampedModel):
         User, verbose_name="administrateurs", related_name="admins", blank=True
     )
     is_public = models.BooleanField(default=False, verbose_name="La base est publique")
+    tags = models.ManyToManyField("Tag", blank=True, related_name="bases")
 
     def __str__(self):
         return self.title
