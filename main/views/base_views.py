@@ -8,6 +8,7 @@ from main.query_changes.permissions import bases_queryset_for_user
 from main.serializers.base_resource_serializers import (
     FullBaseSerializer,
     ShortBaseSerializer,
+    BasesPinStatusField,
 )
 from main.serializers.index_serializers import IndexAdminSerializer
 
@@ -52,5 +53,27 @@ class BaseView(
     @action(detail=True, methods=["get"])
     def short(self, request, pk=None):
         instance = self.get_object()
-        serializer = ShortBaseSerializer(instance)
+        serializer = ShortBaseSerializer(
+            instance, context=self.get_serializer_context()
+        )
         return Response(serializer.data)
+
+
+def generic_pin_action(model, self, request, pk=None):
+    model_name = model._meta.model_name  # _meta is not actually protected
+    instance: model = self.get_queryset().distinct().get(pk=pk)
+    if self.request.method == "PATCH":
+        base = (
+            bases_queryset_for_user(request.user)
+            .filter(can_write=True)
+            .distinct()
+            .get(pk=request.data["id"])
+        )
+        if request.data["is_pinned"]:
+            getattr(base, f"pinned_{model_name}s").add(instance)
+        else:
+            getattr(base, f"pinned_{model_name}s").remove(instance)
+        base.save()
+    return Response(
+        BasesPinStatusField(model=model, request=request).to_representation(instance)
+    )

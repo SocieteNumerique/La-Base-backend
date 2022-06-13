@@ -1,6 +1,7 @@
 from django.contrib.auth import password_validation
 from django.contrib.auth.hashers import make_password
 from django.core import exceptions
+from django.db.models import OuterRef, Exists, Q
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from main.models import User
@@ -61,6 +62,47 @@ class PrimaryKeyBaseField(serializers.PrimaryKeyRelatedField):
         return Base.objects.all()
 
 
+class BaseIsInstancePinnedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Base
+        fields = ["id", "is_pinned"]
+
+    is_pinned = serializers.SerializerMethodField()
+
+    @staticmethod
+    def get_is_pinned(obj: Base):
+        return getattr(obj, "is_pinned", False)
+
+
+class BasesPinStatusField(serializers.SerializerMethodField):
+    def __init__(self, model, request=None, **kwargs):
+        self.model = model
+        self.request = request
+        super().__init__(**kwargs)
+
+    def to_representation(self, value):
+        request = self.request or self.context["request"]
+        instance = value
+        query_test_root_base = (
+            Q(pk=instance.root_base_id)
+            if self.model == Resource
+            else Q(pk=instance.base_id)
+        )
+        if request.user.is_anonymous:
+            return []
+        bases = (
+            Base.objects.filter(Q(owner=request.user) | Q(admins=request.user))
+            .distinct()
+            .annotate(
+                is_pinned=(
+                    Exists(instance.pinned_in_bases.filter(pk=OuterRef("pk")))
+                    | query_test_root_base
+                )
+            )
+        )
+        return BaseIsInstancePinnedSerializer(bases, many=True).data
+
+
 class BaseResourceSerializer(MoreFieldsModelSerializer):
     class Meta:
         model = Resource
@@ -73,6 +115,7 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
             "can_write",
             "label_state",
             "label_details",
+            "bases_pinned_in",
         ]
 
     can_write = serializers.SerializerMethodField()
@@ -88,6 +131,7 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
     root_base_title = serializers.SerializerMethodField()
     stats = serializers.SerializerMethodField(read_only=True)
     supports = serializers.SerializerMethodField(read_only=True)
+    bases_pinned_in = BasesPinStatusField(model=Resource)
 
     @staticmethod
     def get_can_write(obj: Resource):
@@ -132,6 +176,7 @@ class ShortResourceSerializer(BaseResourceSerializer):
             "supports",
             "root_base",
             "root_base_title",
+            "bases_pinned_in",
         ]
         abstract = False
 
@@ -147,6 +192,7 @@ class FullResourceSerializer(BaseResourceSerializer):
             "content_stats",
             "supports",
             "can_write",
+            "bases_pinned_in",
         ]
         abstract = False
 
@@ -192,11 +238,12 @@ class PrimaryKeyResourcesForCollectionField(serializers.PrimaryKeyRelatedField):
 class CollectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Collection
-        fields = ["name", "resources", "base"]
+        fields = ["name", "resources", "base", "bases_pinned_in"]
 
     resources = PrimaryKeyResourcesForCollectionField(
         many=True, required=False, allow_null=True
     )
+    bases_pinned_in = BasesPinStatusField(model=Collection)
 
 
 class BaseBaseSerializer(serializers.ModelSerializer):
@@ -220,10 +267,14 @@ class BaseBaseSerializer(serializers.ModelSerializer):
     def get_can_write(obj: Base):
         return getattr(obj, "can_write", False)
 
-    @staticmethod
-    def get_resources(obj: Base):
-        annotated_qs = resources_queryset_with_stats(obj.resources).all()
-        return ShortResourceSerializer(annotated_qs, many=True).data
+    def get_resources(self, obj: Base):
+        pinned_resources_qs = resources_queryset_with_stats(
+            obj.pinned_resources.prefetch_related("root_base")
+        )
+        annotated_qs = resources_queryset_with_stats(obj.resources)
+        return ShortResourceSerializer(
+            annotated_qs.union(pinned_resources_qs), many=True, context=self.context
+        ).data
 
 
 class ShortBaseSerializer(BaseBaseSerializer):
