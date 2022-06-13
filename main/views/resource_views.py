@@ -21,6 +21,7 @@ from main.serializers.content_serializers import (
     ContentBySectionSerializer,
     ContentSectionSerializer,
 )
+from main.views.base_views import generic_pin_action
 
 
 class ResourceHasWriteAccessFilter(filters.BaseFilterBackend):
@@ -96,14 +97,22 @@ class ResourceView(
     @action(detail=True, methods=["GET"])
     def contents(self, request, pk=None):
         obj: Resource = self.get_object()
-        serializer = ContentBySectionSerializer(obj, context={"request": self.request})
+        serializer = ContentBySectionSerializer(
+            obj, context=self.get_serializer_context()
+        )
         return Response(serializer.data)
 
-    @action(detail=True, methods=["get"])
+    @action(detail=True, methods=["GET"])
     def short(self, request, pk=None):
         instance = self.get_object()
-        serializer = ShortResourceSerializer(instance)
+        serializer = ShortResourceSerializer(
+            instance, context=self.get_serializer_context()
+        )
         return Response(serializer.data)
+
+    @action(detail=True, methods=["PATCH"])
+    def pin(self, request, pk=None):
+        return generic_pin_action(Resource, self, request, pk)
 
 
 class ContentView(

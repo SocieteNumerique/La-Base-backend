@@ -2,7 +2,7 @@ from typing import Optional
 
 from factory.django import DjangoModelFactory
 import factory
-from main.models import User
+from main.models import User, Collection
 
 from main.models import Tag, TagCategory, Base, Resource, UserGroup
 
@@ -65,6 +65,14 @@ class ResourceFactory(DjangoModelFactory):
     root_base = factory.SubFactory(BaseFactory)
     description = factory.Faker("text", max_nb_chars=60)
     is_draft = False
+
+
+class CollectionFactory(DjangoModelFactory):
+    class Meta:
+        model = Collection
+
+    name = factory.Faker("text", max_nb_chars=25)
+    base = factory.SubFactory(BaseFactory)
 
 
 class UserGroupFactory(DjangoModelFactory):

@@ -91,6 +91,18 @@ class Base(TimeStampedModel):
     )
     is_public = models.BooleanField(default=False, verbose_name="La base est publique")
     tags = models.ManyToManyField("Tag", blank=True, related_name="bases")
+    pinned_resources = models.ManyToManyField(
+        "Resource",
+        related_name="pinned_in_bases",
+        verbose_name="Ressources enregistrées",
+        blank=True,
+    )
+    pinned_collections = models.ManyToManyField(
+        "Collection",
+        related_name="pinned_in_bases",
+        verbose_name="Collections enregistrées",
+        blank=True,
+    )
 
     def __str__(self):
         return self.title
@@ -237,7 +249,6 @@ class Resource(TimeStampedModel):
     zip_code = models.IntegerField(null=True, blank=True)
     url = models.URLField(null=True, blank=True)
     thumbnail = models.ImageField(null=True, blank=True)
-    linked_resources = models.ManyToManyField("self", blank=True)
     internal_producers = models.ManyToManyField(
         User, blank=True, related_name="internal_producers"
     )
@@ -318,7 +329,7 @@ class ContentBlock(TimeStampedModel):
         ordering = ["order"]
         unique_together = ("order", "section")
 
-    title = models.CharField(max_length=50, null=True)
+    title = models.CharField(max_length=50, null=True, blank=True)
     annotation = models.TextField(null=True, blank=True)
     is_draft = models.BooleanField(default=True)
     resource = models.ForeignKey(Resource, models.CASCADE, related_name="contents")
