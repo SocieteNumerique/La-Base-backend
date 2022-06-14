@@ -5,7 +5,7 @@ from django.urls import reverse
 from main.factories import ResourceFactory, BaseFactory, TagFactory
 from main.search import search_resources, search_bases
 from main.tests.test_utils import authenticate
-from main.views.search_view import SearchView
+from main.views.search_view import SearchView, StandardResultsSetPagination
 
 
 class TestSearch(TestCase):
@@ -194,4 +194,7 @@ class TestSearchView(TestCase):
             content_type="application/json",
         )
         self.assertEqual(res.json()["count"], page_size + 1)
-        self.assertEqual(len(res.json()["results"]["objects"]), 20)
+        self.assertEqual(
+            len(res.json()["results"]["objects"]),
+            StandardResultsSetPagination.page_size,
+        )

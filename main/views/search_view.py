@@ -26,9 +26,9 @@ class HideEmailUserSerializer(AuthSerializer):
 
 
 class StandardResultsSetPagination(PageNumberPagination):
-    page_size = 20
+    page_size = 12
     page_size_query_param = "page_size"
-    max_page_size = 20
+    max_page_size = 100
 
 
 class SearchView(
@@ -42,6 +42,8 @@ class SearchView(
     def get_queryset(self):
         """Get search results for selected data type."""
         text = self.request.data.get("text", "")
+        tag_operator = self.request.data.get("tag_operator", "OR")
+        tags = self.request.data.get("tags")
         data_type = self.request.data["data_type"]
         if data_type == "resources":
             search_function = search_resources
@@ -51,7 +53,9 @@ class SearchView(
             search_function = search_users
         else:
             raise APIException(f"Unknown data type ({data_type})")
-        return search_function(self.request.user, text=text)
+        return search_function(
+            self.request.user, text=text, tag_operator=tag_operator, tags=tags
+        )
 
     def get_serializer_class(self):
         data_type = self.request.data["data_type"]
@@ -83,5 +87,6 @@ class SearchView(
                 "data_type": self.request.data["data_type"],
                 "objects": serializer.data,
                 "possible_tags": list(possible_tags),
+                "text": self.request.data.get("text", ""),
             }
         )

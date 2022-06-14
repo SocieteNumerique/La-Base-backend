@@ -37,3 +37,4 @@ wheels/
 .vscode
 
 local_settings.conf
+collected_static
