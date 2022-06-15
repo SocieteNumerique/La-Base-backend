@@ -1,6 +1,7 @@
 from django.contrib import admin
 
-from main.models import Resource, TextContent, FileContent, ContentSection
+from main.models.models import Resource
+from main.models.contents import TextContent, FileContent, ContentSection
 
 
 class ContentSectionInline(admin.TabularInline):

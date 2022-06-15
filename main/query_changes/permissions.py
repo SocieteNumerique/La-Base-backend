@@ -1,7 +1,7 @@
 from django.db.models import Q, When, Case, Value
-from main.models import User
+from main.models.user import User
 
-from main.models import Base, Resource
+from main.models.models import Base, Resource
 
 
 def bases_queryset_for_user(user: User, init_queryset=Base.objects):

@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from main.factories import ResourceFactory
-from main.models import ContentSection
+from main.models.contents import ContentSection
 from main.tests.test_utils import authenticate
 
 

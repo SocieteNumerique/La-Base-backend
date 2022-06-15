@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from main.factories import BaseFactory, ResourceFactory, TagFactory, TagCategoryFactory
-from main.models import ExternalProducer
+from main.models.models import ExternalProducer
 from main.tests.test_utils import authenticate
 
 

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from main.models import Base
+from main.models.models import Base
 
 
 @admin.register(Base)

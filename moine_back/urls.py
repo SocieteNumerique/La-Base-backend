@@ -16,6 +16,7 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.contrib.auth.views import PasswordResetConfirmView
 from django.urls import include, path
 from rest_framework import routers
 
@@ -27,7 +28,9 @@ from main.views import (
     index_views,
     tag_views,
     search_view,
+    user_views,
 )
+from main.views.user_views import reset_password
 from moine_back.settings import IS_LOCAL_DEV
 
 router = routers.DefaultRouter()
@@ -40,14 +43,27 @@ router.register(r"contents", resource_views.ContentView, basename="content")
 router.register(r"index", index_views.IndexView, basename="index")
 router.register(r"search", search_view.SearchView, basename="search")
 router.register(r"sections", resource_views.SectionView, basename="section")
+router.register(r"users", user_views.UserView, basename="user")
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("hijack/", include("hijack.urls")),
     path("api/version", main_views.version),
+    path("accounts", include("django.contrib.auth.urls")),
+    path(
+        "api/mdp-oublie/<uidb64>/<token>/",
+        PasswordResetConfirmView.as_view(
+            success_url="/",
+            template_name="password_reset_confirm.html",
+            post_reset_login=True,
+        ),
+        name="password_reset_confirm",
+    ),
+    path("api/password/reset", reset_password, name="reset-password"),
     path("api/auth/", include("telescoop_auth.urls")),
     path("api/", include(router.urls)),
     *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),
+    *static(settings.STATIC_URL, document_root=settings.STATIC_ROOT),
 ]
 
 if IS_LOCAL_DEV:

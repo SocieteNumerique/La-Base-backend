@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework.fields import SerializerMethodField
 
-from main.models import TagCategory, Tag
+from main.models.models import TagCategory, Tag
 
 
 class RecursiveField(serializers.BaseSerializer):

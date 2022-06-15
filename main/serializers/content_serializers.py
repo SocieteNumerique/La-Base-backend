@@ -9,15 +9,16 @@ from rest_framework import serializers
 from rest_framework.fields import CharField
 from django.core.files.base import ContentFile
 
-from main.models import (
+from main.models.contents import (
     LinkContent,
     LinkedResourceContent,
     TextContent,
     ContentBlock,
-    Resource,
     ContentSection,
     FileContent,
 )
+from main.models.models import Resource
+
 
 content_fields = [
     "id",
