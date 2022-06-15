@@ -118,7 +118,7 @@ class TagCategory(TimeStampedModel):
     )
 
     def __str__(self):
-        return f"{self.base or 'GLOBAL'} - {self.name}"
+        return self.name
 
 
 class TagManager(models.Manager):
@@ -151,7 +151,7 @@ class Tag(TimeStampedModel):
     definition = models.TextField(null=True, blank=True)
 
     def __str__(self):
-        return f"{self.category.base or 'GLOBAL'} - {self.name}"
+        return self.name
 
 
 class Resource(TimeStampedModel):

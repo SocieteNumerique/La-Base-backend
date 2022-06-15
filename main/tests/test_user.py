@@ -7,7 +7,9 @@ from django.test import TestCase
 from django.urls import reverse
 from django.core import mail
 
-from main.factories import UserFactory
+from main.factories import UserFactory, TagFactory, TagCategoryFactory
+from main.models.user import User
+from main.serializers.user_serializer import CNFS_RESERVED_TAG_NAME, CNFS_EMAIL_DOMAIN
 from main.tests.test_utils import authenticate
 
 faker_ = faker.Faker()
@@ -34,6 +36,58 @@ class TestUserView(TestCase):
             content_type="application/json",
         )
         self.assertEqual(res.status_code, 201)
+
+    def test_can_create_user_with_tags(self):
+        url = reverse("user-list")
+        data = get_standard_user_data()
+        category = TagCategoryFactory.create(relates_to="User")
+        tag = TagFactory.create(category=category)
+        data["tags"] = [tag.pk]
+        res = self.client.post(
+            url,
+            data,
+            content_type="application/json",
+        )
+        user = User.objects.get(email=res.json()["email"])
+        self.assertEqual(res.status_code, 201)
+        self.assertListEqual(res.json()["tags"], [tag.pk])
+        self.assertListEqual(
+            list(user.tags.all().values_list("pk", flat=True)), [tag.pk]
+        )
+
+    def test_cannot_set_cnfs_tag_on_request(self):
+        url = reverse("user-list")
+        data = get_standard_user_data()
+        category = TagCategoryFactory.create(relates_to="User")
+        tag = TagFactory.create(category=category, name=CNFS_RESERVED_TAG_NAME)
+        data["tags"] = [tag.pk]
+        res = self.client.post(
+            url,
+            data,
+            content_type="application/json",
+        )
+        user = User.objects.get(email=res.json()["email"])
+        self.assertEqual(res.status_code, 201)
+        self.assertListEqual(res.json()["tags"], [])
+        self.assertListEqual(list(user.tags.all().values_list("pk", flat=True)), [])
+
+    def test_cannot_cnfs_tag_is_set_for_special_emails(self):
+        url = reverse("user-list")
+        data = get_standard_user_data()
+        category = TagCategoryFactory.create(relates_to="User")
+        cnfs_tag = TagFactory.create(category=category, name=CNFS_RESERVED_TAG_NAME)
+        data["email"] = f"{data['email'].split('@')[0]}{CNFS_EMAIL_DOMAIN}"
+        res = self.client.post(
+            url,
+            data,
+            content_type="application/json",
+        )
+        user = User.objects.get(email=res.json()["email"])
+        self.assertEqual(res.status_code, 201)
+        self.assertListEqual(res.json()["tags"], [cnfs_tag.pk])
+        self.assertListEqual(
+            list(user.tags.all().values_list("pk", flat=True)), [cnfs_tag.pk]
+        )
 
     def test_cannot_create_user_with_bad_params(self):
         url = reverse("user-list")
