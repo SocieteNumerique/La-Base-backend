@@ -1,7 +1,7 @@
 from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
 
-from main.models import Collection
+from main.models.models import Collection
 from main.query_changes.permissions import bases_queryset_for_user
 from main.serializers.base_resource_serializers import CollectionSerializer
 from main.views.base_views import generic_pin_action

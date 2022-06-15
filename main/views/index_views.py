@@ -2,7 +2,7 @@ from django.db.models import Q, Prefetch
 from rest_framework import viewsets
 from rest_framework.response import Response
 
-from main.models import TagCategory, Tag
+from main.models.models import TagCategory, Tag
 from main.serializers.index_serializers import IndexSerializer
 
 

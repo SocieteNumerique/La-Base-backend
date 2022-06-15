@@ -2,7 +2,7 @@ from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from main.models import Tag, TagCategory
+from main.models.models import Tag, TagCategory
 from main.serializers.index_serializers import TagSerializer, IndexSerializer
 
 

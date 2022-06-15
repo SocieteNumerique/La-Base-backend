@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from main.factories import BaseFactory, ResourceFactory
-from main.models import Collection
+from main.models.models import Collection
 from main.tests.test_utils import authenticate
 
 

@@ -3,7 +3,7 @@ from rest_framework.exceptions import APIException
 from rest_framework.pagination import PageNumberPagination
 from telescoop_auth.serializers import AuthSerializer
 
-from main.models import Resource
+from main.models.models import Resource
 from main.search import search_resources, search_bases, search_users
 from main.serializers.base_resource_serializers import (
     ShortResourceSerializer,

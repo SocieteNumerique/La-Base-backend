@@ -4,7 +4,8 @@ from rest_framework.decorators import action
 from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
 
-from main.models import Resource, ContentBlock, ContentSection
+from main.models.models import Resource
+from main.models.contents import ContentBlock, ContentSection
 from main.query_changes.permissions import (
     resources_queryset_for_user,
     bases_queryset_for_user,

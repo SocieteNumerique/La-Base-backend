@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from main.models import Tag
+from main.models.models import Tag
 
 
 @admin.register(Tag)

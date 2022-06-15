@@ -5,7 +5,7 @@ from .resource_admin import ResourceAdmin  # noqa: F401
 from .tag_admin import TagAdmin  # noqa: F401
 from .tag_category_admin import TagCategoryAdmin  # noqa: F401
 
-from main.models import User
+from main.models.user import User
 from telescoop_auth.models import User as TelesCoopUser
 from telescoop_auth.admin import UserAdmin
 

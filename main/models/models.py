@@ -1,10 +1,10 @@
 import datetime
-import uuid
 
-from django.contrib.auth.base_user import AbstractBaseUser
 from django.db import models
 from django.db.models import Count
-from telescoop_auth.managers import UserManager
+
+from main.models.user import User, UserGroup
+from main.models.utils import TimeStampedModel
 
 RESOURCE_PRODUCER_STATES = [
     ["me", "celui qui ajouté la ressource"],
@@ -23,62 +23,6 @@ RESOURCE_LABEL_CHOICES = [
     ("refused", "Refusé"),
     ("accepted", "Accepté"),
 ]
-
-
-class User(AbstractBaseUser):
-    created = models.DateTimeField(auto_now_add=True)
-    modified = models.DateTimeField(auto_now=True)
-
-    username = None
-    email = models.EmailField(
-        verbose_name="email address",
-        max_length=255,
-        unique=True,
-    )
-    first_name = models.CharField(max_length=150, default="")
-    last_name = models.CharField(max_length=150, default="")
-    is_active = models.BooleanField(default=True)
-    is_admin = models.BooleanField(default=False)
-    is_superuser = models.BooleanField(default=False)
-    activation_key = models.UUIDField(default=uuid.uuid4, editable=False)
-
-    tags = models.ManyToManyField("Tag", blank=True, related_name="users")
-
-    USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = []
-
-    objects = UserManager()
-
-    def __str__(self):
-        return self.email
-
-    def has_perm(self, perm, obj=None):
-        "Does the user have a specific permission?"
-        return True
-
-    def has_module_perms(self, app_label):
-        "Does the user have permissions to view the app `app_label`?"
-        return True
-
-    @property
-    def is_staff(self):
-        "Is the user a member of staff?"
-        # Simplest possible answer: All admins are staff
-        return self.is_admin
-
-
-class TimeStampedModel(models.Model):
-    """
-    An abstract base class model that provides self-updating
-    ``created`` and ``modified`` fields.
-
-    """
-
-    created = models.DateTimeField(auto_now_add=True)
-    modified = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        abstract = True
 
 
 class Base(TimeStampedModel):
@@ -307,76 +251,6 @@ class ExternalProducer(TimeStampedModel):
 
     def __str__(self):
         return f"EXT - ${self.name}"
-
-
-class ContentSection(TimeStampedModel):
-    class Meta:
-        verbose_name = "Dossier de contenu"
-        verbose_name_plural = "Dossiers de contenu"
-        ordering = ["order"]
-        unique_together = ("resource", "order")
-
-    resource = models.ForeignKey(Resource, models.CASCADE, related_name="sections")
-    title = models.CharField(max_length=25, null=True, blank=True)
-    is_foldable = models.BooleanField(default=False)
-    order = models.BigIntegerField()
-
-
-class ContentBlock(TimeStampedModel):
-    class Meta:
-        verbose_name = "Bloc de contenu"
-        verbose_name_plural = "Blocs de contenu"
-        ordering = ["order"]
-        unique_together = ("order", "section")
-
-    title = models.CharField(max_length=50, null=True, blank=True)
-    annotation = models.TextField(null=True, blank=True)
-    is_draft = models.BooleanField(default=True)
-    resource = models.ForeignKey(Resource, models.CASCADE, related_name="contents")
-    section = models.ForeignKey(ContentSection, models.CASCADE, related_name="contents")
-    nb_col = models.IntegerField(default=2)
-    order = models.BigIntegerField()
-
-
-class LinkedResourceContent(ContentBlock):
-    class Meta:
-        verbose_name = "Contenu : Ressource liée"
-        verbose_name_plural = "Contenus : Ressources liées"
-
-    linked_resource = models.ForeignKey(
-        Resource, models.SET_NULL, null=True, blank=True
-    )
-
-
-class LinkContent(ContentBlock):
-    class Meta:
-        verbose_name = "Contenu : Lien externe"
-        verbose_name_plural = "Contenus : Liens externes"
-
-    link = models.URLField(blank=True, null=True)
-    with_preview = models.BooleanField(default=False)
-
-
-class TextContent(ContentBlock):
-    class Meta:
-        verbose_name = "Contenu : Texte"
-        verbose_name_plural = "Contenus : Textes"
-
-    text = models.TextField(blank=True, null=True)  # TODO add rich text support
-
-
-class FileContent(ContentBlock):
-    class Meta:
-        verbose_name = "Contenu : Fichier importé"
-        verbose_name_plural = "Contenus : Fichiers importés"
-
-    file = models.FileField()
-    with_preview = models.BooleanField(default=False)
-
-
-class UserGroup(TimeStampedModel):
-    name = models.CharField(max_length=100, verbose_name="nom du groupe")
-    users = models.ManyToManyField(User)
 
 
 class ResourceUserGroup(TimeStampedModel):

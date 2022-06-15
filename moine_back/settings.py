@@ -128,7 +128,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.0/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "fr-fr"
 
 TIME_ZONE = "UTC"
 
@@ -149,7 +149,7 @@ else:
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# mail and production erros
+# production errors
 if not IS_LOCAL_DEV:
     ROLLBAR = {
         "access_token": "c4ebf44512b4479fb018ee413ac08d2a",
@@ -159,14 +159,6 @@ if not IS_LOCAL_DEV:
     import rollbar
 
     rollbar.init(**ROLLBAR)
-
-    ANYMAIL = {
-        "MAILGUN_API_KEY": config.getstr("mail.api_key"),
-        "MAILGUN_SENDER_DOMAIN": "mail.telescoop.fr",
-    }
-    EMAIL_BACKEND = "anymail.backends.mailgun.EmailBackend"
-    DEFAULT_FROM_EMAIL = "no-reply@telescoop.fr"
-    SERVER_EMAIL = "no-reply@telescoop.fr"
 
 # CORS
 if IS_LOCAL_DEV:
@@ -206,3 +198,16 @@ if not IS_LOCAL_DEV:
 # django debug toolbar
 if IS_LOCAL_DEV:
     INTERNAL_IPS = ["127.0.0.1", "localhost"]
+
+# mail
+DEFAULT_FROM_EMAIL = "La Base <no-reply@telescoop.fr>"
+if IS_LOCAL_DEV:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+else:
+    ANYMAIL = {
+        "MAILGUN_API_KEY": config.getstr("mail.api_key"),
+        "MAILGUN_SENDER_DOMAIN": "mail.telescoop.fr",
+        "MAILGUN_API_URL": "https://api.eu.mailgun.net/v3",
+    }
+    EMAIL_BACKEND = "anymail.backends.mailgun.EmailBackend"
+    SERVER_EMAIL = "no-reply@telescoop.fr"

@@ -4,13 +4,13 @@ from django.core import exceptions
 from django.db.models import OuterRef, Exists, Q
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from main.models import User
+from main.models.user import User
 
 from main.query_changes.stats_annotations import resources_queryset_with_stats
 from main.serializers.content_serializers import Base64FileField
 from main.serializers.custom import MoreFieldsModelSerializer
 
-from main.models import Resource, Base, ExternalProducer, Tag, Collection
+from main.models.models import Resource, Base, ExternalProducer, Tag, Collection
 
 
 class PrimaryKeyOccupationTagField(serializers.PrimaryKeyRelatedField):

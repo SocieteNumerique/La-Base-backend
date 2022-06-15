@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from main.models import TagCategory, Tag
+from main.models.models import TagCategory, Tag
 
 
 class TagInline(admin.TabularInline):

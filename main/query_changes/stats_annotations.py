@@ -1,6 +1,6 @@
 from django.db.models import Q, Count, Prefetch
 
-from main.models import Resource, Tag
+from main.models.models import Resource, Tag
 
 
 def resources_queryset_with_stats(init_queryset=Resource.objects):

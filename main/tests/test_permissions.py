@@ -3,7 +3,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from main.factories import BaseFactory, ResourceFactory, UserFactory, UserGroupFactory
-from main.models import RESOURCE_STATE_CHOICES, ResourceUserGroup
+from main.models.models import RESOURCE_STATE_CHOICES, ResourceUserGroup
 from main.query_changes.permissions import (
     bases_queryset_for_user,
     resources_queryset_for_user,
