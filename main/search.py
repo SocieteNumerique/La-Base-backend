@@ -17,8 +17,9 @@ SEARCH_KEY_PARAM = "search" if IS_POSTGRESQL_DB else "contains"
 
 def filter_queryset(qs, text, search_fields, tag_operator, tags):
     filter_ = Q()
-    for field in search_fields:
-        filter_ = filter_ | Q(**{f"{field}__{SEARCH_KEY_PARAM}": text})
+    if text:
+        for field in search_fields:
+            filter_ = filter_ | Q(**{f"{field}__{SEARCH_KEY_PARAM}": text})
     qs = qs.filter(filter_)
     if tags:
         if tag_operator == "OR":
