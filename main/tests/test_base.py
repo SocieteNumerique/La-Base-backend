@@ -1,7 +1,13 @@
 from django.test import TestCase
 from django.urls import reverse
 
-from main.factories import UserFactory, BaseFactory, ResourceFactory, CollectionFactory
+from main.factories import (
+    UserFactory,
+    BaseFactory,
+    ResourceFactory,
+    CollectionFactory,
+    TagFactory,
+)
 from main.tests.test_utils import authenticate
 
 
@@ -25,6 +31,18 @@ class TestBaseView(TestCase):
         url = reverse("base-list")
         res = self.client.post(url, {"title": "My base"})
         self.assertEqual(res.status_code, 400)
+
+    @authenticate
+    def test_add_base_with_contributor_tags(self):
+        url = reverse("base-list")
+        tag = TagFactory.create()
+        res = self.client.post(
+            url,
+            {"title": "My base", "contributor_tags": [tag.pk]},
+            content_type="application/json",
+        )
+        self.assertEqual(res.status_code, 201)
+        self.assertEqual(res.json()["contributorTags"], [tag.pk])
 
 
 class TestPin(TestCase):

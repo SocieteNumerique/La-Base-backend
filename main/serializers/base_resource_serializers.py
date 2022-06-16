@@ -259,8 +259,12 @@ class BaseBaseSerializer(serializers.ModelSerializer):
     owner = AuthSerializer(required=False)
     resources = serializers.SerializerMethodField()
     can_write = serializers.SerializerMethodField()
+    can_add_resources = serializers.SerializerMethodField()
     collections = serializers.SerializerMethodField()
     resources_in_pinned_collections = serializers.SerializerMethodField()
+    contributor_tags = serializers.PrimaryKeyRelatedField(
+        many=True, queryset=Tag.objects.all(), required=False, allow_null=True
+    )
 
     def create(self, validated_data):
         user = self.context["request"].user
@@ -272,6 +276,10 @@ class BaseBaseSerializer(serializers.ModelSerializer):
     @staticmethod
     def get_can_write(obj: Base):
         return getattr(obj, "can_write", False)
+
+    @staticmethod
+    def get_can_add_resources(obj: Base):
+        return getattr(obj, "can_add_resources", False)
 
     def get_resources(self, obj: Base):
         user = self.context["request"].user
@@ -310,7 +318,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
 class ShortBaseSerializer(BaseBaseSerializer):
     class Meta(BaseBaseSerializer.Meta):
         abstract = False
-        fields = ["id", "title", "owner", "is_short", "can_write"]
+        fields = ["id", "title", "owner", "is_short", "can_write", "can_add_resources"]
 
     is_short = serializers.ReadOnlyField(default=True)
 
@@ -326,4 +334,6 @@ class FullBaseSerializer(BaseBaseSerializer):
             "collections",
             "can_write",
             "resources_in_pinned_collections",
+            "can_add_resources",
+            "contributor_tags",
         ]

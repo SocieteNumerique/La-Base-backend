@@ -43,14 +43,12 @@ class UserCanWriteOnBaseForPost(BasePermission):
         if request.method != "POST" or not request.data:
             return True
 
-        if (
+        return (
             bases_queryset_for_user(request.user)
-            .filter(can_write=True)
+            .filter(can_add_resources=True)
             .filter(pk=request.data["root_base"])
             .exists()
-        ):
-            return True
-        return False
+        )
 
 
 def order_action(model, serializer_class, request):
