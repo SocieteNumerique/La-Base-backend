@@ -27,6 +27,7 @@ class BaseIndexSerializer(serializers.ModelSerializer):
         fields = [
             "accepts_free_tags",
             "base",
+            "description",
             "id",
             "is_draft",
             "name",
