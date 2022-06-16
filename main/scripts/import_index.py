@@ -40,14 +40,15 @@ category_fields = [
     "slug",
 ]
 
+tag_fields = ["id", "name", "is_free", "is_draft", "definition", "parent_tag"]
+
 for category in index:
     cat = TagCategory.objects.create(
         **{field: category[to_camel_case(field)] for field in category_fields}
     )
     for tag in category["tags"]:
         Tag.objects.create(
-            category=cat,
-            **{field: category[to_camel_case(field)] for field in category_fields}
+            category=cat, **{field: tag[to_camel_case(field)] for field in tag_fields}
         )
 
 tags = list(Tag.objects.all())
