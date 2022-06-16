@@ -54,7 +54,6 @@ class Base(TimeStampedModel):
 
 class Collection(TimeStampedModel):
     class Meta:
-        ordering = ("name",)
         unique_together = ("name", "base")
 
     name = models.CharField(max_length=25, verbose_name="nom")

@@ -15,6 +15,16 @@ class TestResourceView(TestCase):
         self.assertEqual(res.status_code, 201)
 
     @authenticate
+    def test_can_add_collection_with_resources(self):
+        base = BaseFactory.create(owner=authenticate.user)
+        resource = ResourceFactory.create(root_base=base)
+        url = reverse("collection-list")
+        res = self.client.post(
+            url, {"base": base.pk, "name": "My name", "resources": [resource.id]}
+        )
+        self.assertEqual(res.status_code, 201)
+
+    @authenticate
     def test_can_only_add_resources_linked_to_base(self):
         base = BaseFactory.create(owner=authenticate.user)
         collection = Collection.objects.create(base=base, name="collection")

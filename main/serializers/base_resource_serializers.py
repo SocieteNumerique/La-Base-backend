@@ -5,6 +5,7 @@ from django.db.models import OuterRef, Exists, Q
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from main.models.user import User
+from main.query_changes.permissions import resources_queryset_for_user
 
 from main.query_changes.stats_annotations import resources_queryset_with_stats
 from main.serializers.content_serializers import Base64FileField
@@ -229,16 +230,20 @@ class FullResourceSerializer(BaseResourceSerializer):
 class PrimaryKeyResourcesForCollectionField(serializers.PrimaryKeyRelatedField):
     def get_queryset(self):
         """Limit to resource that are linked to the base the collection belongs to."""
-        collection_pk = self.context["request"].parser_context["kwargs"]["pk"]
-        collection = Collection.objects.get(pk=collection_pk)
-        base = collection.base
+        request = self.context["request"]
+        if "pk" in request.parser_context["kwargs"]:
+            collection_pk = request.parser_context["kwargs"]["pk"]
+            collection = Collection.objects.get(pk=collection_pk)
+            base = collection.base
+        elif "base" in request.data:
+            base = Base.objects.get(pk=request.data["base"])
         return Resource.objects.filter(root_base=base)
 
 
 class CollectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Collection
-        fields = ["name", "resources", "base", "bases_pinned_in"]
+        fields = ["id", "name", "resources", "base", "bases_pinned_in"]
 
     resources = PrimaryKeyResourcesForCollectionField(
         many=True, required=False, allow_null=True
@@ -254,7 +259,8 @@ class BaseBaseSerializer(serializers.ModelSerializer):
     owner = AuthSerializer(required=False)
     resources = serializers.SerializerMethodField()
     can_write = serializers.SerializerMethodField()
-    collections = CollectionSerializer(many=True)
+    collections = serializers.SerializerMethodField()
+    resources_in_pinned_collections = serializers.SerializerMethodField()
 
     def create(self, validated_data):
         user = self.context["request"].user
@@ -268,13 +274,37 @@ class BaseBaseSerializer(serializers.ModelSerializer):
         return getattr(obj, "can_write", False)
 
     def get_resources(self, obj: Base):
+        user = self.context["request"].user
         pinned_resources_qs = resources_queryset_with_stats(
-            obj.pinned_resources.prefetch_related("root_base")
+            resources_queryset_for_user(
+                user, obj.pinned_resources.prefetch_related("root_base")
+            )
         )
-        annotated_qs = resources_queryset_with_stats(obj.resources)
+        annotated_qs = resources_queryset_with_stats(
+            resources_queryset_for_user(user, obj.resources)
+        )
         return ShortResourceSerializer(
             annotated_qs.union(pinned_resources_qs), many=True, context=self.context
         ).data
+
+    def get_collections(self, obj: Base):
+        pinned_collections_qs = obj.pinned_collections.prefetch_related("base")
+        return CollectionSerializer(
+            obj.collections.union(pinned_collections_qs),
+            many=True,
+            context=self.context,
+        ).data
+
+    def get_resources_in_pinned_collections(self, obj: Base):
+        user = self.context["request"].user
+        qs = resources_queryset_with_stats(
+            resources_queryset_for_user(user)
+            .exclude(root_base=obj)
+            .filter(
+                Exists(obj.pinned_collections.filter(id__in=OuterRef("collections")))
+            )
+        )
+        return ShortResourceSerializer(qs, many=True, context=self.context).data
 
 
 class ShortBaseSerializer(BaseBaseSerializer):
@@ -288,4 +318,12 @@ class ShortBaseSerializer(BaseBaseSerializer):
 class FullBaseSerializer(BaseBaseSerializer):
     class Meta(BaseBaseSerializer.Meta):
         abstract = False
-        fields = ["id", "title", "owner", "resources", "collections", "can_write"]
+        fields = [
+            "id",
+            "title",
+            "owner",
+            "resources",
+            "collections",
+            "can_write",
+            "resources_in_pinned_collections",
+        ]
