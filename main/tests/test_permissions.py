@@ -2,7 +2,13 @@ from django.contrib.auth.models import AnonymousUser
 from django.test import TestCase
 from django.urls import reverse
 
-from main.factories import BaseFactory, ResourceFactory, UserFactory, UserGroupFactory
+from main.factories import (
+    BaseFactory,
+    ResourceFactory,
+    UserFactory,
+    UserGroupFactory,
+    TagFactory,
+)
 from main.models.models import RESOURCE_STATE_CHOICES, ResourceUserGroup
 from main.query_changes.permissions import (
     bases_queryset_for_user,
@@ -116,7 +122,7 @@ class TestPermissions(TestCase):
             "state": RESOURCE_STATE_CHOICES[0][0],
         }
 
-        # test adding a ressource to a base without write access
+        # test adding a resource to a base without write access
         base = BaseFactory.create(is_public=True)
         url = reverse("resource-list")
         new_resource_payload["root_base"] = base.pk
@@ -178,3 +184,71 @@ class UserGroupTest(TestCase):
         url = reverse("resource-detail", args=[resource.pk])
         data = self.client.get(url).json()
         self.assertEqual(data["canWrite"], True)
+
+
+class ContributorInBasesTest(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = UserFactory.create()
+        cls.tag = TagFactory.create()
+        cls.user.tags.add(cls.tag)
+        cls.base = BaseFactory.create(is_public=False)
+        cls.base.contributor_tags.add(cls.tag)
+
+    def login(self):
+        self.client.force_login(user=self.user)
+
+    def test_contributor_in_bases(self):
+        qs = bases_queryset_for_user(self.user)
+        self.assertEqual(qs.count(), 1)
+        base_ = qs.first()
+        self.assertFalse(base_.can_write)
+        self.assertTrue(base_.can_add_resources)
+
+        # test has access to resources
+        ResourceFactory.create(root_base=self.base)
+        qs = resources_queryset_for_user(self.user)
+        self.assertEqual(qs.count(), self.base.resources.count())
+        resource = qs.first()
+        self.assertTrue(resource.can_write, True)
+
+    def test_get_view_has_can_write_and_add_resources_set(self):
+        # test serializer
+        self.login()
+        url = reverse("base-detail", args=[self.base.pk])
+        data = self.client.get(url).json()
+        self.assertFalse(data["canWrite"])
+        self.assertTrue(data["canAddResources"])
+
+    def test_can_add_resource_view(self):
+        self.login()
+        new_resource_payload = {
+            "title": " title",
+            "state": RESOURCE_STATE_CHOICES[0][0],
+            "root_base": self.base.pk,
+        }
+
+        url = reverse("resource-list")
+        res = self.client.post(
+            url,
+            new_resource_payload,
+            content_type="application/json",
+        )
+        self.assertEqual(res.status_code, 201)
+
+    def test_can_change_resource_view(self):
+        self.login()
+        resource = ResourceFactory.create(root_base=self.base)
+        url = reverse("resource-detail", args=[resource.pk])
+        res = self.client.patch(
+            url, {"title": "new title"}, content_type="application/json"
+        )
+        self.assertEqual(res.status_code, 200)
+
+    def test_cannot_change_base(self):
+        self.login()
+        url = reverse("base-detail", args=[self.base.pk])
+        res = self.client.delete(url)
+        self.assertIn(res.status_code, [403, 404])
+        res = self.client.patch(url, {"title": "title"})
+        self.assertIn(res.status_code, [403, 404])

@@ -35,6 +35,10 @@ class Base(TimeStampedModel):
     )
     is_public = models.BooleanField(default=False, verbose_name="La base est publique")
     tags = models.ManyToManyField("Tag", blank=True, related_name="bases")
+    # users with these tags will have write access
+    contributor_tags = models.ManyToManyField(
+        "Tag", blank=True, related_name="contributor_in_bases"
+    )
     pinned_resources = models.ManyToManyField(
         "Resource",
         related_name="pinned_in_bases",

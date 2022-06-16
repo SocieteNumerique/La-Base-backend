@@ -40,7 +40,7 @@ class BaseView(
         return bases_queryset_for_user(self.request.user)
 
     def get_serializer_class(self):
-        if self.kwargs.get("pk"):
+        if self.kwargs.get("pk") or self.request.method == "POST":
             return FullBaseSerializer
         return ShortBaseSerializer
 
