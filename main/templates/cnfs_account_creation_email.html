@@ -1,0 +1,14 @@
+{% autoescape off %}
+Votre compte a été créé sur {{ site_name }}
+
+Vous devez maintenant choisir un mot de passe en suivant le lien suivant
+{% block reset_link %}
+{{ protocol }}://{{ domain }}{% url 'password_reset_confirm' uidb64=uid token=token %}
+{% endblock %}
+
+Attention, vous recevez aussi ce mail sur votre adresse personnelle, mais vous devez
+bien utiliser votre adresse {{ email }} pour vous connecter.
+
+A bientôt sur le site !
+
+{% endautoescape %}
