@@ -72,6 +72,8 @@ class UserSerializer(serializers.ModelSerializer):
         if cnfs_tag and validated_data["email"].endswith(CNFS_EMAIL_DOMAIN):
             user.tags.add(cnfs_tag)
 
+        # login user instantly
+        # TODO this should be removed after we implement email confirmation
         if self.context.get("request"):
             user.backend = AUTHENTICATION_BACKENDS[0]
             login(self.context.get("request"), user)

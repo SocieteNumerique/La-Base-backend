@@ -211,3 +211,9 @@ else:
     }
     EMAIL_BACKEND = "anymail.backends.mailgun.EmailBackend"
     SERVER_EMAIL = "no-reply@telescoop.fr"
+
+# domain
+if IS_LOCAL_DEV:
+    DOMAIN = "localhost:8000"
+else:
+    DOMAIN = ALLOWED_HOSTS[0]
