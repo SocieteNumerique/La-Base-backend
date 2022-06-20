@@ -1,7 +1,6 @@
 from rest_framework import viewsets, mixins
 from rest_framework.exceptions import APIException
 from rest_framework.pagination import PageNumberPagination
-from telescoop_auth.serializers import AuthSerializer
 
 from main.models.models import Resource
 from main.search import search_resources, search_bases, search_users
@@ -9,20 +8,7 @@ from main.serializers.base_resource_serializers import (
     ShortResourceSerializer,
     ShortBaseSerializer,
 )
-
-
-class UserSerializerForSearch(AuthSerializer):
-    class Meta(AuthSerializer.Meta):
-        fields = (
-            "id",
-            "first_name",
-            "last_name",
-        )
-
-
-class HideEmailUserSerializer(AuthSerializer):
-    class Meta(AuthSerializer.Meta):
-        fields = (field for field in AuthSerializer.Meta.fields if field != "email")
+from main.serializers.user_serializer import UserSerializerForSearch
 
 
 class StandardResultsSetPagination(PageNumberPagination):

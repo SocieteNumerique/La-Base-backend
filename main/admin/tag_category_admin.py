@@ -9,5 +9,5 @@ class TagInline(admin.TabularInline):
 
 @admin.register(TagCategory)
 class TagCategoryAdmin(admin.ModelAdmin):
-    list_display = ("name",)
+    list_display = ("name", "relates_to")
     inlines = [TagInline]

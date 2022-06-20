@@ -4,11 +4,36 @@ from django.contrib.auth.hashers import make_password
 from django.core import exceptions
 from rest_framework import serializers
 
-from main.models import Tag
+from main.models.models import Tag
+from main.models.user import User
 
 UserModel = get_user_model()
 CNFS_RESERVED_TAG_NAME = "Conseiller numérique France Services"
 CNFS_EMAIL_DOMAIN = "@conseiller-numerique.fr"
+
+
+class AuthSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = (
+            "id",
+            "first_name",
+            "last_name",
+            "email",
+            "is_admin",
+        )
+
+    @staticmethod
+    def validate_password(self, value):
+        errors = None
+        try:
+            password_validation.validate_password(password=value, user=User)
+        except exceptions.ValidationError as e:
+            errors = list(e.messages)
+
+        if errors:
+            raise serializers.ValidationError(errors)
+        return make_password(value)
 
 
 class ChangePasswordSerializer(serializers.Serializer):
@@ -90,3 +115,17 @@ class UserSerializer(serializers.ModelSerializer):
         if errors:
             raise serializers.ValidationError(errors)
         return make_password(value)
+
+
+class UserSerializerForSearch(AuthSerializer):
+    class Meta(AuthSerializer.Meta):
+        fields = (
+            "id",
+            "first_name",
+            "last_name",
+        )
+
+
+class NestedUserSerializer(UserSerializerForSearch):
+    class Meta(UserSerializerForSearch.Meta):
+        extra_kwargs = {"id": {"read_only": False}}

@@ -7,6 +7,7 @@ from main.factories import (
     ResourceFactory,
     CollectionFactory,
     TagFactory,
+    TagCategoryFactory,
 )
 from main.tests.test_utils import authenticate
 
@@ -43,6 +44,52 @@ class TestBaseView(TestCase):
         )
         self.assertEqual(res.status_code, 201)
         self.assertEqual(res.json()["contributorTags"], [tag.pk])
+
+    def specific_tag_category_is_sent(self, slug, property_name):
+        base = BaseFactory(owner=authenticate.user)
+        tc = TagCategoryFactory(slug=slug, relates_to="Base")
+        tag = tc.tags.first()
+        base.tags.add(tag)
+
+        url = reverse("base-detail", args=[base.pk])
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, 200)
+        self.assertListEqual(res.json()[property_name], [tag.id])
+
+        url = reverse("base-list")
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, 200)
+        data_my_base = next(
+            base_data for base_data in res.json() if base_data["id"] == base.pk
+        )
+        self.assertListEqual(data_my_base[property_name], [tag.id])
+
+    @authenticate
+    def test_specific_tag_categories_are_sent(self):
+        self.specific_tag_category_is_sent(
+            "general_00participantType", "participantTypeTags"
+        )
+        self.specific_tag_category_is_sent("territory_00city", "territoryTags")
+
+    @authenticate
+    def test_update_base_admins(self):
+        users1 = [UserFactory.create() for _ in range(3)]
+        users2 = [UserFactory.create() for _ in range(3)]
+        users2.append(users1[0])
+        base = BaseFactory.create(owner=authenticate.user)
+        base.admins.set(users1)
+
+        url = reverse("base-detail", args=[base.pk])
+        res = self.client.patch(
+            url,
+            {"admins": [{"id": user.pk} for user in users2]},
+            content_type="application/json",
+        )
+        self.assertEqual(res.status_code, 200)
+        self.assertSetEqual(
+            {admin_data["id"] for admin_data in res.json()["admins"]},
+            {user.id for user in users2},
+        )
 
 
 class TestPin(TestCase):
@@ -99,6 +146,14 @@ class TestPin(TestCase):
             {collection.base_id, other_base.id},
         )
 
+    def pin_and_test(self, base, url):
+        res = self.client.patch(
+            url, {"id": base.id, "is_pinned": True}, content_type="application/json"
+        )
+        self.assertEqual(res.status_code, 200)
+        base_pin = next(base_pin for base_pin in res.data if base_pin["id"] == base.id)
+        self.assertTrue(base_pin["is_pinned"])
+
     @authenticate
     def test_can_pin_not_writable_instance(self):
         # read
@@ -123,17 +178,7 @@ class TestPin(TestCase):
 
         # write
         url = reverse("resource-pin", args=[resource.pk])
-        res = self.client.patch(
-            url, {"id": base.id, "is_pinned": True}, content_type="application/json"
-        )
-        self.assertEqual(res.status_code, 200)
-        base_pin = next(base_pin for base_pin in res.data if base_pin["id"] == base.id)
-        self.assertTrue(base_pin["is_pinned"])
+        self.pin_and_test(base, url)
 
         url = reverse("collection-pin", args=[collection.pk])
-        res = self.client.patch(
-            url, {"id": base.id, "is_pinned": True}, content_type="application/json"
-        )
-        self.assertEqual(res.status_code, 200)
-        base_pin = next(base_pin for base_pin in res.data if base_pin["id"] == base.id)
-        self.assertTrue(base_pin["is_pinned"])
+        self.pin_and_test(base, url)
