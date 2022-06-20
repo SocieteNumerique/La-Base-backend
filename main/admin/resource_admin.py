@@ -19,3 +19,11 @@ class FileContentInline(admin.TabularInline):
 @admin.register(Resource)
 class ResourceAdmin(admin.ModelAdmin):
     inlines = [TextContentInline, FileContentInline, ContentSectionInline]
+    search_fields = ("title",)
+    autocomplete_fields = [
+        "creator",
+        "internal_producers",
+        "tags",
+        "root_base",
+        "creator_bases",
+    ]
