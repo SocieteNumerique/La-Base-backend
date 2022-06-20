@@ -12,7 +12,7 @@ RESOURCE_PRODUCER_STATES = [
     ["dont-know", "producteur inconnu"],
 ]
 RESOURCE_STATE_CHOICES = [
-    ("public", "public"),
+    ("public", "Public"),
     ("private", "Privé"),
     ("restricted", "Restreint"),
     ("draft", "Brouillon"),
@@ -22,6 +22,10 @@ RESOURCE_LABEL_CHOICES = [
     ("pending", "En cours"),
     ("refused", "Refusé"),
     ("accepted", "Accepté"),
+]
+BASE_CONTACT_STATE_CHOICES = [
+    ("public", "Public"),
+    ("private", "Privé"),
 ]
 
 
@@ -51,6 +55,21 @@ class Base(TimeStampedModel):
         verbose_name="Collections enregistrées",
         blank=True,
     )
+    description = models.CharField(max_length=560, null=True, blank=True)
+    contact = models.EmailField(null=True, blank=True)
+    cover_image = models.FileField(null=True, blank=True)
+    profile_image = models.FileField(null=True, blank=True)
+    state = models.CharField(
+        default="draft", choices=RESOURCE_STATE_CHOICES, max_length=10
+    )
+
+    contact_state = models.CharField(
+        max_length=10,
+        verbose_name="Accès au mail",
+        choices=BASE_CONTACT_STATE_CHOICES,
+        null=True,
+        blank=True,
+    )
 
     def __str__(self):
         return self.title
@@ -72,7 +91,7 @@ class Collection(TimeStampedModel):
 
 class TagCategory(TimeStampedModel):
     class Meta:
-        unique_together = ("name", "base")
+        unique_together = ("name", "base", "relates_to", "slug")
         ordering = ("slug",)
         verbose_name = "Catégorie de tags"
         verbose_name_plural = "Catégories de tags"

@@ -1,6 +1,3 @@
-from django.contrib.auth import password_validation
-from django.contrib.auth.hashers import make_password
-from django.core import exceptions
 from django.db.models import OuterRef, Exists, Q
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -12,6 +9,7 @@ from main.serializers.content_serializers import Base64FileField
 from main.serializers.custom import MoreFieldsModelSerializer
 
 from main.models.models import Resource, Base, ExternalProducer, Tag, Collection
+from main.serializers.user_serializer import AuthSerializer, NestedUserSerializer
 
 
 class PrimaryKeyOccupationTagField(serializers.PrimaryKeyRelatedField):
@@ -25,30 +23,6 @@ class ExternalProducerSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
     occupation = PrimaryKeyOccupationTagField()
-
-
-class AuthSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = (
-            "id",
-            "first_name",
-            "last_name",
-            "email",
-            "is_admin",
-        )
-
-    @staticmethod
-    def validate_password(self, value):
-        errors = None
-        try:
-            password_validation.validate_password(password=value, user=User)
-        except exceptions.ValidationError as e:
-            errors = list(e.messages)
-
-        if errors:
-            raise serializers.ValidationError(errors)
-        return make_password(value)
 
 
 class PrimaryKeyCreatorField(serializers.PrimaryKeyRelatedField):
@@ -112,7 +86,7 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
             "is_labeled",
             "stats",
             "content_stats",
-            "supports",
+            "support_tags",
             "can_write",
             "label_state",
             "label_details",
@@ -131,7 +105,7 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
     is_short = serializers.ReadOnlyField(default=True)
     root_base_title = serializers.SerializerMethodField()
     stats = serializers.SerializerMethodField(read_only=True)
-    supports = serializers.SerializerMethodField(read_only=True)
+    support_tags = serializers.SerializerMethodField()
     bases_pinned_in = BasesPinStatusField(model=Resource)
 
     @staticmethod
@@ -156,12 +130,11 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
         return obj.root_base.title
 
     @staticmethod
-    def get_supports(obj: Resource):
-        res = []
-        tags = obj.tags.filter(category__slug="indexation_01RessType")
-        for tag in tags:
-            res.append(tag.name)
-        return res
+    def get_support_tags(obj: Resource):
+        tags = obj.tags.filter(category__slug="indexation_01RessType").values_list(
+            "pk", flat=True
+        )
+        return tags
 
 
 class ShortResourceSerializer(BaseResourceSerializer):
@@ -174,7 +147,7 @@ class ShortResourceSerializer(BaseResourceSerializer):
             "is_labeled",
             "stats",
             "content_stats",
-            "supports",
+            "support_tags",
             "root_base",
             "root_base_title",
             "bases_pinned_in",
@@ -191,7 +164,7 @@ class FullResourceSerializer(BaseResourceSerializer):
             "is_labeled",
             "stats",
             "content_stats",
-            "supports",
+            "support_tags",
             "can_write",
             "bases_pinned_in",
         ]
@@ -256,7 +229,8 @@ class BaseBaseSerializer(serializers.ModelSerializer):
         model = Base
         abstract = True
 
-    owner = AuthSerializer(required=False)
+    owner = AuthSerializer(required=False, read_only=True)
+    admins = NestedUserSerializer(many=True, required=False, allow_null=True)
     resources = serializers.SerializerMethodField()
     can_write = serializers.SerializerMethodField()
     can_add_resources = serializers.SerializerMethodField()
@@ -265,6 +239,8 @@ class BaseBaseSerializer(serializers.ModelSerializer):
     contributor_tags = serializers.PrimaryKeyRelatedField(
         many=True, queryset=Tag.objects.all(), required=False, allow_null=True
     )
+    participant_type_tags = serializers.SerializerMethodField()
+    territory_tags = serializers.SerializerMethodField()
 
     def create(self, validated_data):
         user = self.context["request"].user
@@ -272,6 +248,21 @@ class BaseBaseSerializer(serializers.ModelSerializer):
             raise ValidationError("Anonymous cannot create a base")
         validated_data["owner"] = user
         return super().create(validated_data)
+
+    def update(self, instance: Base, validated_data):
+        def find_admin_instance(admin_data):
+            if "id" not in admin_data:
+                raise ValidationError("missing id in admin data")
+            return User.objects.get(pk=admin_data["id"])
+
+        if "admins" in validated_data:
+            admins = [
+                find_admin_instance(admin_data)
+                for admin_data in validated_data["admins"]
+            ]
+            instance.admins.set(admins)
+            del validated_data["admins"]
+        return super().update(instance, validated_data)
 
     @staticmethod
     def get_can_write(obj: Base):
@@ -314,11 +305,32 @@ class BaseBaseSerializer(serializers.ModelSerializer):
         )
         return ShortResourceSerializer(qs, many=True, context=self.context).data
 
+    @staticmethod
+    def get_participant_type_tags(obj: Base):
+        return obj.tags.filter(category__slug="general_00participantType").values_list(
+            "pk", flat=True
+        )
+
+    @staticmethod
+    def get_territory_tags(obj: Base):
+        return obj.tags.filter(category__slug="territory_00city").values_list(
+            "pk", flat=True
+        )
+
 
 class ShortBaseSerializer(BaseBaseSerializer):
     class Meta(BaseBaseSerializer.Meta):
         abstract = False
-        fields = ["id", "title", "owner", "is_short", "can_write", "can_add_resources"]
+        fields = [
+            "id",
+            "title",
+            "owner",
+            "is_short",
+            "can_write",
+            "can_add_resources",
+            "participant_type_tags",
+            "territory_tags",
+        ]
 
     is_short = serializers.ReadOnlyField(default=True)
 
@@ -330,10 +342,17 @@ class FullBaseSerializer(BaseBaseSerializer):
             "id",
             "title",
             "owner",
+            "contact",
+            "description",
             "resources",
             "collections",
             "can_write",
             "resources_in_pinned_collections",
             "can_add_resources",
             "contributor_tags",
+            "state",
+            "tags",
+            "participant_type_tags",
+            "territory_tags",
+            "admins",
         ]

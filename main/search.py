@@ -10,9 +10,9 @@ from main.query_changes.permissions import (
 
 BASES_SEARCH_FIELDS = ["title"]
 RESOURCES_SEARCH_FIELDS = ["title", "description"]
-USERS_SEARCH_FIELDS = ["first_name", "last_name"]
+USERS_SEARCH_FIELDS = ["first_name", "last_name", "email"]
 IS_POSTGRESQL_DB = "postgresql" in settings.DATABASES["default"]["ENGINE"]
-SEARCH_KEY_PARAM = "search" if IS_POSTGRESQL_DB else "contains"
+SEARCH_KEY_PARAM = "search" if IS_POSTGRESQL_DB else "icontains"
 
 
 def filter_queryset(qs, text, search_fields, tag_operator, tags):
@@ -59,6 +59,6 @@ def search_users(user, text, tag_operator="OR", tags=None):
     qs = User.objects.all()
     qs = filter_queryset(qs, text, USERS_SEARCH_FIELDS, tag_operator, tags)
     possible_tags = (
-        Tag.objects.filter(ressources__in=qs).values_list("pk", flat=True).distinct()
+        Tag.objects.filter(users__in=qs).values_list("pk", flat=True).distinct()
     )
     return {"queryset": qs, "possible_tags": possible_tags}
