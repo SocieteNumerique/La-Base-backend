@@ -197,7 +197,7 @@ class Resource(TimeStampedModel):
     root_base = models.ForeignKey(
         Base,
         verbose_name="Base à laquelle la ressource est rattachée",
-        on_delete=models.PROTECT,
+        on_delete=models.SET_NULL,
         related_name="resources",
         null=True,  # when root_base is null, the resource is "owned" by admins
         blank=True,
