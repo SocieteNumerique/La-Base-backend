@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.http import HttpRequest
 from rest_framework import mixins, viewsets, filters
 from rest_framework.decorators import action
@@ -39,6 +40,11 @@ class BaseView(
     def get_queryset(self):
         return bases_queryset_for_user(self.request.user)
 
+    def perform_create(self, serializer: FullBaseSerializer):
+        serializer.save()
+        instance = self.get_queryset().get(pk=serializer.instance.id)
+        serializer.instance = instance
+
     def get_serializer_class(self):
         if self.kwargs.get("pk") or self.request.method == "POST":
             return FullBaseSerializer
@@ -65,7 +71,7 @@ def generic_pin_action(model, self, request, pk=None):
     if self.request.method == "PATCH":
         base = (
             bases_queryset_for_user(request.user)
-            .filter(can_write=True)
+            .filter(Q(can_write=True) | Q(can_add_resources=True))
             .distinct()
             .get(pk=request.data["id"])
         )

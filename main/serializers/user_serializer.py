@@ -2,6 +2,7 @@ from django.conf.global_settings import AUTHENTICATION_BACKENDS
 from django.contrib.auth import get_user_model, password_validation, login
 from django.contrib.auth.hashers import make_password
 from django.core import exceptions
+from django.db.models import Q
 from rest_framework import serializers
 
 from main.models.models import Tag
@@ -53,7 +54,9 @@ class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, max_length=100)
     tags = serializers.PrimaryKeyRelatedField(
         many=True,
-        queryset=Tag.objects.filter(category__relates_to="User"),
+        queryset=Tag.objects.filter(
+            Q(category__relates_to="User") | Q(category__relates_to__isnull=True)
+        ),
         required=False,
         allow_null=True,
     )
