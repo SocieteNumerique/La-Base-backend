@@ -6,10 +6,14 @@ from main.models.models import Base, Resource
 
 def bases_queryset_for_user(user: User, init_queryset=Base.objects):
     if user.is_superuser:
-        return init_queryset.annotate(can_write=Value(True))
+        return init_queryset.annotate(
+            can_write=Value(True), can_add_resources=Value(True)
+        )
 
     if user.is_anonymous:
-        return init_queryset.filter(is_public=True).annotate(can_write=Value(False))
+        return init_queryset.filter(is_public=True).annotate(
+            can_write=Value(False), can_add_resources=Value(False)
+        )
 
     user_tags = user.tags.all()
     qs = init_queryset.filter(

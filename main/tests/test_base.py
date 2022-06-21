@@ -182,3 +182,23 @@ class TestPin(TestCase):
 
         url = reverse("collection-pin", args=[collection.pk])
         self.pin_and_test(base, url)
+
+    @authenticate
+    def test_contributors_can_pin(self):
+        # read
+        base = BaseFactory()
+        tag = TagFactory(category__relates_to="user")
+        base.contributor_tags.add(tag)
+        authenticate.user.tags.add(tag)
+
+        resource = ResourceFactory(is_public=True, is_draft=False)
+        url = reverse("resource-detail", args=[resource.pk])
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(
+            any(base_pin["id"] == base.id for base_pin in res.data["bases_pinned_in"])
+        )
+
+        # write
+        url = reverse("resource-pin", args=[resource.pk])
+        self.pin_and_test(base, url)

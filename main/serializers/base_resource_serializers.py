@@ -2,7 +2,10 @@ from django.db.models import OuterRef, Exists, Q
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from main.models.user import User
-from main.query_changes.permissions import resources_queryset_for_user
+from main.query_changes.permissions import (
+    resources_queryset_for_user,
+    bases_queryset_for_user,
+)
 
 from main.query_changes.stats_annotations import resources_queryset_with_stats
 from main.serializers.content_serializers import Base64FileField
@@ -66,8 +69,8 @@ class BasesPinStatusField(serializers.SerializerMethodField):
         if request.user.is_anonymous:
             return []
         bases = (
-            Base.objects.filter(Q(owner=request.user) | Q(admins=request.user))
-            .distinct()
+            bases_queryset_for_user(request.user)
+            .filter(Q(can_write=True) | Q(can_add_resources=True))
             .annotate(
                 is_pinned=(
                     Exists(instance.pinned_in_bases.filter(pk=OuterRef("pk")))
