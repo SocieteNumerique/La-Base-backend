@@ -256,6 +256,9 @@ class Resource(TimeStampedModel):
     def is_allowed_to_be_public(self):
         return len(self.missing_categories_to_be_public()) > 0
 
+    def is_labeled(self):
+        return self.label_state == "accepted"
+
     def __str__(self):
         return self.title
 
