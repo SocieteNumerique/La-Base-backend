@@ -166,9 +166,9 @@ if IS_LOCAL_DEV:
     CORS_ALLOW_CREDENTIALS = True
     CSRF_TRUSTED_ORIGINS = ["http://localhost:3000"]
 else:
-    CSRF_TRUSTED_ORIGINS = ["https://labase.anct.gouv.fr"]
-    CORS_ALLOW_CREDENTIALS = True
-    CORS_ALLOWED_ORIGINS = ["https://labase.anct.gouv.fr"]
+    # see https://docs.djangoproject.com/en/4.0/ref/settings/#secure-proxy-ssl-header
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 
 # django-hijack
 HIJACK_ALLOW_GET_REQUESTS = True
