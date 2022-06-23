@@ -20,22 +20,22 @@ from main.tests.test_utils import authenticate
 class TestPermissions(TestCase):
     def test_anonymous_can_access_public_data(self):
         user = AnonymousUser()
-        BaseFactory.create(is_public=True)
+        BaseFactory.create(state="public")
         self.assertEqual(bases_queryset_for_user(user).count(), 1)
-        ResourceFactory.create(is_public=True, is_draft=False)
+        ResourceFactory.create(state="public")
         self.assertEqual(resources_queryset_for_user(user).count(), 1)
 
     def test_anonymous_cannot_access_private_data(self):
         user = AnonymousUser()
-        BaseFactory.create(is_public=False)
+        BaseFactory.create(state="private")
         self.assertEqual(bases_queryset_for_user(user).count(), 0)
-        ResourceFactory.create(is_public=False, is_draft=False)
+        ResourceFactory.create(state="private")
         self.assertEqual(resources_queryset_for_user(user).count(), 0)
 
     @authenticate
     def test_bases_private_access(self):
         # no access to a private base we're not member of
-        base = BaseFactory.create(is_public=False)
+        base = BaseFactory.create(state="private")
         self.assertEqual(bases_queryset_for_user(authenticate.user).count(), 0)
 
         # access to a private base we're owner of
@@ -52,7 +52,7 @@ class TestPermissions(TestCase):
     @authenticate
     def test_resources_private_access(self):
         # no access to a private resource we're not member of
-        resource = ResourceFactory.create(is_public=False, is_draft=False)
+        resource = ResourceFactory.create(state="private")
         self.assertEqual(resources_queryset_for_user(authenticate.user).count(), 0)
 
         # access to a private database we're not member of
@@ -76,7 +76,7 @@ class TestPermissions(TestCase):
     @authenticate
     def test_resources_write_access(self):
         # test writing when no write access
-        resource = ResourceFactory.create(is_public=True, is_draft=False)
+        resource = ResourceFactory.create(state="public")
         url = reverse("resource-detail", args=[resource.pk])
         data = self.client.get(url).json()
         self.assertEqual(data["canWrite"], False)
@@ -97,7 +97,7 @@ class TestPermissions(TestCase):
 
     @authenticate
     def test_bases_write_access(self):
-        base = BaseFactory.create(is_public=True)
+        base = BaseFactory.create(state="public")
         url = reverse("base-detail", args=[base.pk])
         data = self.client.get(url).json()
         self.assertEqual(data["canWrite"], False)
@@ -123,7 +123,7 @@ class TestPermissions(TestCase):
         }
 
         # test adding a resource to a base without write access
-        base = BaseFactory.create(is_public=True)
+        base = BaseFactory.create(state="public")
         url = reverse("resource-list")
         new_resource_payload["root_base"] = base.pk
         res = self.client.post(
@@ -134,7 +134,7 @@ class TestPermissions(TestCase):
         self.assertEqual(res.status_code, 403)
 
         # test adding a ressource to a base with write access
-        base = BaseFactory.create(is_public=True, owner=authenticate.user)
+        base = BaseFactory.create(state="public", owner=authenticate.user)
         url = reverse("resource-list")
         new_resource_payload["root_base"] = base.pk
         res = self.client.post(
@@ -164,7 +164,7 @@ class TestPermissions(TestCase):
 class UserGroupTest(TestCase):
     @authenticate
     def test_member_of_group(self):
-        resource = ResourceFactory.create(is_public=False, is_draft=False)
+        resource = ResourceFactory.create(state="private")
         group = UserGroupFactory.create()
         resource_user_group = ResourceUserGroup.objects.create(
             resource=resource, group=group, can_write=False
@@ -192,7 +192,7 @@ class ContributorInBasesTest(TestCase):
         cls.user = UserFactory.create()
         cls.tag = TagFactory.create()
         cls.user.tags.add(cls.tag)
-        cls.base = BaseFactory.create(is_public=False)
+        cls.base = BaseFactory.create(state="private")
         cls.base.contributor_tags.add(cls.tag)
 
     def login(self):

@@ -38,7 +38,8 @@ class BaseView(
     filter_backends = [BaseHasWriteAccessFilter]
 
     def get_queryset(self):
-        return bases_queryset_for_user(self.request.user)
+        full = self.kwargs.get("pk") or self.request.method == "POST"
+        return bases_queryset_for_user(self.request.user, full=full)
 
     def perform_create(self, serializer: FullBaseSerializer):
         serializer.save()

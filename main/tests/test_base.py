@@ -97,7 +97,7 @@ class TestPin(TestCase):
     def test_root_is_pinned(self):
         resource = ResourceFactory(
             creator=authenticate.user,
-            is_public=True,
+            state="public",
             root_base__owner=authenticate.user,
         )
         url = reverse("resource-detail", args=[resource.pk])
@@ -127,7 +127,7 @@ class TestPin(TestCase):
         other_base = BaseFactory(owner=authenticate.user)
 
         resource = ResourceFactory(
-            creator=authenticate.user, is_public=True, root_base=base
+            creator=authenticate.user, state="public", root_base=base
         )
         url = reverse("resource-detail", args=[resource.pk])
         res = self.client.get(url)
@@ -160,7 +160,7 @@ class TestPin(TestCase):
         user = UserFactory.create()
         base = BaseFactory(owner=authenticate.user)
 
-        resource = ResourceFactory(creator=user, is_public=True, is_draft=False)
+        resource = ResourceFactory(creator=user, state="public")
         url = reverse("resource-detail", args=[resource.pk])
         res = self.client.get(url)
         self.assertEqual(res.status_code, 200)
@@ -168,7 +168,7 @@ class TestPin(TestCase):
             any(base_pin["id"] == base.id for base_pin in res.data["bases_pinned_in"])
         )
 
-        collection = CollectionFactory(base__is_public=True)
+        collection = CollectionFactory(base__state="public")
         url = reverse("collection-detail", args=[collection.pk])
         res = self.client.get(url)
         self.assertEqual(res.status_code, 200)
@@ -191,7 +191,7 @@ class TestPin(TestCase):
         base.contributor_tags.add(tag)
         authenticate.user.tags.add(tag)
 
-        resource = ResourceFactory(is_public=True, is_draft=False)
+        resource = ResourceFactory(state="public")
         url = reverse("resource-detail", args=[resource.pk])
         res = self.client.get(url)
         self.assertEqual(res.status_code, 200)

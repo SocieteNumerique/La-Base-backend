@@ -4,23 +4,26 @@ from main.models.user import User
 from main.models.models import Base, Resource
 
 
-def bases_queryset_for_user(user: User, init_queryset=Base.objects):
+def bases_queryset_for_user(user: User, init_queryset=Base.objects, full=True):
     if user.is_superuser:
         return init_queryset.annotate(
             can_write=Value(True), can_add_resources=Value(True)
         )
 
     if user.is_anonymous:
-        return init_queryset.filter(is_public=True).annotate(
+        return init_queryset.filter(state="public").annotate(
             can_write=Value(False), can_add_resources=Value(False)
         )
 
     user_tags = user.tags.all()
+    necessary_state_query = Q(state="public")
+    # TODO use next line when we have restricted option so that they can see and ask access
+    # necessary_state_query = Q(state="public") if full else ~Q(state="draft")
     qs = init_queryset.filter(
-        Q(is_public=True)
+        necessary_state_query
         | Q(owner=user)
         | Q(admins=user)
-        | Q(contributor_tags__in=user_tags)
+        | Q(contributor_tags__in=user_tags)  # also subscribers
     ).distinct()
     return qs.annotate(
         can_write=Case(
@@ -40,7 +43,7 @@ def bases_queryset_for_user(user: User, init_queryset=Base.objects):
     )
 
 
-def resources_queryset_for_user(user: User, init_queryset=Resource.objects):
+def resources_queryset_for_user(user: User, init_queryset=Resource.objects, full=True):
     init_queryset = (
         init_queryset.prefetch_related("root_base")
         .prefetch_related("tags")
@@ -51,13 +54,15 @@ def resources_queryset_for_user(user: User, init_queryset=Resource.objects):
         return init_queryset.annotate(can_write=Value(True))
 
     if user.is_anonymous:
-        return init_queryset.filter(is_public=True, is_draft=False).annotate(
-            can_write=Value(False)
-        )
+        return init_queryset.filter(state="public").annotate(can_write=Value(False))
 
     user_tags = user.tags.all()
+    necessary_state_query = Q(state="public")
+    # TODO use next line when we have restricted option so that they can see and ask access
+    # necessary_state_query = Q(state="public") if full else ~Q(state="draft")
+
     qs = init_queryset.filter(
-        Q(is_public=True, is_draft=False)
+        necessary_state_query
         | Q(root_base__owner=user)
         | Q(root_base__admins=user)
         | Q(creator=user)

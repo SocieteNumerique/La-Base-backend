@@ -66,7 +66,6 @@ class ResourceFactory(DjangoModelFactory):
     title = factory.Faker("text", max_nb_chars=30)
     root_base = factory.SubFactory(BaseFactory)
     description = factory.Faker("text", max_nb_chars=60)
-    is_draft = False
 
 
 class CollectionFactory(DjangoModelFactory):

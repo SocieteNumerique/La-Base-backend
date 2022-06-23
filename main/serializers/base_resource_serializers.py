@@ -289,11 +289,11 @@ class BaseBaseSerializer(serializers.ModelSerializer):
         user = self.context["request"].user
         pinned_resources_qs = resources_queryset_with_stats(
             resources_queryset_for_user(
-                user, obj.pinned_resources.prefetch_related("root_base")
+                user, obj.pinned_resources.prefetch_related("root_base"), full=False
             )
         )
         annotated_qs = resources_queryset_with_stats(
-            resources_queryset_for_user(user, obj.resources)
+            resources_queryset_for_user(user, obj.resources, full=False)
         )
         return ShortResourceSerializer(
             annotated_qs.union(pinned_resources_qs), many=True, context=self.context
@@ -310,7 +310,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
     def get_resources_in_pinned_collections(self, obj: Base):
         user = self.context["request"].user
         qs = resources_queryset_with_stats(
-            resources_queryset_for_user(user)
+            resources_queryset_for_user(user, full=False)
             .exclude(root_base=obj)
             .filter(
                 Exists(obj.pinned_collections.filter(id__in=OuterRef("collections")))
