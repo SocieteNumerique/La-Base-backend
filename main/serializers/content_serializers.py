@@ -6,7 +6,7 @@ from copy import copy
 
 from django.db.models.fields.files import FieldFile
 from rest_framework import serializers
-from rest_framework.fields import CharField
+from rest_framework.fields import CharField, SkipField
 from django.core.files.base import ContentFile
 
 from main.models.contents import (
@@ -118,6 +118,17 @@ class TextContentSerializer(BaseContentSerializer):
 
 
 class Base64FileField(serializers.FileField):
+    # When the front knows this data among other models properties and PATCHes
+    # those other properties, file data is sent to back and should not be interpreted
+    # the file should be used only if there is base_64 property
+    def validate_empty_values(self, data):
+        try:
+            if "base_64" not in data and self.context.get("request").method != "GET":
+                raise SkipField()
+        except TypeError:
+            pass
+        return super().validate_empty_values(data)
+
     def to_internal_value(self, data):
         if data is None:
             return None
@@ -146,7 +157,7 @@ class Base64FileField(serializers.FileField):
         if not instance.name:
             return None
         full_link = self.context.get("request").build_absolute_uri(instance.url)
-        name_without_uuid = re.match("^[^_]*_(.*)$", instance.name).group(1)
+        name_without_uuid = re.match("^[^_]*_?(.*)$", instance.name).group(1)
         return {
             "name": name_without_uuid,
             "link": full_link,
@@ -159,7 +170,7 @@ class FileContentSerializer(BaseContentSerializer):
         fields = BaseContentSerializer.Meta.fields + ["file", "with_preview"]
         model = FileContent
 
-    file = Base64FileField()
+    file = Base64FileField(required=False, allow_null=True)
 
     @staticmethod
     def get_type(obj):
