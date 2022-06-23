@@ -104,7 +104,6 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
     )
     creator_bases = PrimaryKeyBaseField(required=False, allow_null=True, many=True)
     external_producers = ExternalProducerSerializer(many=True, required=False)
-    is_labeled = serializers.ReadOnlyField(default=False)  # TODO actually use db
     is_short = serializers.ReadOnlyField(default=True)
     root_base_title = serializers.SerializerMethodField()
     stats = serializers.SerializerMethodField(read_only=True)
