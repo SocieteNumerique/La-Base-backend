@@ -10,7 +10,7 @@ from main.views.search_view import SearchView, StandardResultsSetPagination
 
 class TestSearch(TestCase):
     def test_anonymous_search_on_resources_public_data(self):
-        ResourceFactory.create(title="MyTitle", is_public=True)
+        ResourceFactory.create(title="MyTitle", state="public")
         self.assertEqual(
             search_resources(AnonymousUser(), "MyTitle")["queryset"].count(), 1
         )
@@ -19,7 +19,7 @@ class TestSearch(TestCase):
         )
 
     def test_anonymous_search_on_resources_private_data(self):
-        ResourceFactory.create(title="MyTitle", is_public=False)
+        ResourceFactory.create(title="MyTitle", state="private")
         self.assertEqual(
             search_resources(AnonymousUser(), "MyTitle")["queryset"].count(), 0
         )
@@ -29,7 +29,7 @@ class TestSearch(TestCase):
 
     @authenticate
     def test_search_on_resources_public_data(self):
-        ResourceFactory.create(title="MyTitle", is_public=True)
+        ResourceFactory.create(title="MyTitle", state="public")
         self.assertEqual(
             search_resources(authenticate.user, "MyTitle")["queryset"].count(), 1
         )
@@ -40,7 +40,7 @@ class TestSearch(TestCase):
     @authenticate
     def test_search_on_resources_own_private_data(self):
         ResourceFactory.create(
-            title="MyTitle", is_public=False, creator=authenticate.user
+            title="MyTitle", state="private", creator=authenticate.user
         )
         self.assertEqual(
             search_resources(authenticate.user, "MyTitle")["queryset"].count(), 1
@@ -51,7 +51,7 @@ class TestSearch(TestCase):
 
     @authenticate
     def test_search_on_resources_others_private_data(self):
-        ResourceFactory.create(title="MyTitle", is_public=False)
+        ResourceFactory.create(title="MyTitle", state="private")
         self.assertEqual(
             search_resources(authenticate.user, "MyTitle")["queryset"].count(), 0
         )
@@ -60,7 +60,7 @@ class TestSearch(TestCase):
         )
 
     def test_anonymous_search_on_bases_public_data(self):
-        BaseFactory.create(title="MyTitle", is_public=True)
+        BaseFactory.create(title="MyTitle", state="public")
         self.assertEqual(
             search_bases(AnonymousUser(), "MyTitle")["queryset"].count(), 1
         )
@@ -69,7 +69,7 @@ class TestSearch(TestCase):
         )
 
     def test_anonymous_search_on_bases_private_data(self):
-        BaseFactory.create(title="MyTitle", is_public=False)
+        BaseFactory.create(title="MyTitle", state="private")
         self.assertEqual(
             search_bases(AnonymousUser(), "MyTitle")["queryset"].count(), 0
         )
@@ -79,7 +79,7 @@ class TestSearch(TestCase):
 
     @authenticate
     def test_search_on_bases_public_data(self):
-        BaseFactory.create(title="MyTitle", is_public=True)
+        BaseFactory.create(title="MyTitle", state="public")
         self.assertEqual(
             search_bases(authenticate.user, "MyTitle")["queryset"].count(), 1
         )
@@ -89,7 +89,7 @@ class TestSearch(TestCase):
 
     @authenticate
     def test_search_on_bases_own_private_data(self):
-        BaseFactory.create(title="MyTitle", is_public=False, owner=authenticate.user)
+        BaseFactory.create(title="MyTitle", state="private", owner=authenticate.user)
         self.assertEqual(
             search_bases(authenticate.user, "MyTitle")["queryset"].count(), 1
         )
@@ -99,7 +99,7 @@ class TestSearch(TestCase):
 
     @authenticate
     def test_search_on_bases_others_private_data(self):
-        BaseFactory.create(title="MyTitle", is_public=False)
+        BaseFactory.create(title="MyTitle", state="private")
         self.assertEqual(
             search_bases(authenticate.user, "MyTitle")["queryset"].count(), 0
         )
@@ -117,7 +117,7 @@ class TestSearch(TestCase):
         )
 
     def test_search_ignores_case(self):
-        ResourceFactory.create(title="MyTitle", is_public=True)
+        ResourceFactory.create(title="MyTitle", state="public")
         self.assertEqual(
             search_resources(AnonymousUser(), "MyTitle")["queryset"].count(), 1
         )
@@ -127,7 +127,7 @@ class TestSearch(TestCase):
 
     def test_possible_tags(self):
         tag = TagFactory.create()
-        resource = ResourceFactory.create(title="MyTitle", is_public=True)
+        resource = ResourceFactory.create(title="MyTitle", state="public")
         self.assertListEqual(
             list(search_resources(AnonymousUser(), "MyTitle")["possible_tags"]), []
         )
@@ -146,7 +146,7 @@ class TestSearchView(TestCase):
 
     def test_search_view(self):
         tag = TagFactory.create()
-        resource = ResourceFactory.create(title="MyTitle", is_public=True)
+        resource = ResourceFactory.create(title="MyTitle", state="public")
         res = self.client.post(
             self.url,
             {"data_type": "resources", "text": "MyTitle"},
@@ -163,11 +163,11 @@ class TestSearchView(TestCase):
         self.assertListEqual(res.json()["results"]["possibleTags"], [tag.pk])
 
     def test_pagination(self):
-        base = BaseFactory.create(is_public=True)
+        base = BaseFactory.create(state="public")
         page_size = SearchView.pagination_class.page_size
         for ix in range(page_size + 1):
             ResourceFactory.create(
-                title=f"Resource {ix}", is_public=True, root_base=base
+                title=f"Resource {ix}", state="public", root_base=base
             )
         # page 1 is limited to page_size results
         res = self.client.post(

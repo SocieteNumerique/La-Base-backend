@@ -37,7 +37,6 @@ class Base(TimeStampedModel):
     admins = models.ManyToManyField(
         User, verbose_name="administrateurs", related_name="admins", blank=True
     )
-    is_public = models.BooleanField(default=False, verbose_name="La base est publique")
     tags = models.ManyToManyField("Tag", blank=True, related_name="bases")
     # users with these tags will have write access
     contributor_tags = models.ManyToManyField(
@@ -211,8 +210,6 @@ class Resource(TimeStampedModel):
     )
     is_linked_to_a_territory = models.BooleanField(null=True, blank=True)
     access_requires_user_account = models.BooleanField(null=True, blank=True)
-    is_draft = models.BooleanField(default=True)
-    is_public = models.BooleanField(default=False)
     description = models.CharField(
         max_length=560, null=True, blank=True
     )  # only if not in base, first

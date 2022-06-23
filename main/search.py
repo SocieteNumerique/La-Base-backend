@@ -34,7 +34,7 @@ def filter_queryset(qs, text, search_fields, tag_operator, tags):
 def search_bases(user, text, tag_operator="OR", tags=None):
     if tags is None:
         tags = []
-    qs = bases_queryset_for_user(user)
+    qs = bases_queryset_for_user(user, full=False)
     qs = filter_queryset(qs, text, BASES_SEARCH_FIELDS, tag_operator, tags)
     possible_tags = (
         Tag.objects.filter(bases__in=qs).values_list("pk", flat=True).distinct()
@@ -45,7 +45,7 @@ def search_bases(user, text, tag_operator="OR", tags=None):
 def search_resources(user, text, tag_operator="OR", tags=None):
     if tags is None:
         tags = []
-    qs = resources_queryset_with_stats(resources_queryset_for_user(user))
+    qs = resources_queryset_with_stats(resources_queryset_for_user(user, full=False))
     qs = filter_queryset(qs, text, RESOURCES_SEARCH_FIELDS, tag_operator, tags)
     possible_tags = (
         Tag.objects.filter(ressources__in=qs).values_list("pk", flat=True).distinct()
