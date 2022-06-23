@@ -165,6 +165,10 @@ if IS_LOCAL_DEV:
     CORS_ALLOWED_ORIGINS = ["http://localhost:3000"]
     CORS_ALLOW_CREDENTIALS = True
     CSRF_TRUSTED_ORIGINS = ["http://localhost:3000"]
+else:
+    CSRF_TRUSTED_ORIGINS = ["https://labase.anct.gouv.fr"]
+    CORS_ALLOW_CREDENTIALS = True
+    CORS_ALLOWED_ORIGINS = ["https://labase.anct.gouv.fr"]
 
 # django-hijack
 HIJACK_ALLOW_GET_REQUESTS = True
