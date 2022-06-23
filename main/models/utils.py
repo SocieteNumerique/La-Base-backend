@@ -1,4 +1,7 @@
+from io import BytesIO
+
 from PIL import Image
+from django.core.files.storage import default_storage
 from django.db import models
 
 
@@ -19,8 +22,12 @@ class TimeStampedModel(models.Model):
 def resize_image(image):
     if not image:
         return
-    img = Image.open(image.path)
+    memfile = BytesIO()
+    img = Image.open(image)
     if img.height > 150 or img.width > 150:
         output_size = (150, 150)
-        img.thumbnail(output_size)
-        img.save(image.path)
+        img.thumbnail(output_size, Image.ANTIALIAS)
+        img.save(memfile, img.format)
+        default_storage.save(image.name, memfile)
+        memfile.close()
+        img.close()
