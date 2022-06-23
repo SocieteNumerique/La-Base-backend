@@ -231,6 +231,16 @@ class BaseBaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Base
         abstract = True
+        fields = [
+            "id",
+            "title",
+            "owner",
+            "can_write",
+            "can_add_resources",
+            "participant_type_tags",
+            "territory_tags",
+            "profile_image",
+        ]
 
     owner = AuthSerializer(required=False, read_only=True)
     admins = NestedUserSerializer(many=True, required=False, allow_null=True)
@@ -244,6 +254,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
     )
     participant_type_tags = serializers.SerializerMethodField()
     territory_tags = serializers.SerializerMethodField()
+    profile_image = Base64FileField(required=False, allow_null=True)
 
     def create(self, validated_data):
         user = self.context["request"].user
@@ -324,16 +335,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
 class ShortBaseSerializer(BaseBaseSerializer):
     class Meta(BaseBaseSerializer.Meta):
         abstract = False
-        fields = [
-            "id",
-            "title",
-            "owner",
-            "is_short",
-            "can_write",
-            "can_add_resources",
-            "participant_type_tags",
-            "territory_tags",
-        ]
+        fields = BaseBaseSerializer.Meta.fields + ["is_short"]
 
     is_short = serializers.ReadOnlyField(default=True)
 
@@ -341,21 +343,14 @@ class ShortBaseSerializer(BaseBaseSerializer):
 class FullBaseSerializer(BaseBaseSerializer):
     class Meta(BaseBaseSerializer.Meta):
         abstract = False
-        fields = [
-            "id",
-            "title",
-            "owner",
+        fields = BaseBaseSerializer.Meta.fields + [
             "contact",
             "description",
             "resources",
             "collections",
-            "can_write",
             "resources_in_pinned_collections",
-            "can_add_resources",
             "contributor_tags",
             "state",
             "tags",
-            "participant_type_tags",
-            "territory_tags",
             "admins",
         ]

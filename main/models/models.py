@@ -4,7 +4,7 @@ from django.db import models
 from django.db.models import Count
 
 from main.models.user import User, UserGroup
-from main.models.utils import TimeStampedModel
+from main.models.utils import TimeStampedModel, resize_image
 
 RESOURCE_PRODUCER_STATES = [
     ["me", "celui qui ajouté la ressource"],
@@ -57,8 +57,8 @@ class Base(TimeStampedModel):
     )
     description = models.CharField(max_length=560, null=True, blank=True)
     contact = models.EmailField(null=True, blank=True)
-    cover_image = models.FileField(null=True, blank=True)
-    profile_image = models.FileField(null=True, blank=True)
+    cover_image = models.ImageField(null=True, blank=True)
+    profile_image = models.ImageField(null=True, blank=True)
     state = models.CharField(
         default="draft", choices=RESOURCE_STATE_CHOICES, max_length=10
     )
@@ -73,6 +73,10 @@ class Base(TimeStampedModel):
 
     def __str__(self):
         return self.title
+
+    def save(self, **kwargs):
+        super().save(**kwargs)
+        resize_image(self.profile_image)
 
 
 class Collection(TimeStampedModel):
