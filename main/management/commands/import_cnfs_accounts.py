@@ -13,7 +13,7 @@ from django.utils.http import urlsafe_base64_encode
 from main.models import Tag
 from main.models.user import User
 from main.serializers.user_serializer import CNFS_RESERVED_TAG_NAME
-from moine_back.settings import BASE_DIR, DOMAIN
+from moine_back.settings import BASE_DIR, DOMAIN, IS_LOCAL_DEV
 
 from csv import DictReader
 
@@ -116,7 +116,6 @@ def import_accounts(limit_to_emails=None, max_n_accounts=None):
             email = line["Email @conseiller-numerique.fr"]
             private_email = line["Email"]
             if not email:
-                print("Le champ mail est vide")
                 continue
 
             if (
@@ -160,6 +159,7 @@ def import_accounts(limit_to_emails=None, max_n_accounts=None):
                         "last_name": user.last_name,
                     },
                     extra_email=private_email,
+                    use_https=not IS_LOCAL_DEV,
                 )
 
             print(f"utilisateur {email} - {private_email} ajouté")

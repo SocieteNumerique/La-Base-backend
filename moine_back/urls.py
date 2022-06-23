@@ -16,7 +16,6 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.contrib.auth.views import PasswordResetConfirmView
 from django.urls import include, path
 from rest_framework import routers
 
@@ -30,7 +29,7 @@ from main.views import (
     search_view,
     user_views,
 )
-from main.views.user_views import reset_password
+from main.views.user_views import reset_password, MyPasswordResetConfirmView
 from moine_back.settings import IS_LOCAL_DEV
 
 router = routers.DefaultRouter()
@@ -52,7 +51,7 @@ urlpatterns = [
     path("accounts", include("django.contrib.auth.urls")),
     path(
         "api/mdp-oublie/<uidb64>/<token>/",
-        PasswordResetConfirmView.as_view(
+        MyPasswordResetConfirmView.as_view(
             success_url="/",
             template_name="password_reset_confirm.html",
             post_reset_login=True,
