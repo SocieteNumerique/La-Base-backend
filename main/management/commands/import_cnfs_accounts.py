@@ -114,11 +114,16 @@ def import_accounts(limit_to_emails=None, max_n_accounts=None):
                 break
 
             email = line["Email @conseiller-numerique.fr"]
+            private_email = line["Email"]
             if not email:
                 print("Le champ mail est vide")
                 continue
 
-            if limit_to_emails and email not in limit_to_emails:
+            if (
+                limit_to_emails
+                and email not in limit_to_emails
+                and private_email not in limit_to_emails
+            ):
                 continue
 
             # check if user already exists
@@ -131,7 +136,6 @@ def import_accounts(limit_to_emails=None, max_n_accounts=None):
                 continue
 
             # create account
-            private_email = line["Email"]
             user_data = dict(
                 email=line["Email @conseiller-numerique.fr"],
                 password=str(uuid.uuid4()),
@@ -158,11 +162,11 @@ def import_accounts(limit_to_emails=None, max_n_accounts=None):
                     extra_email=private_email,
                 )
 
-            print(f"utilisateur {email} ajouté")
+            print(f"utilisateur {email} - {private_email} ajouté")
 
 
 class Command(BaseCommand):
-    help = "Compute data scores"
+    help = "Import CnFS accounts"
 
     def add_arguments(self, parser):
         pass
