@@ -1,6 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.views import PasswordResetConfirmView
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import mixins, viewsets, status
 from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
@@ -67,6 +69,7 @@ def reset_password(request):
 
 
 class MyPasswordResetConfirmView(PasswordResetConfirmView):
+    @method_decorator(csrf_exempt)
     def dispatch(self, *args, **kwargs):
-        self.request.csrf_processing_done = True
+        """Somehow, csrf fails here."""
         return super().dispatch(*args, **kwargs)
