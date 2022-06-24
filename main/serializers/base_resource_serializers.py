@@ -320,9 +320,9 @@ class BaseBaseSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def get_participant_type_tags(obj: Base):
-        return obj.tags.filter(category__slug="general_00participantType").values_list(
-            "pk", flat=True
-        )
+        return obj.tags.filter(
+            category__slug="externalProducer_00occupation"
+        ).values_list("pk", flat=True)
 
     @staticmethod
     def get_territory_tags(obj: Base):
