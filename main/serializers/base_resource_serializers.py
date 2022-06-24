@@ -138,6 +138,11 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
         )
         return tags
 
+    def create(self, validated_data):
+        instance = super().create(validated_data)
+        instance.can_write = True
+        return instance
+
 
 class ShortResourceSerializer(BaseResourceSerializer):
     class Meta(BaseResourceSerializer.Meta):
