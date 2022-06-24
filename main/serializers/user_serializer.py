@@ -55,7 +55,7 @@ class UserSerializer(serializers.ModelSerializer):
     tags = serializers.PrimaryKeyRelatedField(
         many=True,
         queryset=Tag.objects.filter(
-            Q(category__relates_to="User")  # can be general_00participantType
+            Q(category__relates_to="User")  # can be externalProducer_00occupation
             | Q(category__relates_to="Base")
             | Q(category__relates_to__isnull=True)
         ),

@@ -67,7 +67,7 @@ class TestBaseView(TestCase):
     @authenticate
     def test_specific_tag_categories_are_sent(self):
         self.specific_tag_category_is_sent(
-            "general_00participantType", "participantTypeTags"
+            "externalProducer_00occupation", "participantTypeTags"
         )
         self.specific_tag_category_is_sent("territory_00city", "territoryTags")
 
