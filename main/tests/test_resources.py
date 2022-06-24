@@ -8,6 +8,14 @@ from main.tests.test_utils import authenticate
 
 class TestResourceView(TestCase):
     @authenticate
+    def test_can_create_resource(self):
+        base = BaseFactory.create(owner=authenticate.user)
+        url = reverse("resource-list")
+        response = self.client.post(url, {"root_base": base.pk, "title": "My title"})
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(response.json()["canWrite"])
+
+    @authenticate
     def test_can_update_resource(self):
         base = BaseFactory.create(owner=authenticate.user)
         resource = ResourceFactory.create(root_base=base)
