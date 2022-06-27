@@ -129,6 +129,8 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
 
     @staticmethod
     def get_root_base_title(obj: Resource):
+        if not obj.root_base:
+            return None
         return obj.root_base.title
 
     @staticmethod
