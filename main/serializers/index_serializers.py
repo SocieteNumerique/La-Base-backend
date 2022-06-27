@@ -74,7 +74,9 @@ class TagIndexAdminSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def no_free_tag_set(obj: TagCategory):
-        return TagIndexAdminSerializer(obj.tags.filter(is_free=False), many=True).data
+        return TagIndexAdminSerializer(
+            obj.tags.filter(is_free=False).order_by("name"), many=True
+        ).data
 
 
 class IndexAdminSerializer(BaseIndexSerializer):

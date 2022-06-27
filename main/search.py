@@ -48,7 +48,7 @@ def search_resources(user, text, tag_operator="OR", tags=None):
     qs = resources_queryset_with_stats(resources_queryset_for_user(user, full=False))
     qs = filter_queryset(qs, text, RESOURCES_SEARCH_FIELDS, tag_operator, tags)
     possible_tags = (
-        Tag.objects.filter(ressources__in=qs).values_list("pk", flat=True).distinct()
+        Tag.objects.filter(resources__in=qs).values_list("pk", flat=True).distinct()
     )
     return {"queryset": qs, "possible_tags": possible_tags}
 

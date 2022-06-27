@@ -148,7 +148,7 @@ class TagCategory(TimeStampedModel):
 
 class TagManager(models.Manager):
     def get_queryset(self):
-        return Tag.default_manager.all().annotate(count=Count("ressources"))
+        return Tag.default_manager.all().annotate(count=Count("resources"))
 
 
 class Tag(TimeStampedModel):
@@ -219,7 +219,7 @@ class Resource(TimeStampedModel):
     internal_producers = models.ManyToManyField(
         User, blank=True, related_name="internal_producers"
     )
-    tags = models.ManyToManyField(Tag, blank=True, related_name="ressources")
+    tags = models.ManyToManyField(Tag, blank=True, related_name="resources")
     label_state = models.CharField(
         max_length=10, default="", blank=True, choices=RESOURCE_LABEL_CHOICES
     )
