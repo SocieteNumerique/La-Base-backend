@@ -16,7 +16,7 @@ class BaseTagSerializer(serializers.ModelSerializer):
         model = Tag
         fields = "__all__"
 
-    # TODO: this creates additional queries
+    # TODO: this creates additional queries and is not used for the moment
     # tags = RecursiveField(many=True, required=False)
 
 
@@ -43,7 +43,10 @@ class BaseIndexSerializer(serializers.ModelSerializer):
     @staticmethod
     def root_tags(obj: TagCategory):
         return TagSerializer(
-            obj.tags.filter(parent_tag_id__isnull=True, is_draft=False), many=True
+            obj.tags.filter(parent_tag_id__isnull=True, is_draft=False).order_by(
+                "name"
+            ),
+            many=True,
         ).data
 
 
