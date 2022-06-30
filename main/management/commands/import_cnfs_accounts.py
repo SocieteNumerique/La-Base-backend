@@ -190,7 +190,7 @@ def import_cnfs_organizations(limit_to_emails=None, max_n_accounts=None):
             # check if organization for cnfs already exists
             cnfs_id = line["Id du conseiller"]
             if (
-                User.objects.filter(email=email).exists()
+                User.objects.filter(email__iexact=email).exists()
                 or User.objects.filter(cnfs_id_organization=cnfs_id).exists()
             ):
                 print(f"compte déjà créé pour cet {email} - {cnfs_id}")
