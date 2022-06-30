@@ -8,7 +8,8 @@ from .tag_category_admin import TagCategoryAdmin  # noqa: F401
 
 from main.models.user import User
 from telescoop_auth.models import User as TelesCoopUser
-from telescoop_auth.admin import UserAdmin
+
+from .user_admin import UserAdmin
 
 admin.site.unregister(TelesCoopUser)
 admin.site.register(User, UserAdmin)

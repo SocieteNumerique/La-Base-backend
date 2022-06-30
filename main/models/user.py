@@ -20,6 +20,7 @@ class UserManager(BaseUserManager):
         is_admin=False,
         is_superuser=False,
         cnfs_id=None,
+        cnfs_id_organization=None,
     ):
         """
         Creates and saves a User with the given email and password.
@@ -35,6 +36,7 @@ class UserManager(BaseUserManager):
             is_admin=is_admin,
             is_superuser=is_superuser,
             cnfs_id=cnfs_id,
+            cnfs_id_organization=cnfs_id_organization,
         )
         user.set_password(password)
         user.save(using=self._db)
@@ -84,6 +86,7 @@ class User(AbstractBaseUser):
     tags = models.ManyToManyField("Tag", blank=True, related_name="users")
 
     cnfs_id = models.PositiveIntegerField(null=True, blank=True)
+    cnfs_id_organization = models.PositiveIntegerField(null=True, blank=True)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
