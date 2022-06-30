@@ -165,6 +165,67 @@ def import_accounts(limit_to_emails=None, max_n_accounts=None):
             print(f"utilisateur {email} - {private_email} ajouté")
 
 
+def import_cnfs_organizations(limit_to_emails=None, max_n_accounts=None):
+    with open(source_file_path) as fh:
+        reader = DictReader(fh, delimiter=";")
+
+        try:
+            cnfs_tag = Tag.objects.get(name=CNFS_RESERVED_TAG_NAME)
+        except Tag.DoesNotExist:
+            cnfs_tag = None
+
+        n_accounts_created = 0
+        for line in reader:
+            if max_n_accounts and n_accounts_created >= max_n_accounts:
+                print(f"already created {max_n_accounts} accounts")
+                break
+
+            email = line["Email de la structure"]
+            if not email:
+                continue
+
+            if limit_to_emails and email not in limit_to_emails:
+                continue
+
+            # check if organization for cnfs already exists
+            cnfs_id = line["Id du conseiller"]
+            if (
+                User.objects.filter(email=email).exists()
+                or User.objects.filter(cnfs_id_organization=cnfs_id).exists()
+            ):
+                print(f"compte déjà créé pour cet {email} - {cnfs_id}")
+                continue
+
+            # create account
+            user_data = dict(
+                email=email,
+                password=str(uuid.uuid4()),
+                first_name=line["Prénom supérieur hiérarchique"],
+                last_name=line["Nom Supérieur hiérarchique"],
+                cnfs_id_organization=cnfs_id,
+            )
+            n_accounts_created += 1
+            user = User.objects.create_user(**user_data)
+            if cnfs_tag:
+                user.tags.add(cnfs_tag)
+
+            # send custom password forgotten email
+            form = MyPasswordResetForm(dict(email=email))
+            if form.is_valid():
+                form.save(
+                    email_template_name="cnfs_organization_account_creation_email.html",
+                    subject_template_name="cnfs_organization_account_creation_subject.txt",
+                    domain_override=DOMAIN,
+                    extra_email_context={
+                        "first_name": user.first_name,
+                        "last_name": user.last_name,
+                    },
+                    use_https=not IS_LOCAL_DEV,
+                )
+
+            print(f"utilisateur {email} - ajouté - user id {user.pk}")
+
+
 class Command(BaseCommand):
     help = "Import CnFS accounts"
 
