@@ -23,7 +23,7 @@ DEBUG = IS_LOCAL_DEV
 if IS_LOCAL_DEV:
     config_paths = ["local_settings.conf"]
 else:
-    config_paths = os.environ["CONFIG_PATH"]
+    config_paths = [os.environ["CONFIG_PATH"]]
 config = getconf.ConfigGetter("myproj", config_paths)
 
 if IS_LOCAL_DEV:
