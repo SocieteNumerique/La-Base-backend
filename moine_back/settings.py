@@ -105,7 +105,7 @@ else:
             "ENGINE": "django.db.backends.postgresql",
             "NAME": config.getstr("database.name"),
             "USER": config.getstr("database.user"),
-            "password": config.getstr("database.password"),
+            "PASSWORD": config.getstr("database.password"),
         }
     }
 
