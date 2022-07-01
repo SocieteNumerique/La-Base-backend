@@ -16,15 +16,20 @@ def bases_queryset_for_user(user: User, init_queryset=Base.objects, full=True):
         )
 
     user_tags = user.tags.all()
-    necessary_state_query = Q(state="public")
-    # TODO use next line when we have restricted option so that they can see and ask access
-    # necessary_state_query = Q(state="public") if full else ~Q(state="draft")
+    state_query = Q(state="public")
+    # TODO use next line when we have subscribe option so that they can see and ask access
+    # state_query = Q(state="public") if full else ~Q(state="draft")
     qs = init_queryset.filter(
-        necessary_state_query
+        state_query
         | Q(owner=user)
         | Q(admins=user)
-        | Q(contributor_tags__in=user_tags)  # also subscribers
+        | (Q(contributor_tags__in=user_tags) | Q(contributors=user))
+        | (
+            Q(state="private")
+            & (Q(authorized_users=user) | Q(authorized_user_tags__in=user_tags))
+        )
     ).distinct()
+    # also subscribers
     return qs.annotate(
         can_write=Case(
             When(
@@ -35,7 +40,9 @@ def bases_queryset_for_user(user: User, init_queryset=Base.objects, full=True):
         ),
         can_add_resources=Case(
             When(
-                Q(owner=user) | Q(admins=user) | Q(contributor_tags__in=user_tags),
+                Q(owner=user)
+                | Q(admins=user)
+                | (Q(contributor_tags__in=user_tags) | Q(contributors=user)),
                 then=Value(True),
             ),
             default=Value(False),
@@ -58,7 +65,7 @@ def resources_queryset_for_user(user: User, init_queryset=Resource.objects, full
 
     user_tags = user.tags.all()
     necessary_state_query = Q(state="public")
-    # TODO use next line when we have restricted option so that they can see and ask access
+    # TODO use next line when we have subscribe option so that they can see and ask access
     # necessary_state_query = Q(state="public") if full else ~Q(state="draft")
 
     qs = init_queryset.filter(
@@ -67,9 +74,21 @@ def resources_queryset_for_user(user: User, init_queryset=Resource.objects, full
         | Q(root_base__admins=user)
         | Q(creator=user)
         | Q(groups__users=user)
-        | Q(root_base__contributor_tags__in=user_tags)
+        | (
+            Q(root_base__contributor_tags__in=user_tags)
+            | Q(root_base__contributors=user)
+        )
+        | (
+            Q(state="private")
+            & (
+                Q(authorized_users=user)
+                | Q(authorized_user_tags__in=user_tags)
+                | Q(root_base__authorized_users=user)
+                | Q(root_base__authorized_user_tags__in=user_tags)
+            )
+        )
     )
-    return qs.annotate(
+    qs = qs.annotate(
         can_write=Case(
             When(
                 Q(root_base__owner=user)
@@ -79,9 +98,13 @@ def resources_queryset_for_user(user: User, init_queryset=Resource.objects, full
                     Q(resource_user_groups__group__users=user)
                     & Q(resource_user_groups__can_write=True)
                 )
-                | Q(root_base__contributor_tags__in=user_tags),
+                | (
+                    Q(root_base__contributor_tags__in=user_tags)
+                    | Q(root_base__contributors=user)
+                ),
                 then=Value(True),
             ),
             default=Value(False),
         )
     )
+    return qs
