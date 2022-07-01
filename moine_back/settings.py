@@ -14,15 +14,17 @@ import os
 import getconf
 from pathlib import Path
 
-# local config
-config = getconf.ConfigGetter(
-    "myproj", ["local_settings.conf", "/etc/telescoop/moine/settings.ini"]
-)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 IS_LOCAL_DEV = bool(os.environ.get("TELESCOOP_DEV"))
 DEBUG = IS_LOCAL_DEV
+
+if IS_LOCAL_DEV:
+    config_paths = ["local_settings.conf"]
+else:
+    config_paths = os.environ["CONFIG_PATH"]
+config = getconf.ConfigGetter("myproj", config_paths)
 
 if IS_LOCAL_DEV:
     SECRET_KEY = "django-insecure-zdvs0+i17^0*8w0nd%0mtoa69)%#%cp37=8t2^2s0ung)zp(51"
