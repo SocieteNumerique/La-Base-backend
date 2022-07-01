@@ -14,7 +14,6 @@ RESOURCE_PRODUCER_STATES = [
 RESOURCE_STATE_CHOICES = [
     ("public", "Public"),
     ("private", "Privé"),
-    ("restricted", "Restreint"),
     ("draft", "Brouillon"),
 ]
 RESOURCE_LABEL_CHOICES = [
@@ -40,7 +39,28 @@ class Base(TimeStampedModel):
     tags = models.ManyToManyField("Tag", blank=True, related_name="bases")
     # users with these tags will have write access
     contributor_tags = models.ManyToManyField(
-        "Tag", blank=True, related_name="contributor_in_bases"
+        "Tag",
+        blank=True,
+        related_name="contributor_tags_in_bases",
+        verbose_name="Tags de contributeurs",
+    )
+    contributors = models.ManyToManyField(
+        User,
+        blank=True,
+        related_name="contributor_in_bases",
+        verbose_name="Contributeurs",
+    )
+    authorized_users = models.ManyToManyField(
+        User,
+        blank=True,
+        related_name="authorized_bases",
+        verbose_name="Utilisateurs avec accès en lecture",
+    )
+    authorized_user_tags = models.ManyToManyField(
+        "Tag",
+        blank=True,
+        related_name="authorized_tags_in_bases",
+        verbose_name="Tags d'utilisateurs avec accès en lecture",
     )
     pinned_resources = models.ManyToManyField(
         "Resource",
@@ -228,6 +248,15 @@ class Resource(TimeStampedModel):
         "UserGroup", blank=True, through="ResourceUserGroup"
     )
     is_grid_view_enabled = models.BooleanField(default=False)
+    authorized_users = models.ManyToManyField(
+        User, blank=True, related_name="authorized_resources"
+    )
+    authorized_user_tags = models.ManyToManyField(
+        "Tag",
+        blank=True,
+        related_name="authorized_tags_in_resources",
+        verbose_name="Tags d'utilisateurs avec accès en lecture",
+    )
 
     def save(self, *args, **kwargs):
         """

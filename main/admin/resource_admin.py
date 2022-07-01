@@ -23,6 +23,8 @@ class ResourceAdmin(admin.ModelAdmin):
     autocomplete_fields = [
         "creator",
         "internal_producers",
+        "authorized_users",
+        "authorized_user_tags",
         "tags",
         "root_base",
         "creator_bases",

@@ -9,7 +9,7 @@ from main.factories import (
     TagFactory,
     TagCategoryFactory,
 )
-from main.tests.test_utils import authenticate
+from main.tests.test_utils import authenticate, snake_to_camel_case
 
 
 class TestBaseView(TestCase):
@@ -71,25 +71,39 @@ class TestBaseView(TestCase):
         )
         self.specific_tag_category_is_sent("territory_00city", "territoryTags")
 
-    @authenticate
-    def test_update_base_admins(self):
+    def update_user_list(self, property_name):
         users1 = [UserFactory.create() for _ in range(3)]
         users2 = [UserFactory.create() for _ in range(3)]
         users2.append(users1[0])
         base = BaseFactory.create(owner=authenticate.user)
-        base.admins.set(users1)
+        property_in_instance = getattr(base, property_name)
+        property_in_instance.set(users1)
+
+        caml_case_property_name = snake_to_camel_case(property_name)
 
         url = reverse("base-detail", args=[base.pk])
         res = self.client.patch(
             url,
-            {"admins": [{"id": user.pk} for user in users2]},
+            {caml_case_property_name: [{"id": user.pk} for user in users2]},
             content_type="application/json",
         )
         self.assertEqual(res.status_code, 200)
         self.assertSetEqual(
-            {admin_data["id"] for admin_data in res.json()["admins"]},
+            {user_data["id"] for user_data in res.json()[caml_case_property_name]},
             {user.id for user in users2},
         )
+
+    @authenticate
+    def test_update_base_admins(self):
+        self.update_user_list("admins")
+
+    @authenticate
+    def test_update_base_authorized_users(self):
+        self.update_user_list("authorized_users")
+
+    @authenticate
+    def test_update_base_contributors(self):
+        self.update_user_list("contributors")
 
 
 class TestPin(TestCase):
