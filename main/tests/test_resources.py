@@ -1,15 +1,9 @@
 from django.test import TestCase
 from django.urls import reverse
 
-from main.factories import (
-    BaseFactory,
-    ResourceFactory,
-    TagFactory,
-    TagCategoryFactory,
-    UserFactory,
-)
+from main.factories import BaseFactory, ResourceFactory, TagFactory, TagCategoryFactory
 from main.models.models import ExternalProducer
-from main.tests.test_utils import authenticate, snake_to_camel_case
+from main.tests.test_utils import authenticate
 
 
 class TestResourceView(TestCase):
@@ -172,30 +166,3 @@ class TestResourceView(TestCase):
         producer = res_producers[0]
         self.assertEqual(producer["occupation"], tag2.pk)
         self.assertEqual(producer["name"], new_data["name"])
-
-    def update_user_list(self, property_name):
-        users1 = [UserFactory.create() for _ in range(3)]
-        users2 = [UserFactory.create() for _ in range(3)]
-        users2.append(users1[0])
-        resource = ResourceFactory.create(root_base__owner=authenticate.user)
-        property_in_instance = getattr(resource, property_name)
-        property_in_instance.set(users1)
-
-        caml_case_property_name = snake_to_camel_case(property_name)
-
-        url = reverse("base-detail", args=[resource.pk])
-        res = self.client.patch(
-            url,
-            {caml_case_property_name: [{"id": user.pk} for user in users2]},
-            content_type="application/json",
-        )
-        self.assertEqual(res.status_code, 200)
-
-        self.assertSetEqual(
-            {user_data["id"] for user_data in res.json()[caml_case_property_name]},
-            {user.id for user in users2},
-        )
-
-    @authenticate
-    def test_update_base_admins(self):
-        self.update_user_list("authorized_users")

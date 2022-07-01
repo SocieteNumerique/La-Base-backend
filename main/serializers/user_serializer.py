@@ -4,7 +4,6 @@ from django.contrib.auth.hashers import make_password
 from django.core import exceptions
 from django.db.models import Q
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
 
 from main.models.models import Tag
 from main.models.user import User
@@ -135,18 +134,3 @@ class UserSerializerForSearch(AuthSerializer):
 class NestedUserSerializer(UserSerializerForSearch):
     class Meta(UserSerializerForSearch.Meta):
         extra_kwargs = {"id": {"read_only": False}}
-
-
-def set_nested_user_fields(instance, validated_data, property_name):
-    def find_user_instance(user_data):
-        if "id" not in user_data:
-            raise ValidationError(f"missing id in {property_name} data")
-        return User.objects.get(pk=user_data["id"])
-
-    if property_name in validated_data:
-        users = [
-            find_user_instance(user_data) for user_data in validated_data[property_name]
-        ]
-        property_in_instance = getattr(instance, property_name)
-        property_in_instance.set(users)
-        del validated_data[property_name]

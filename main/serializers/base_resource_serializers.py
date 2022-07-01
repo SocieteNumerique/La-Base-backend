@@ -12,11 +12,7 @@ from main.serializers.content_serializers import Base64FileField
 from main.serializers.custom import MoreFieldsModelSerializer
 
 from main.models.models import Resource, Base, ExternalProducer, Tag, Collection
-from main.serializers.user_serializer import (
-    AuthSerializer,
-    NestedUserSerializer,
-    set_nested_user_fields,
-)
+from main.serializers.user_serializer import AuthSerializer, NestedUserSerializer
 
 
 class PrimaryKeyOccupationTagField(serializers.PrimaryKeyRelatedField):
@@ -100,13 +96,8 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
             "bases_pinned_in",
         ]
 
-    authorized_users = NestedUserSerializer(many=True, required=False, allow_null=True)
-    authorized_user_tags = serializers.PrimaryKeyRelatedField(
-        many=True, queryset=Tag.objects.all(), required=False, allow_null=True
-    )
     can_write = serializers.SerializerMethodField()
     content_stats = serializers.SerializerMethodField(read_only=True)
-    contributors = NestedUserSerializer(many=True, required=False, allow_null=True)
     cover_image = Base64FileField(required=False, allow_null=True)
     creator = PrimaryKeyCreatorField(
         default=serializers.CurrentUserDefault(), required=False, allow_null=True
@@ -153,10 +144,6 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
         instance = super().create(validated_data)
         instance.can_write = True
         return instance
-
-    def update(self, instance, validated_data):
-        set_nested_user_fields(instance, validated_data, "authorized_users")
-        return super().update(instance, validated_data)
 
 
 class ShortResourceSerializer(BaseResourceSerializer):
@@ -263,11 +250,6 @@ class BaseBaseSerializer(serializers.ModelSerializer):
 
     owner = AuthSerializer(required=False, read_only=True)
     admins = NestedUserSerializer(many=True, required=False, allow_null=True)
-    authorized_users = NestedUserSerializer(many=True, required=False, allow_null=True)
-    authorized_user_tags = serializers.PrimaryKeyRelatedField(
-        many=True, queryset=Tag.objects.all(), required=False, allow_null=True
-    )
-    contributors = NestedUserSerializer(many=True, required=False, allow_null=True)
     resources = serializers.SerializerMethodField()
     can_write = serializers.SerializerMethodField()
     can_add_resources = serializers.SerializerMethodField()
@@ -288,9 +270,18 @@ class BaseBaseSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
     def update(self, instance: Base, validated_data):
-        set_nested_user_fields(instance, validated_data, "admins")
-        set_nested_user_fields(instance, validated_data, "authorized_users")
-        set_nested_user_fields(instance, validated_data, "contributors")
+        def find_admin_instance(admin_data):
+            if "id" not in admin_data:
+                raise ValidationError("missing id in admin data")
+            return User.objects.get(pk=admin_data["id"])
+
+        if "admins" in validated_data:
+            admins = [
+                find_admin_instance(admin_data)
+                for admin_data in validated_data["admins"]
+            ]
+            instance.admins.set(admins)
+            del validated_data["admins"]
         return super().update(instance, validated_data)
 
     @staticmethod
@@ -364,9 +355,7 @@ class FullBaseSerializer(BaseBaseSerializer):
             "resources",
             "collections",
             "resources_in_pinned_collections",
-            "contributors",
             "contributor_tags",
-            "authorized_users",
             "state",
             "tags",
             "admins",
