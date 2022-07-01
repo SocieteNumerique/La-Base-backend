@@ -49,6 +49,17 @@ class TestPermissions(TestCase):
         base.admins.add(authenticate.user)
         self.assertEqual(bases_queryset_for_user(authenticate.user).count(), 1)
 
+        # access to a private base we're authorized
+        base.save()
+        base.authorized_users.add(authenticate.user)
+        self.assertEqual(bases_queryset_for_user(authenticate.user).count(), 1)
+
+        tag = TagFactory()
+        base.authorized_user_tags.add(tag)
+        base.authorized_users.set([])
+        authenticate.user.tags.add(tag)
+        self.assertEqual(bases_queryset_for_user(authenticate.user).count(), 1)
+
     @authenticate
     def test_resources_private_access(self):
         # no access to a private resource we're not member of
@@ -71,6 +82,18 @@ class TestPermissions(TestCase):
         resource.root_base.owner = UserFactory.create()
         resource.root_base.save()
         resource.root_base.admins.add(authenticate.user)
+        self.assertEqual(resources_queryset_for_user(authenticate.user).count(), 1)
+
+        # access to a private resource where we're authorized
+        resource.root_base.owner = UserFactory.create()
+        resource.root_base.save()
+        resource.root_base.authorized_users.add(authenticate.user)
+        self.assertEqual(resources_queryset_for_user(authenticate.user).count(), 1)
+
+        tag = TagFactory()
+        resource.authorized_user_tags.add(tag)
+        resource.authorized_users.set([])
+        authenticate.user.tags.add(tag)
         self.assertEqual(resources_queryset_for_user(authenticate.user).count(), 1)
 
     @authenticate
@@ -186,14 +209,10 @@ class UserGroupTest(TestCase):
         self.assertEqual(data["canWrite"], True)
 
 
-class ContributorInBasesTest(TestCase):
+class AbstractContributorInBasesTest:
     @classmethod
     def setUpTestData(cls):
-        cls.user = UserFactory.create()
-        cls.tag = TagFactory.create()
-        cls.user.tags.add(cls.tag)
-        cls.base = BaseFactory.create(state="private")
-        cls.base.contributor_tags.add(cls.tag)
+        raise NotImplementedError
 
     def login(self):
         self.client.force_login(user=self.user)
@@ -252,3 +271,23 @@ class ContributorInBasesTest(TestCase):
         self.assertIn(res.status_code, [403, 404])
         res = self.client.patch(url, {"title": "title"})
         self.assertIn(res.status_code, [403, 404])
+
+
+class ContributorInBasesTestPerUserInBasesTest(
+    TestCase, AbstractContributorInBasesTest
+):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = UserFactory.create()
+        cls.tag = TagFactory.create()
+        cls.user.tags.add(cls.tag)
+        cls.base = BaseFactory.create(state="private")
+        cls.base.contributor_tags.add(cls.tag)
+
+
+class ContributorInBasesTestTagsInBasesTest(TestCase, AbstractContributorInBasesTest):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = UserFactory.create()
+        cls.base = BaseFactory.create(state="private")
+        cls.base.contributors.add(cls.user)

@@ -31,7 +31,7 @@ class ResourceHasWriteAccessFilter(filters.BaseFilterBackend):
     """
 
     def filter_queryset(self, request: HttpRequest, queryset, view):
-        if request.method in ["PATCH", "DELETE"]:
+        if request.method in ["PATCH", "DELETE", "PUT"]:
             return queryset.filter(can_write=True)
 
         # GET does not need additional filtering
