@@ -15,15 +15,11 @@ CNFS_EMAIL_DOMAIN = "@conseiller-numerique.fr"
 
 
 class AuthSerializer(serializers.ModelSerializer):
+    is_cnfs = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = (
-            "id",
-            "first_name",
-            "last_name",
-            "email",
-            "is_admin",
-        )
+        fields = ("id", "first_name", "last_name", "email", "is_admin", "is_cnfs")
 
     @staticmethod
     def validate_password(self, value):
@@ -36,6 +32,10 @@ class AuthSerializer(serializers.ModelSerializer):
         if errors:
             raise serializers.ValidationError(errors)
         return make_password(value)
+
+    @staticmethod
+    def get_is_cnfs(obj: User):
+        return obj.cnfs_id is not None or obj.cnfs_id_organization is not None
 
 
 class ChangePasswordSerializer(serializers.Serializer):
