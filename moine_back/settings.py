@@ -223,3 +223,6 @@ if IS_LOCAL_DEV:
     DOMAIN = "localhost:8000"
 else:
     DOMAIN = ALLOWED_HOSTS[0]
+
+# allow password reset for a week (by default 1 day)
+PASSWORD_RESET_TIMEOUT = 3600 * 24 * 7
