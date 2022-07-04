@@ -35,7 +35,7 @@ class AuthSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def get_is_cnfs(obj: User):
-        return obj.cnfs_id is not None
+        return obj.cnfs_id is not None or obj.cnfs_id_organization is not None
 
 
 class ChangePasswordSerializer(serializers.Serializer):
