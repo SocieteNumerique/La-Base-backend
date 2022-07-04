@@ -23,10 +23,17 @@ def bases_queryset_for_user(user: User, init_queryset=Base.objects, full=True):
         state_query
         | Q(owner=user)
         | Q(admins=user)
-        | (Q(contributor_tags__in=user_tags) | Q(contributors=user))
+        | (
+            Q(contributor_tags__in=user_tags)
+            # | Q(contributors=user)
+        )
         | (
             Q(state="private")
-            & (Q(authorized_users=user) | Q(authorized_user_tags__in=user_tags))
+            & (
+                # Q(authorized_users=user)
+                # |
+                Q(authorized_user_tags__in=user_tags)
+            )
         )
     ).distinct()
     # also subscribers
@@ -42,7 +49,10 @@ def bases_queryset_for_user(user: User, init_queryset=Base.objects, full=True):
             When(
                 Q(owner=user)
                 | Q(admins=user)
-                | (Q(contributor_tags__in=user_tags) | Q(contributors=user)),
+                | (
+                    Q(contributor_tags__in=user_tags)
+                    # | Q(contributors=user)
+                ),
                 then=Value(True),
             ),
             default=Value(False),
@@ -76,14 +86,14 @@ def resources_queryset_for_user(user: User, init_queryset=Resource.objects, full
         | Q(groups__users=user)
         | (
             Q(root_base__contributor_tags__in=user_tags)
-            | Q(root_base__contributors=user)
+            # | Q(root_base__contributors=user)
         )
         | (
             Q(state="private")
             & (
                 Q(authorized_users=user)
                 | Q(authorized_user_tags__in=user_tags)
-                | Q(root_base__authorized_users=user)
+                # | Q(root_base__authorized_users=user)
                 | Q(root_base__authorized_user_tags__in=user_tags)
             )
         )
@@ -100,7 +110,7 @@ def resources_queryset_for_user(user: User, init_queryset=Resource.objects, full
                 )
                 | (
                     Q(root_base__contributor_tags__in=user_tags)
-                    | Q(root_base__contributors=user)
+                    # | Q(root_base__contributors=user)
                 ),
                 then=Value(True),
             ),
