@@ -216,6 +216,7 @@ class Resource(TimeStampedModel):
         Base,
         verbose_name="Bases qui ont créé la ressource",
         related_name="created_resources",
+        blank=True,
     )
     root_base = models.ForeignKey(
         Base,

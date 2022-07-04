@@ -5,7 +5,11 @@ from rest_framework import mixins, viewsets, status
 from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
 
-from main.serializers.user_serializer import UserSerializer, ChangePasswordSerializer
+from main.serializers.user_serializer import (
+    UserSerializer,
+    ChangePasswordSerializer,
+    AuthSerializer,
+)
 
 
 class UserView(
@@ -50,6 +54,12 @@ class UserView(
             return Response(response)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=["GET"])
+    def me(self, request):
+        if request.user.is_anonymous:
+            return Response(status=400)
+        return Response(AuthSerializer(request.user).data)
 
     model = get_user_model()
     serializer_class = UserSerializer
