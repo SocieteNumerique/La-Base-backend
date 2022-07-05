@@ -6,10 +6,9 @@ from main.factories import (
     BaseFactory,
     ResourceFactory,
     UserFactory,
-    UserGroupFactory,
     TagFactory,
 )
-from main.models.models import RESOURCE_STATE_CHOICES, ResourceUserGroup
+from main.models.models import RESOURCE_STATE_CHOICES
 from main.query_changes.permissions import (
     bases_queryset_for_user,
     resources_queryset_for_user,
@@ -179,31 +178,6 @@ class TestPermissions(TestCase):
 
         resource = ResourceFactory.create()
         self.assertEqual(resources_queryset_for_user(authenticate.user).count(), 1)
-        url = reverse("resource-detail", args=[resource.pk])
-        data = self.client.get(url).json()
-        self.assertEqual(data["canWrite"], True)
-
-
-class UserGroupTest(TestCase):
-    @authenticate
-    def test_member_of_group(self):
-        resource = ResourceFactory.create(state="private")
-        group = UserGroupFactory.create()
-        resource_user_group = ResourceUserGroup.objects.create(
-            resource=resource, group=group, can_write=False
-        )
-        self.assertEqual(resources_queryset_for_user(authenticate.user).count(), 0)
-        group.users.add(authenticate.user)
-        self.assertEqual(resources_queryset_for_user(authenticate.user).count(), 1)
-
-        resource_user_group.can_write = False
-        resource_user_group.save()
-        url = reverse("resource-detail", args=[resource.pk])
-        data = self.client.get(url).json()
-        self.assertEqual(data["canWrite"], False)
-
-        resource_user_group.can_write = True
-        resource_user_group.save()
         url = reverse("resource-detail", args=[resource.pk])
         data = self.client.get(url).json()
         self.assertEqual(data["canWrite"], True)

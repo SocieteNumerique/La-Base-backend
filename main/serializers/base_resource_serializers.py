@@ -1,6 +1,8 @@
 from django.db.models import OuterRef, Exists, Q
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
+
+from main.models import TagCategory
 from main.models.user import User
 from main.query_changes.permissions import (
     resources_queryset_for_user,
@@ -18,10 +20,36 @@ from main.serializers.user_serializer import (
     set_nested_user_fields,
 )
 
+TERRITORY_CATEGORY = None
+EXTERNAL_PRODUCER_CATEGORY = None
+
+
+def reset_specific_categories():
+    global TERRITORY_CATEGORY
+    global EXTERNAL_PRODUCER_CATEGORY
+
+    try:
+        TERRITORY_CATEGORY = TagCategory.objects.get(slug="territory_00city")
+    except TagCategory.DoesNotExist:
+        TERRITORY_CATEGORY = None
+
+    try:
+        EXTERNAL_PRODUCER_CATEGORY = TagCategory.objects.get(
+            slug="externalProducer_00occupation"
+        )
+    except TagCategory.DoesNotExist:
+        EXTERNAL_PRODUCER_CATEGORY = None
+
+
+reset_specific_categories()
+
 
 class PrimaryKeyOccupationTagField(serializers.PrimaryKeyRelatedField):
     def get_queryset(self):
-        return Tag.objects.filter(category__slug="externalProducer_00occupation")
+        if EXTERNAL_PRODUCER_CATEGORY:
+            return Tag.objects.filter(category=EXTERNAL_PRODUCER_CATEGORY)
+        else:
+            return Tag.objects.none()
 
 
 class ExternalProducerSerializer(serializers.ModelSerializer):
@@ -336,15 +364,23 @@ class BaseBaseSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def get_participant_type_tags(obj: Base):
-        return obj.tags.filter(
-            category__slug="externalProducer_00occupation"
-        ).values_list("pk", flat=True)
+        if EXTERNAL_PRODUCER_CATEGORY:
+            return [
+                tag.pk
+                for tag in obj.tags.all()
+                if tag.category == EXTERNAL_PRODUCER_CATEGORY
+            ]
+        else:
+            return []
 
     @staticmethod
     def get_territory_tags(obj: Base):
-        return obj.tags.filter(category__slug="territory_00city").values_list(
-            "pk", flat=True
-        )
+        if TERRITORY_CATEGORY:
+            return [
+                tag.pk for tag in obj.tags.all() if tag.category == TERRITORY_CATEGORY
+            ]
+        else:
+            return []
 
 
 class ShortBaseSerializer(BaseBaseSerializer):

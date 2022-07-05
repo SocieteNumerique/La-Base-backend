@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
 import os
+import sys
 import getconf
 from pathlib import Path
 
@@ -19,6 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 IS_LOCAL_DEV = bool(os.environ.get("TELESCOOP_DEV"))
 DEBUG = IS_LOCAL_DEV
+IS_TESTING = "test" in sys.argv
 
 if IS_LOCAL_DEV:
     config_paths = ["local_settings.conf"]
@@ -100,6 +102,15 @@ if IS_LOCAL_DEV:
             "NAME": BASE_DIR / "db.sqlite3",
         }
     }
+    if not IS_TESTING and config.getstr("database.postgres"):
+        DATABASES = {
+            "default": {
+                "ENGINE": "django.db.backends.postgresql",
+                "NAME": config.getstr("database.name"),
+                "USER": config.getstr("database.user"),
+                "PASSWORD": config.getstr("database.password"),
+            }
+        }
 else:
     DATABASES = {
         "default": {
