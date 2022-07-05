@@ -20,25 +20,31 @@ from main.serializers.user_serializer import (
     set_nested_user_fields,
 )
 
-TERRITORY_CATEGORY = None
-EXTERNAL_PRODUCER_CATEGORY = None
+TERRITORY_CATEGORY_ID = None
+EXTERNAL_PRODUCER_CATEGORY_ID = None
+SUPPORT_CATEGORY_ID = None
 
 
 def reset_specific_categories():
-    global TERRITORY_CATEGORY
-    global EXTERNAL_PRODUCER_CATEGORY
+    global TERRITORY_CATEGORY_ID
+    global EXTERNAL_PRODUCER_CATEGORY_ID
+    global SUPPORT_CATEGORY_ID
 
     try:
-        TERRITORY_CATEGORY = TagCategory.objects.get(slug="territory_00city")
+        TERRITORY_CATEGORY_ID = TagCategory.objects.get(slug="territory_00city").pk
     except TagCategory.DoesNotExist:
-        TERRITORY_CATEGORY = None
+        TERRITORY_CATEGORY_ID = None
 
     try:
-        EXTERNAL_PRODUCER_CATEGORY = TagCategory.objects.get(
+        EXTERNAL_PRODUCER_CATEGORY_ID = TagCategory.objects.get(
             slug="externalProducer_00occupation"
-        )
+        ).pk
     except TagCategory.DoesNotExist:
-        EXTERNAL_PRODUCER_CATEGORY = None
+        SUPPORT_CATEGORY_ID = None
+    try:
+        SUPPORT_CATEGORY_ID = TagCategory.objects.get(slug="indexation_01RessType").pk
+    except TagCategory.DoesNotExist:
+        SUPPORT_CATEGORY_ID = None
 
 
 reset_specific_categories()
@@ -46,8 +52,8 @@ reset_specific_categories()
 
 class PrimaryKeyOccupationTagField(serializers.PrimaryKeyRelatedField):
     def get_queryset(self):
-        if EXTERNAL_PRODUCER_CATEGORY:
-            return Tag.objects.filter(category=EXTERNAL_PRODUCER_CATEGORY)
+        if EXTERNAL_PRODUCER_CATEGORY_ID:
+            return Tag.objects.filter(category=EXTERNAL_PRODUCER_CATEGORY_ID)
         else:
             return Tag.objects.none()
 
@@ -172,10 +178,19 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
 
     @staticmethod
     def get_support_tags(obj: Resource):
-        tags = obj.tags.filter(category__slug="indexation_01RessType").values_list(
-            "pk", flat=True
-        )
-        return tags
+        if SUPPORT_CATEGORY_ID:
+            if "tags" in obj._prefetched_objects_cache:
+                return [
+                    tag.pk
+                    for tag in obj.tags.all()
+                    if tag.category_id == SUPPORT_CATEGORY_ID
+                ]
+            else:
+                return obj.tags.filter(
+                    category__slug="indexation_01RessType"
+                ).values_list("pk", flat=True)
+        else:
+            return []
 
     def create(self, validated_data):
         instance = super().create(validated_data)
@@ -364,20 +379,22 @@ class BaseBaseSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def get_participant_type_tags(obj: Base):
-        if EXTERNAL_PRODUCER_CATEGORY:
+        if EXTERNAL_PRODUCER_CATEGORY_ID:
             return [
                 tag.pk
                 for tag in obj.tags.all()
-                if tag.category == EXTERNAL_PRODUCER_CATEGORY
+                if tag.category_id == EXTERNAL_PRODUCER_CATEGORY_ID
             ]
         else:
             return []
 
     @staticmethod
     def get_territory_tags(obj: Base):
-        if TERRITORY_CATEGORY:
+        if TERRITORY_CATEGORY_ID:
             return [
-                tag.pk for tag in obj.tags.all() if tag.category == TERRITORY_CATEGORY
+                tag.pk
+                for tag in obj.tags.all()
+                if tag.category_id == TERRITORY_CATEGORY_ID
             ]
         else:
             return []
