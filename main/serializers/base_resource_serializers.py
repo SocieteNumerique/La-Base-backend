@@ -121,7 +121,7 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
     stats = serializers.SerializerMethodField(read_only=True)
     support_tags = serializers.SerializerMethodField()
     pinned_in_bases = serializers.PrimaryKeyRelatedField(
-        queryset=Base.objects.all(), many=True
+        queryset=Base.objects.all(), many=True, required=False
     )
 
     @staticmethod
