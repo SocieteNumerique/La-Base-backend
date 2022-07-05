@@ -9,6 +9,7 @@ from main.factories import (
     TagFactory,
     TagCategoryFactory,
 )
+from main.serializers.base_resource_serializers import reset_specific_categories
 from main.tests.test_utils import authenticate, snake_to_camel_case
 
 
@@ -48,6 +49,7 @@ class TestBaseView(TestCase):
     def specific_tag_category_is_sent(self, slug, property_name):
         base = BaseFactory(owner=authenticate.user)
         tc = TagCategoryFactory(slug=slug, relates_to="Base")
+        reset_specific_categories()
         tag = tc.tags.first()
         base.tags.add(tag)
 
