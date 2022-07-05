@@ -12,7 +12,7 @@ from main.models.contents import (
     FileContent,
 )
 from main.models.models import Resource
-from main.serializers.custom import Base64FileField
+from main.serializers.utils import Base64FileField
 
 content_fields = [
     "id",

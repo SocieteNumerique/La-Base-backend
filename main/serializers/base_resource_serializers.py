@@ -9,8 +9,9 @@ from main.query_changes.permissions import (
     resources_queryset_for_user,
 )
 from main.query_changes.stats_annotations import resources_queryset_with_stats
-from main.serializers.content_serializers import Base64FileField
-from main.serializers.custom import MoreFieldsModelSerializer
+from main.serializers.utils import MoreFieldsModelSerializer, Base64FileField
+
+from main.models.models import Resource, Base, ExternalProducer, Tag, Collection
 from main.serializers.user_serializer import (
     AuthSerializer,
     NestedUserSerializer,
