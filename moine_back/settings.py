@@ -67,6 +67,7 @@ MIDDLEWARE = [
     "debug_toolbar.middleware.DebugToolbarMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "hijack.middleware.HijackUserMiddleware",
+    "django_cprofile_middleware.middleware.ProfilerMiddleware",
 ]
 
 ROOT_URLCONF = "moine_back.urls"
@@ -181,9 +182,9 @@ AUTH_USER_MODEL = "main.User"
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": (
         "djangorestframework_camel_case.render.CamelCaseJSONRenderer",
-        "djangorestframework_camel_case.render.CamelCaseBrowsableAPIRenderer",
+        # "djangorestframework_camel_case.render.CamelCaseBrowsableAPIRenderer",
         # below renderer can be useful to debug queries with django-debug-toolbar
-        # "main.renderer.RendererNoForm",
+        "main.renderer.RendererNoForm",
     ),
     "DEFAULT_PARSER_CLASSES": (
         "djangorestframework_camel_case.parser.CamelCaseFormParser",
