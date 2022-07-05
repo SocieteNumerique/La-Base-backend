@@ -9,6 +9,8 @@ from rest_framework import serializers
 from rest_framework.fields import SkipField
 from rest_framework.serializers import ModelSerializer
 
+from main.models.utils import ResizableImage
+
 
 class MoreFieldsModelSerializer(ModelSerializer):
     def get_field_names(self, declared_fields, info):
@@ -69,3 +71,58 @@ class Base64FileField(serializers.FileField):
             "link": full_link,
             "mime_type": mimetypes.guess_type(instance.name)[0],
         }
+
+
+class ResizableImageBase64Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = ResizableImage
+        fields = "__all__"
+        read_only_fields = [
+            "scale_x",
+            "scale_y",
+            "relative_position_x",
+            "relative_position_y",
+        ]
+
+    image = Base64FileField()
+
+    def apply_coordinates(self, instance, coordinates):
+        instance.scale_x = instance.image.width / coordinates["width"]
+        instance.scale_y = instance.image.height / coordinates["height"]
+        instance.relative_position_x = coordinates["left"] / coordinates["width"]
+        instance.relative_position_y = coordinates["top"] / coordinates["height"]
+
+    def to_internal_value(self, data):
+        res = super().to_internal_value(data)
+        if "coordinates" in data:
+            res["coordinates"] = data["coordinates"]
+        return res
+
+    def create(self, validated_data):
+        instance = super().create(validated_data)
+        if "coordinates" in validated_data:
+            self.apply_coordinates(instance, validated_data["coordinates"])
+        instance.save()
+        return instance
+
+    def update(self, instance, validated_data):
+        super().update(instance, validated_data)
+        if "coordinates" in validated_data:
+            self.apply_coordinates(instance, validated_data["coordinates"])
+        instance.save()
+        return instance
+
+
+def create_or_update_resizable_image(parent_instance, validated_data, property_name):
+    if property_name not in validated_data:
+        return None
+    image_instance = getattr(parent_instance, property_name)
+    image_data = validated_data[property_name]
+    serializer = ResizableImageBase64Serializer()
+    if image_instance:
+        serializer.update(image_instance, image_data)
+    else:
+        image_instance = serializer.create(image_data)
+        setattr(parent_instance, property_name, image_instance)
+        parent_instance.save()
+    del validated_data[property_name]

@@ -19,6 +19,25 @@ class TimeStampedModel(models.Model):
         abstract = True
 
 
+class ResizableImage(models.Model):
+    image = models.ImageField()
+    # these four values are percentages of the image dimensions
+    # scale = complete_size / cropped_size
+    # relative_position = position / complete_size
+    scale_x = models.DecimalField(
+        default=100, blank=True, max_digits=5, decimal_places=2
+    )
+    scale_y = models.DecimalField(
+        default=100, blank=True, max_digits=5, decimal_places=2
+    )
+    relative_position_x = models.DecimalField(
+        default=0, blank=True, max_digits=5, decimal_places=2
+    )
+    relative_position_y = models.DecimalField(
+        default=0, blank=True, max_digits=5, decimal_places=2
+    )
+
+
 def resize_image(image):
     if not image:
         return

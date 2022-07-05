@@ -9,7 +9,12 @@ from main.query_changes.permissions import (
     resources_queryset_for_user,
 )
 from main.query_changes.stats_annotations import resources_queryset_with_stats
-from main.serializers.utils import MoreFieldsModelSerializer, Base64FileField
+from main.serializers.utils import (
+    MoreFieldsModelSerializer,
+    Base64FileField,
+    ResizableImageBase64Serializer,
+    create_or_update_resizable_image,
+)
 
 from main.models.models import Resource, Base, ExternalProducer, Tag, Collection
 from main.serializers.user_serializer import (
@@ -295,19 +300,22 @@ class BaseBaseSerializer(serializers.ModelSerializer):
     )
     participant_type_tags = serializers.SerializerMethodField()
     territory_tags = serializers.SerializerMethodField()
-    profile_image = Base64FileField(required=False, allow_null=True)
+    profile_image = ResizableImageBase64Serializer(required=False, allow_null=True)
 
     def create(self, validated_data):
         user = self.context["request"].user
         if user.is_anonymous:
             raise ValidationError("Anonymous cannot create a base")
         validated_data["owner"] = user
-        return super().create(validated_data)
+        instance = super().create(validated_data)
+        create_or_update_resizable_image(instance, validated_data, "profile_image")
+        return instance
 
     def update(self, instance: Base, validated_data):
         set_nested_user_fields(instance, validated_data, "admins")
         set_nested_user_fields(instance, validated_data, "authorized_users")
         set_nested_user_fields(instance, validated_data, "contributors")
+        create_or_update_resizable_image(instance, validated_data, "profile_image")
         return super().update(instance, validated_data)
 
     @staticmethod
