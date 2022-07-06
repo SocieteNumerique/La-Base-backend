@@ -8,6 +8,7 @@ from main.factories import (
     TagCategoryFactory,
     UserFactory,
 )
+from main.models import Resource
 from main.models.models import ExternalProducer
 from main.tests.test_utils import authenticate, snake_to_camel_case
 
@@ -20,6 +21,8 @@ class TestResourceView(TestCase):
         response = self.client.post(url, {"root_base": base.pk, "title": "My title"})
         self.assertEqual(response.status_code, 201)
         self.assertTrue(response.json()["canWrite"])
+        resource = Resource.objects.get(pk=response.json()["id"])
+        self.assertEqual(resource.creator, authenticate.user)
 
     @authenticate
     def test_can_update_resource(self):

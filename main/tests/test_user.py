@@ -177,3 +177,24 @@ class TestUserView(TestCase):
             self.client.request, email=user.email, password=new_password
         )
         self.assertEqual(user_, user)
+
+    def test_user_activation(self):
+        # create user from view
+        url = reverse("user-list")
+        res = self.client.post(
+            url,
+            get_standard_user_data(),
+            content_type="application/json",
+        )
+        user = User.objects.get()
+        self.assertFalse(user.is_active)
+
+        self.assertEqual(len(mail.outbox), 1)
+        mail_ = mail.outbox[0]
+
+        # get url from mail
+        url = re.findall(r"testserver(\/.*\/)", mail_.body)[0]
+        # click on url
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, 302)
+        self.assertTrue(User.objects.get().is_active)

@@ -156,7 +156,10 @@ class Base64FileField(serializers.FileField):
     def to_representation(self, instance: FieldFile):
         if not instance.name:
             return None
-        full_link = self.context.get("request").build_absolute_uri(instance.url)
+        if self.context.get("request"):
+            full_link = self.context.get("request").build_absolute_uri(instance.url)
+        else:
+            full_link = instance.url
         name_without_uuid = re.match("^[^_]*_?(.*)$", instance.name).group(1)
         return {
             "name": name_without_uuid,

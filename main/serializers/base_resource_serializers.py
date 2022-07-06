@@ -68,7 +68,9 @@ class ExternalProducerSerializer(serializers.ModelSerializer):
 
 class PrimaryKeyCreatorField(serializers.PrimaryKeyRelatedField):
     def get_queryset(self):
-        # request = self.context.get('request', None)
+        request = self.context.get("request", None)
+        if request:
+            return User.objects.filter(pk=request.user.pk)
         return User.objects.all()
 
 

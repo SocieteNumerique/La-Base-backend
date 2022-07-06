@@ -10,13 +10,10 @@ class UserManager(BaseUserManager):
     def create_user(
         self,
         email: str,
-        first_name=None,
-        last_name=None,
+        first_name="",
+        last_name="",
         password=None,
-        # TODO: having the user active by default removes email validation
-        #  so everyone can sign up with any email. Email validation should
-        #  be implemented one day.
-        is_active=True,
+        is_active=False,
         is_admin=False,
         is_superuser=False,
         cnfs_id=None,
@@ -45,8 +42,8 @@ class UserManager(BaseUserManager):
     def create_superuser(
         self,
         email: str,
-        first_name=None,
-        last_name=None,
+        first_name="",
+        last_name="",
         password=None,
         is_active: bool = True,
     ):
