@@ -258,7 +258,7 @@ class CollectionSerializer(serializers.ModelSerializer):
         many=True, required=False, allow_null=True
     )
     pinned_in_bases = serializers.PrimaryKeyRelatedField(
-        queryset=Base.objects.all(), many=True
+        queryset=Base.objects.all(), many=True, required=False
     )
 
 
