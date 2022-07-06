@@ -1,0 +1,10 @@
+{% autoescape off %}
+Bonjour,
+
+Veuillez cliquer sur le lien ou le copier-coller dans votre navigateur pour confirmer
+votre courriel et terminer votre inscription :
+
+http://{{ domain }}{% url 'activate' uidb64=uid token=token %}
+
+L'équipe de La Base
+{% endautoescape %}

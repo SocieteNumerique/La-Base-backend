@@ -1,15 +1,36 @@
-from django.contrib.auth import get_user_model
+from django.conf.global_settings import AUTHENTICATION_BACKENDS
+from django.contrib.auth import (
+    get_user_model,
+    authenticate,
+    login as django_login,
+    logout as django_logout,
+)
 from django.contrib.auth.forms import PasswordResetForm
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.contrib.auth.views import PasswordResetConfirmView
+from django.http import HttpResponse
+from django.shortcuts import redirect
+from django.utils.encoding import force_str
+from django.utils.http import urlsafe_base64_decode
 from rest_framework import mixins, viewsets, status
 from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
 
+from main.models import User
 from main.serializers.user_serializer import (
     UserSerializer,
     ChangePasswordSerializer,
     AuthSerializer,
 )
+from main.user_utils import normalize_email, send_email_confirmation
+
+
+class TokenGenerator(PasswordResetTokenGenerator):
+    def _make_hash_value(self, user, timestamp):
+        return f"{user.pk}{timestamp}{user.is_active}"
+
+
+account_activation_token = TokenGenerator()
 
 
 class UserView(
@@ -80,3 +101,78 @@ class MyPasswordResetConfirmView(PasswordResetConfirmView):
     def dispatch(self, *args, **kwargs):
         self.request.csrf_processing_done = True
         return super().dispatch(*args, **kwargs)
+
+
+def send_email_confirmation_view(request, email):
+    email = normalize_email(email)
+    try:
+        user = User.objects.get(email=email)
+        send_email_confirmation(request, user)
+    except User.DoesNotExist:
+        pass
+    return HttpResponse()
+
+
+def activate(_, uidb64, token):
+    User = get_user_model()
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
+    if user is not None and account_activation_token.check_token(user, token):
+        user.is_active = True
+        user.save()
+        return redirect("/?emailConfirmed=true")
+    else:
+        return HttpResponse("Le lien d'activation n'est pas valide !")
+
+
+@api_view(["POST"])
+def login(request):
+    """
+    Log in a user
+
+    Args:
+        request:
+            The request body should contain a JSON object such as::
+
+              {"email": "email@ex.com",
+               "password": "secret_pa$$w0rD"}
+
+    Returns:
+        JSON object::
+            AuthSerializer
+    """
+
+    data = request.data
+    email, password = normalize_email(data["email"]), data["password"]
+
+    try:
+        user = User.objects.get(email=email)
+        if not user.is_active:
+            return Response(
+                "Le compte n'a pas été activé. Vérifiez vos mails et cliquez sur le lien de confirmation",
+                status=status.HTTP_403_FORBIDDEN,
+            )
+    except User.DoesNotExist:
+        pass
+
+    user = authenticate(email=email, password=password)
+
+    if user is not None:
+        user.backend = AUTHENTICATION_BACKENDS[0]
+        django_login(request, user)
+        return Response(AuthSerializer(user).data)
+    else:
+        return Response(
+            "Email et mot de passe ne correspondent pas",
+            status=status.HTTP_401_UNAUTHORIZED,
+        )
+
+
+@api_view(["POST"])
+def logout(request):
+    """Log out current user."""
+    django_logout(request)
+    return Response()
