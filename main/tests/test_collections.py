@@ -43,6 +43,20 @@ class TestResourceView(TestCase):
         self.assertEqual(res.status_code, 400)
 
     @authenticate
+    def test_can_only_resources_pinned_to_base(self):
+        base = BaseFactory.create(owner=authenticate.user)
+        collection = Collection.objects.create(base=base, name="collection")
+        url = reverse("collection-detail", args=[collection.pk])
+        base2 = BaseFactory.create(state="public")
+        r1 = ResourceFactory.create(root_base=base2)
+        base.pinned_resources.add(r1)
+        res = self.client.patch(
+            url, {"resources": [r1.pk]}, content_type="application/json"
+        )
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(collection.resources.count(), 1)
+
+    @authenticate
     def test_change_base_ownership_removes_resource_from_collections(self):
         base = BaseFactory.create(owner=authenticate.user)
         collection = Collection.objects.create(base=base, name="collection")
