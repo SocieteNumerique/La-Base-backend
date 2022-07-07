@@ -307,15 +307,21 @@ class BaseBaseSerializer(serializers.ModelSerializer):
         if user.is_anonymous:
             raise ValidationError("Anonymous cannot create a base")
         validated_data["owner"] = user
+        image = create_or_update_resizable_image(validated_data, "profile_image")
         instance = super().create(validated_data)
-        create_or_update_resizable_image(instance, validated_data, "profile_image")
+        instance.profile_image = image
+        instance.save()
         return instance
 
     def update(self, instance: Base, validated_data):
         set_nested_user_fields(instance, validated_data, "admins")
         set_nested_user_fields(instance, validated_data, "authorized_users")
         set_nested_user_fields(instance, validated_data, "contributors")
-        create_or_update_resizable_image(instance, validated_data, "profile_image")
+        image = create_or_update_resizable_image(
+            validated_data, "profile_image", instance
+        )
+        instance.profile_image = image
+        instance.save()
         return super().update(instance, validated_data)
 
     @staticmethod
