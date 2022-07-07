@@ -110,7 +110,7 @@ class TestBaseView(TestCase):
 
 class TestPin(TestCase):
     @authenticate
-    def test_root_is_pinned(self):
+    def test_root_is_not_pinned(self):
         resource = ResourceFactory(
             creator=authenticate.user,
             state="public",
@@ -119,28 +119,18 @@ class TestPin(TestCase):
         url = reverse("resource-detail", args=[resource.pk])
         res = self.client.get(url)
         self.assertEqual(res.status_code, 200)
-        base_pin = next(
-            base_pin
-            for base_pin in res.data["bases_pinned_in"]
-            if base_pin["id"] == resource.root_base_id
-        )
-        self.assertTrue(base_pin["is_pinned"])
+        self.assertEqual(res.data["pinned_in_bases"], [])
 
         collection = CollectionFactory(base__owner=authenticate.user)
         url = reverse("collection-detail", args=[collection.pk])
         res = self.client.get(url)
         self.assertEqual(res.status_code, 200)
-        base_pin = next(
-            base_pin
-            for base_pin in res.data["bases_pinned_in"]
-            if base_pin["id"] == collection.base_id
-        )
-        self.assertTrue(base_pin["is_pinned"])
+        self.assertEqual(res.data["pinned_in_bases"], [])
 
     @authenticate
-    def test_bases_pinned_in_contains_exactly_my_bases(self):
+    def test_pinned_in_bases_is_empty_by_default(self):
         base = BaseFactory(owner=authenticate.user)
-        other_base = BaseFactory(owner=authenticate.user)
+        BaseFactory(owner=authenticate.user)
 
         resource = ResourceFactory(
             creator=authenticate.user, state="public", root_base=base
@@ -149,8 +139,8 @@ class TestPin(TestCase):
         res = self.client.get(url)
         self.assertEqual(res.status_code, 200)
         self.assertSetEqual(
-            {base_pin["id"] for base_pin in res.data["bases_pinned_in"]},
-            {resource.root_base_id, other_base.id},
+            set(res.data["pinned_in_bases"]),
+            set(),
         )
 
         collection = CollectionFactory(base=base)
@@ -158,8 +148,8 @@ class TestPin(TestCase):
         res = self.client.get(url)
         self.assertEqual(res.status_code, 200)
         self.assertSetEqual(
-            {base_pin["id"] for base_pin in res.data["bases_pinned_in"]},
-            {collection.base_id, other_base.id},
+            {base_pin["id"] for base_pin in res.data["pinned_in_bases"]},
+            set(),
         )
 
     def pin_and_test(self, base, url):
@@ -167,8 +157,7 @@ class TestPin(TestCase):
             url, {"id": base.id, "is_pinned": True}, content_type="application/json"
         )
         self.assertEqual(res.status_code, 200)
-        base_pin = next(base_pin for base_pin in res.data if base_pin["id"] == base.id)
-        self.assertTrue(base_pin["is_pinned"])
+        self.assertIn(base.id, res.json())
 
     @authenticate
     def test_can_pin_not_writable_instance(self):
@@ -180,17 +169,11 @@ class TestPin(TestCase):
         url = reverse("resource-detail", args=[resource.pk])
         res = self.client.get(url)
         self.assertEqual(res.status_code, 200)
-        self.assertTrue(
-            any(base_pin["id"] == base.id for base_pin in res.data["bases_pinned_in"])
-        )
 
         collection = CollectionFactory(base__state="public")
         url = reverse("collection-detail", args=[collection.pk])
         res = self.client.get(url)
         self.assertEqual(res.status_code, 200)
-        self.assertTrue(
-            any(base_pin["id"] == base.id for base_pin in res.data["bases_pinned_in"])
-        )
 
         # write
         url = reverse("resource-pin", args=[resource.pk])
@@ -211,10 +194,44 @@ class TestPin(TestCase):
         url = reverse("resource-detail", args=[resource.pk])
         res = self.client.get(url)
         self.assertEqual(res.status_code, 200)
-        self.assertTrue(
-            any(base_pin["id"] == base.id for base_pin in res.data["bases_pinned_in"])
-        )
 
         # write
         url = reverse("resource-pin", args=[resource.pk])
         self.pin_and_test(base, url)
+
+    @authenticate
+    def test_multiple_pins(self):
+        # read
+        base = BaseFactory(owner=authenticate.user)
+
+        resource = ResourceFactory(state="public")
+
+        # pin resource
+        url = reverse("resource-pin", args=[resource.pk])
+        res = self.client.patch(
+            url, {"id": base.id, "is_pinned": True}, content_type="application/json"
+        )
+        self.assertEqual(res.status_code, 200)
+        self.assertListEqual(res.json(), [base.id])
+
+        # pin in other base
+        base2 = BaseFactory(owner=authenticate.user)
+        res = self.client.patch(
+            url, {"id": base2.id, "is_pinned": True}, content_type="application/json"
+        )
+        self.assertEqual(res.status_code, 200)
+        self.assertSetEqual(set(res.json()), {base.id, base2.id})
+
+        # remove first pin
+        res = self.client.patch(
+            url, {"id": base.id, "is_pinned": False}, content_type="application/json"
+        )
+        self.assertEqual(res.status_code, 200)
+        self.assertSetEqual(set(res.json()), {base2.id})
+
+        # remove other pin
+        res = self.client.patch(
+            url, {"id": base2.id, "is_pinned": False}, content_type="application/json"
+        )
+        self.assertEqual(res.status_code, 200)
+        self.assertSetEqual(set(res.json()), set())

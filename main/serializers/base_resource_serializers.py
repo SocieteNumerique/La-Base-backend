@@ -1,19 +1,16 @@
-from django.db.models import OuterRef, Exists, Q
+from django.db.models import OuterRef, Exists
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from main.models import TagCategory
+from main.models.models import Resource, Base, ExternalProducer, Tag, Collection
 from main.models.user import User
 from main.query_changes.permissions import (
     resources_queryset_for_user,
-    bases_queryset_for_user,
 )
-
 from main.query_changes.stats_annotations import resources_queryset_with_stats
 from main.serializers.content_serializers import Base64FileField
 from main.serializers.custom import MoreFieldsModelSerializer
-
-from main.models.models import Resource, Base, ExternalProducer, Tag, Collection
 from main.serializers.user_serializer import (
     AuthSerializer,
     NestedUserSerializer,
@@ -68,7 +65,9 @@ class ExternalProducerSerializer(serializers.ModelSerializer):
 
 class PrimaryKeyCreatorField(serializers.PrimaryKeyRelatedField):
     def get_queryset(self):
-        # request = self.context.get('request', None)
+        request = self.context.get("request", None)
+        if request:
+            return User.objects.filter(pk=request.user.pk)
         return User.objects.all()
 
 
@@ -90,35 +89,6 @@ class BaseIsInstancePinnedSerializer(serializers.ModelSerializer):
         return getattr(obj, "is_pinned", False)
 
 
-class BasesPinStatusField(serializers.SerializerMethodField):
-    def __init__(self, model, request=None, **kwargs):
-        self.model = model
-        self.request = request
-        super().__init__(**kwargs)
-
-    def to_representation(self, value):
-        request = self.request or self.context["request"]
-        instance = value
-        query_test_root_base = (
-            Q(pk=instance.root_base_id)
-            if self.model == Resource
-            else Q(pk=instance.base_id)
-        )
-        if request.user.is_anonymous:
-            return []
-        bases = (
-            bases_queryset_for_user(request.user)
-            .filter(Q(can_write=True) | Q(can_add_resources=True))
-            .annotate(
-                is_pinned=(
-                    Exists(instance.pinned_in_bases.filter(pk=OuterRef("pk")))
-                    | query_test_root_base
-                )
-            )
-        )
-        return BaseIsInstancePinnedSerializer(bases, many=True).data
-
-
 class BaseResourceSerializer(MoreFieldsModelSerializer):
     class Meta:
         model = Resource
@@ -131,7 +101,6 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
             "can_write",
             "label_state",
             "label_details",
-            "bases_pinned_in",
         ]
 
     authorized_users = NestedUserSerializer(many=True, required=False, allow_null=True)
@@ -151,7 +120,9 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
     root_base_title = serializers.SerializerMethodField()
     stats = serializers.SerializerMethodField(read_only=True)
     support_tags = serializers.SerializerMethodField()
-    bases_pinned_in = BasesPinStatusField(model=Resource)
+    pinned_in_bases = serializers.PrimaryKeyRelatedField(
+        queryset=Base.objects.all(), many=True, required=False
+    )
 
     @staticmethod
     def get_can_write(obj: Resource):
@@ -215,7 +186,7 @@ class ShortResourceSerializer(BaseResourceSerializer):
             "support_tags",
             "root_base",
             "root_base_title",
-            "bases_pinned_in",
+            "pinned_in_bases",
         ]
         abstract = False
 
@@ -231,7 +202,7 @@ class FullResourceSerializer(BaseResourceSerializer):
             "content_stats",
             "support_tags",
             "can_write",
-            "bases_pinned_in",
+            "pinned_in_bases",
         ]
         abstract = False
 
@@ -281,12 +252,14 @@ class PrimaryKeyResourcesForCollectionField(serializers.PrimaryKeyRelatedField):
 class CollectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Collection
-        fields = ["id", "name", "resources", "base", "bases_pinned_in"]
+        fields = ["id", "name", "resources", "base", "pinned_in_bases"]
 
     resources = PrimaryKeyResourcesForCollectionField(
         many=True, required=False, allow_null=True
     )
-    bases_pinned_in = BasesPinStatusField(model=Collection)
+    pinned_in_bases = serializers.PrimaryKeyRelatedField(
+        queryset=Base.objects.all(), many=True, required=False
+    )
 
 
 class BaseBaseSerializer(serializers.ModelSerializer):
@@ -348,7 +321,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
         user = self.context["request"].user
         pinned_resources_qs = resources_queryset_with_stats(
             resources_queryset_for_user(
-                user, obj.pinned_resources.prefetch_related("root_base"), full=False
+                user, obj.pinned_resources.prefetch_related("root_base__pk"), full=False
             )
         )
         annotated_qs = resources_queryset_with_stats(
@@ -359,7 +332,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
         ).data
 
     def get_collections(self, obj: Base):
-        pinned_collections_qs = obj.pinned_collections.prefetch_related("base")
+        pinned_collections_qs = obj.pinned_collections.prefetch_related("base__pk")
         return CollectionSerializer(
             obj.collections.union(pinned_collections_qs),
             many=True,
