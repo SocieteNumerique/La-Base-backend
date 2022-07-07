@@ -1,4 +1,4 @@
-from django.db.models import OuterRef, Exists
+from django.db.models import OuterRef, Exists, Q
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 

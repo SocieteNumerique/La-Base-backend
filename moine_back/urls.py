@@ -48,7 +48,7 @@ urlpatterns = [
     path("hijack/", include("hijack.urls")),
     path("api/version", main_views.version),
     path(
-        "user/activate/<str:uidb64>/<str:token>/",
+        "api/user/activate/<str:uidb64>/<str:token>/",
         user_views.activate,
         name="activate",
     ),
