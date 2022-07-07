@@ -43,7 +43,7 @@ class TestResourceView(TestCase):
         self.assertEqual(res.status_code, 400)
 
     @authenticate
-    def test_can_only_resources_pinned_to_base(self):
+    def test_add_resources_pinned_in_base(self):
         base = BaseFactory.create(owner=authenticate.user)
         collection = Collection.objects.create(base=base, name="collection")
         url = reverse("collection-detail", args=[collection.pk])
