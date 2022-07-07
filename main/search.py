@@ -13,7 +13,7 @@ BASES_SEARCH_FIELDS = ["title"]
 RESOURCES_SEARCH_FIELDS = ["title", "description"]
 USERS_SEARCH_FIELDS = ["first_name", "last_name", "email"]
 IS_POSTGRESQL_DB = "postgresql" in settings.DATABASES["default"]["ENGINE"]
-SEARCH_KEY_PARAM = "search" if IS_POSTGRESQL_DB else "icontains"
+SEARCH_KEY_PARAM = "unaccent__icontains" if IS_POSTGRESQL_DB else "icontains"
 
 
 def filter_queryset(qs, text, search_fields, tag_operator, tags):
