@@ -275,7 +275,7 @@ class PrimaryKeyResourcesForCollectionField(serializers.PrimaryKeyRelatedField):
             base = collection.base
         elif "base" in request.data:
             base = Base.objects.get(pk=request.data["base"])
-        return Resource.objects.filter(root_base=base)
+        return Resource.objects.filter(Q(root_base=base) | Q(pinned_in_bases=base))
 
 
 class CollectionSerializer(serializers.ModelSerializer):

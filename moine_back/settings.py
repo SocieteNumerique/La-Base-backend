@@ -110,6 +110,8 @@ if IS_LOCAL_DEV:
                 "PASSWORD": config.getstr("database.password"),
             }
         }
+        # this is necessary for text search
+        INSTALLED_APPS.append("django.contrib.postgres")
 else:
     DATABASES = {
         "default": {
