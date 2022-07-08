@@ -105,16 +105,26 @@ class ResizableImageBase64Serializer(serializers.ModelSerializer):
         return res
 
     def create(self, validated_data):
+        coordinates = (
+            validated_data.pop("coordinates")
+            if "coordinates" in validated_data
+            else None
+        )
         instance = super().create(validated_data)
-        if "coordinates" in validated_data:
-            self.apply_coordinates(instance, validated_data["coordinates"])
+        self.apply_coordinates(instance, coordinates)
         instance.save()
         return instance
 
     def update(self, instance, validated_data):
+        coordinates = (
+            validated_data.pop("coordinates")
+            if "coordinates" in validated_data
+            else None
+        )
+        has_image_changed = "image" in validated_data
         super().update(instance, validated_data)
-        if "coordinates" in validated_data:
-            self.apply_coordinates(instance, validated_data["coordinates"])
+        if coordinates or has_image_changed:
+            self.apply_coordinates(instance, coordinates)
         instance.save()
         return instance
 
