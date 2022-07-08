@@ -58,24 +58,6 @@ class TestResourceView(TestCase):
         self.assertEqual(response.json()["tags"], [new_tag.pk])
 
     @authenticate
-    def test_can_edit_resource_creator(self):
-        base = BaseFactory.create(owner=authenticate.user)
-        resource = ResourceFactory.create(root_base=base)
-        url = reverse("resource-detail", args=[resource.pk])
-
-        response = self.client.patch(
-            url, {"creator": authenticate.user.pk}, content_type="application/json"
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["creator"], authenticate.user.pk)
-
-        response = self.client.patch(
-            url, {"creator": None}, content_type="application/json"
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["creator"], None)
-
-    @authenticate
     def test_can_edit_creator_bases(self):
         base1 = BaseFactory.create(owner=authenticate.user)
         base2 = BaseFactory.create(owner=authenticate.user)

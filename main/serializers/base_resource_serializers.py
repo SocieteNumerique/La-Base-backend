@@ -98,6 +98,7 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
         model = Resource
         abstract = True
         read_only_fields = [
+            "creator",
             "is_labeled",
             "stats",
             "content_stats",
@@ -115,9 +116,7 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
     content_stats = serializers.SerializerMethodField(read_only=True)
     contributors = NestedUserSerializer(many=True, required=False, allow_null=True)
     cover_image = Base64FileField(required=False, allow_null=True)
-    creator = PrimaryKeyCreatorField(
-        default=serializers.CurrentUserDefault(), required=False, allow_null=True
-    )
+    creator = PrimaryKeyCreatorField(read_only=True)
     creator_bases = PrimaryKeyBaseField(required=False, allow_null=True, many=True)
     external_producers = ExternalProducerSerializer(many=True, required=False)
     is_short = serializers.ReadOnlyField(default=True)
@@ -169,6 +168,10 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
 
     def create(self, validated_data):
         instance = super().create(validated_data)
+        request = self.context.get("request")
+        if request:
+            instance.creator = request.user
+            instance.save()
         instance.can_write = True
         return instance
 
