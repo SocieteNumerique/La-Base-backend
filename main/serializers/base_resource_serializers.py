@@ -9,8 +9,14 @@ from main.query_changes.permissions import (
     resources_queryset_for_user,
 )
 from main.query_changes.stats_annotations import resources_queryset_with_stats
-from main.serializers.content_serializers import Base64FileField
-from main.serializers.custom import MoreFieldsModelSerializer
+from main.serializers.utils import (
+    MoreFieldsModelSerializer,
+    Base64FileField,
+    ResizableImageBase64Serializer,
+    create_or_update_resizable_image,
+)
+
+from main.models.models import Resource, Base, ExternalProducer, Tag, Collection
 from main.serializers.user_serializer import (
     AuthSerializer,
     NestedUserSerializer,
@@ -294,19 +300,28 @@ class BaseBaseSerializer(serializers.ModelSerializer):
     )
     participant_type_tags = serializers.SerializerMethodField()
     territory_tags = serializers.SerializerMethodField()
-    profile_image = Base64FileField(required=False, allow_null=True)
+    profile_image = ResizableImageBase64Serializer(required=False, allow_null=True)
 
     def create(self, validated_data):
         user = self.context["request"].user
         if user.is_anonymous:
             raise ValidationError("Anonymous cannot create a base")
         validated_data["owner"] = user
-        return super().create(validated_data)
+        image = create_or_update_resizable_image(validated_data, "profile_image")
+        instance = super().create(validated_data)
+        instance.profile_image = image
+        instance.save()
+        return instance
 
     def update(self, instance: Base, validated_data):
         set_nested_user_fields(instance, validated_data, "admins")
         set_nested_user_fields(instance, validated_data, "authorized_users")
         set_nested_user_fields(instance, validated_data, "contributors")
+        image = create_or_update_resizable_image(
+            validated_data, "profile_image", instance
+        )
+        instance.profile_image = image
+        instance.save()
         return super().update(instance, validated_data)
 
     @staticmethod
