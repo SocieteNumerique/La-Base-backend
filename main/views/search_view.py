@@ -1,5 +1,5 @@
 from rest_framework import viewsets, mixins
-from rest_framework.exceptions import APIException
+from rest_framework.exceptions import APIException, ParseError
 from rest_framework.pagination import PageNumberPagination
 
 from main.models.models import Resource
@@ -30,7 +30,10 @@ class SearchView(
         text = self.request.data.get("text", "")
         tag_operator = self.request.data.get("tag_operator", "OR")
         tags = self.request.data.get("tags")
-        data_type = self.request.data["data_type"]
+        try:
+            data_type = self.request.data["data_type"]
+        except KeyError:
+            raise ParseError("'data_type' needs to be in request body")
         if data_type == "resources":
             search_function = search_resources
         elif data_type == "bases":
