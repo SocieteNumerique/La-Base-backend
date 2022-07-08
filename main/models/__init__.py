@@ -15,3 +15,5 @@ from .contents import (  # noqa: F401
     FileContent,
 )
 from .user import User, UserGroup  # noqa: F401
+
+from .utils import ResizableImage  # noqa: F401
