@@ -9,18 +9,16 @@ from main.query_changes.permissions import (
     resources_queryset_for_user,
 )
 from main.query_changes.stats_annotations import resources_queryset_with_stats
+from main.serializers.user_serializer import (
+    AuthSerializer,
+    NestedUserSerializer,
+    set_nested_user_fields,
+)
 from main.serializers.utils import (
     MoreFieldsModelSerializer,
     Base64FileField,
     ResizableImageBase64Serializer,
     create_or_update_resizable_image,
-)
-
-from main.models.models import Resource, Base, ExternalProducer, Tag, Collection
-from main.serializers.user_serializer import (
-    AuthSerializer,
-    NestedUserSerializer,
-    set_nested_user_fields,
 )
 
 TERRITORY_CATEGORY_ID = None
@@ -156,7 +154,7 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
     @staticmethod
     def get_support_tags(obj: Resource):
         if SUPPORT_CATEGORY_ID:
-            if "tags" in obj._prefetched_objects_cache:
+            if "tags" in getattr(obj, "_prefetched_objects_cache", []):
                 return [
                     tag.pk
                     for tag in obj.tags.all()
