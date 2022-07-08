@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model, password_validation
 from django.contrib.auth.hashers import make_password
 from django.core import exceptions
+from django.db import IntegrityError
 from django.db.models import Q
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -78,12 +79,17 @@ class UserSerializer(serializers.ModelSerializer):
         )
 
     def create(self, validated_data):
-        user = UserModel.objects.create_user(
-            email=validated_data["email"],
-            password=validated_data["password"],
-            first_name=validated_data["first_name"],
-            last_name=validated_data["last_name"],
-        )
+        try:
+            user = UserModel.objects.create_user(
+                email=validated_data["email"],
+                password=validated_data["password"],
+                first_name=validated_data["first_name"],
+                last_name=validated_data["last_name"],
+            )
+        except IntegrityError:
+            raise ValidationError(
+                "un compte existe déjà avec cette adresse mail, veuillez vous connecter"
+            )
         try:
             cnfs_tag = Tag.objects.get(
                 name=CNFS_RESERVED_TAG_NAME,
