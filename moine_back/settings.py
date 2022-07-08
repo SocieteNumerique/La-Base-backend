@@ -168,7 +168,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 if not IS_LOCAL_DEV:
     ROLLBAR = {
         "access_token": "c4ebf44512b4479fb018ee413ac08d2a",
-        "environment": "development" if DEBUG else "production",
+        "environment": "development"
+        if DEBUG
+        else config.getstr("environment.environment", "production"),
         "root": BASE_DIR,
     }
     import rollbar
