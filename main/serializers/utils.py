@@ -86,11 +86,17 @@ class ResizableImageBase64Serializer(serializers.ModelSerializer):
 
     image = Base64FileField()
 
-    def apply_coordinates(self, instance, coordinates):
-        instance.scale_x = instance.image.width / coordinates["width"]
-        instance.scale_y = instance.image.height / coordinates["height"]
-        instance.relative_position_x = coordinates["left"] / coordinates["width"]
-        instance.relative_position_y = coordinates["top"] / coordinates["height"]
+    def apply_coordinates(self, instance, coordinates=None):
+        if coordinates is None:
+            instance.scale_x = None
+            instance.scale_y = None
+            instance.relative_position_x = None
+            instance.relative_position_y = None
+        else:
+            instance.scale_x = instance.image.width / coordinates["width"]
+            instance.scale_y = instance.image.height / coordinates["height"]
+            instance.relative_position_x = coordinates["left"] / coordinates["width"]
+            instance.relative_position_y = coordinates["top"] / coordinates["height"]
 
     def to_internal_value(self, data):
         res = super().to_internal_value(data)
@@ -99,16 +105,26 @@ class ResizableImageBase64Serializer(serializers.ModelSerializer):
         return res
 
     def create(self, validated_data):
+        coordinates = (
+            validated_data.pop("coordinates")
+            if "coordinates" in validated_data
+            else None
+        )
         instance = super().create(validated_data)
-        if "coordinates" in validated_data:
-            self.apply_coordinates(instance, validated_data["coordinates"])
+        self.apply_coordinates(instance, coordinates)
         instance.save()
         return instance
 
     def update(self, instance, validated_data):
+        coordinates = (
+            validated_data.pop("coordinates")
+            if "coordinates" in validated_data
+            else None
+        )
+        has_image_changed = "image" in validated_data
         super().update(instance, validated_data)
-        if "coordinates" in validated_data:
-            self.apply_coordinates(instance, validated_data["coordinates"])
+        if coordinates or has_image_changed:
+            self.apply_coordinates(instance, coordinates)
         instance.save()
         return instance
 

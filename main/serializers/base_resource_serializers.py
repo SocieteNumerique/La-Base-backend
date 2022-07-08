@@ -310,8 +310,9 @@ class BaseBaseSerializer(serializers.ModelSerializer):
         validated_data["owner"] = user
         image = create_or_update_resizable_image(validated_data, "profile_image")
         instance = super().create(validated_data)
-        instance.profile_image = image
-        instance.save()
+        if image is not None:
+            instance.profile_image = image
+            instance.save()
         return instance
 
     def update(self, instance: Base, validated_data):
@@ -321,8 +322,9 @@ class BaseBaseSerializer(serializers.ModelSerializer):
         image = create_or_update_resizable_image(
             validated_data, "profile_image", instance
         )
-        instance.profile_image = image
-        instance.save()
+        if image is not None:
+            instance.profile_image = image
+            instance.save()
         return super().update(instance, validated_data)
 
     @staticmethod
