@@ -35,7 +35,10 @@ class UserManager(BaseUserManager):
             cnfs_id=cnfs_id,
             cnfs_id_organization=cnfs_id_organization,
         )
-        user.set_password(password)
+        if password.startswith("pbkdf2_sha256"):
+            user.password = password
+        else:
+            user.set_password(password)
         user.save(using=self._db)
         return user
 
