@@ -86,11 +86,17 @@ class ResizableImageBase64Serializer(serializers.ModelSerializer):
 
     image = Base64FileField()
 
-    def apply_coordinates(self, instance, coordinates):
-        instance.scale_x = instance.image.width / coordinates["width"]
-        instance.scale_y = instance.image.height / coordinates["height"]
-        instance.relative_position_x = coordinates["left"] / coordinates["width"]
-        instance.relative_position_y = coordinates["top"] / coordinates["height"]
+    def apply_coordinates(self, instance, coordinates=None):
+        if coordinates is None:
+            instance.scale_x = None
+            instance.scale_y = None
+            instance.relative_position_x = None
+            instance.relative_position_y = None
+        else:
+            instance.scale_x = instance.image.width / coordinates["width"]
+            instance.scale_y = instance.image.height / coordinates["height"]
+            instance.relative_position_x = coordinates["left"] / coordinates["width"]
+            instance.relative_position_y = coordinates["top"] / coordinates["height"]
 
     def to_internal_value(self, data):
         res = super().to_internal_value(data)

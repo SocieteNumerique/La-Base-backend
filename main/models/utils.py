@@ -24,17 +24,13 @@ class ResizableImage(models.Model):
     # these four values are percentages of the image dimensions
     # scale = complete_size / cropped_size
     # relative_position = position / complete_size
-    scale_x = models.DecimalField(
-        default=100, blank=True, max_digits=5, decimal_places=2
-    )
-    scale_y = models.DecimalField(
-        default=100, blank=True, max_digits=5, decimal_places=2
-    )
+    scale_x = models.DecimalField(null=True, blank=True, max_digits=5, decimal_places=2)
+    scale_y = models.DecimalField(null=True, blank=True, max_digits=5, decimal_places=2)
     relative_position_x = models.DecimalField(
-        default=0, blank=True, max_digits=5, decimal_places=2
+        null=True, blank=True, max_digits=5, decimal_places=2
     )
     relative_position_y = models.DecimalField(
-        default=0, blank=True, max_digits=5, decimal_places=2
+        null=True, blank=True, max_digits=5, decimal_places=2
     )
 
 
