@@ -32,7 +32,7 @@ def from_resizable_image(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('main', '0009_base_authorized_user_tags_base_authorized_users_and_more'),
+        ('main', '0010_auto_20220707_0800'),
     ]
 
     operations = [
