@@ -81,7 +81,7 @@ class Base(TimeStampedModel):
         ResizableImage, null=True, blank=True, on_delete=models.CASCADE
     )
     state = models.CharField(
-        default="draft", choices=RESOURCE_STATE_CHOICES, max_length=10
+        default="private", choices=RESOURCE_STATE_CHOICES, max_length=10
     )
 
     contact_state = models.CharField(
