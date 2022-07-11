@@ -130,16 +130,17 @@ class ResizableImageBase64Serializer(serializers.ModelSerializer):
 
 
 def create_or_update_resizable_image(
-    validated_data, property_name, parent_instance=None
+    instance_validated_data, property_name, parent_instance=None
 ) -> ResizableImage:
-    if property_name not in validated_data:
+    if property_name not in instance_validated_data:
         return None
+    image_data = instance_validated_data.pop(property_name)
+    if image_data is None:
+        return None
+
+    serializer = ResizableImageBase64Serializer()
     if parent_instance is not None:
         image_instance = getattr(parent_instance, property_name)
-    else:
-        image_instance = ResizableImage()
-    image_data = validated_data.pop(property_name)
-    serializer = ResizableImageBase64Serializer()
-    if image_instance:
-        return serializer.update(image_instance, image_data)
+        if image_instance:
+            return serializer.update(image_instance, image_data)
     return serializer.create(image_data)
