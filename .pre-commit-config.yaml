@@ -1,4 +1,5 @@
 exclude: ^(.*\/migrations|.*package.json|.*package-lock.json|Pipfile*)
+fail_fast: True
 repos:
 - hooks:
   - id: check-added-large-files
