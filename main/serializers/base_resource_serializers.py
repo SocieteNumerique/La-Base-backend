@@ -1,6 +1,7 @@
 from django.db.models import OuterRef, Exists, Q
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
+from rest_framework.fields import SkipField
 
 from main.models import TagCategory
 from main.models.models import Resource, Base, ExternalProducer, Tag, Collection
@@ -308,23 +309,27 @@ class BaseBaseSerializer(serializers.ModelSerializer):
         if user.is_anonymous:
             raise ValidationError("Anonymous cannot create a base")
         validated_data["owner"] = user
-        image = create_or_update_resizable_image(validated_data, "profile_image")
-        instance = super().create(validated_data)
-        if image is not None:
+        try:
+            image = create_or_update_resizable_image(validated_data, "profile_image")
+            instance = super().create(validated_data)
             instance.profile_image = image
             instance.save()
+        except SkipField:
+            instance = super().create(validated_data)
         return instance
 
     def update(self, instance: Base, validated_data):
         set_nested_user_fields(instance, validated_data, "admins")
         set_nested_user_fields(instance, validated_data, "authorized_users")
         set_nested_user_fields(instance, validated_data, "contributors")
-        image = create_or_update_resizable_image(
-            validated_data, "profile_image", instance
-        )
-        if image is not None:
+        try:
+            image = create_or_update_resizable_image(
+                validated_data, "profile_image", instance
+            )
             instance.profile_image = image
             instance.save()
+        except SkipField:
+            pass
         return super().update(instance, validated_data)
 
     @staticmethod

@@ -2,6 +2,7 @@ import uuid
 
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.db import models
+from django.db.models import Q
 
 from main.models.utils import TimeStampedModel
 
@@ -83,7 +84,14 @@ class User(AbstractBaseUser):
     is_superuser = models.BooleanField(default=False)
     activation_key = models.UUIDField(default=uuid.uuid4, editable=False)
 
-    tags = models.ManyToManyField("Tag", blank=True, related_name="users")
+    tags = models.ManyToManyField(
+        "Tag",
+        blank=True,
+        related_name="users",
+        limit_choices_to=(
+            Q(category__relates_to="User") | Q(category__relates_to__isnull=True)
+        ),
+    )
 
     cnfs_id = models.PositiveIntegerField(null=True, blank=True)
     cnfs_id_organization = models.PositiveIntegerField(null=True, blank=True)

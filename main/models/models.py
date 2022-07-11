@@ -1,7 +1,7 @@
 import datetime
 
 from django.db import models
-from django.db.models import Count
+from django.db.models import Count, Q
 
 from main.models.user import User, UserGroup
 from main.models.utils import TimeStampedModel, ResizableImage
@@ -36,7 +36,14 @@ class Base(TimeStampedModel):
     admins = models.ManyToManyField(
         User, verbose_name="administrateurs", related_name="admins", blank=True
     )
-    tags = models.ManyToManyField("Tag", blank=True, related_name="bases")
+    tags = models.ManyToManyField(
+        "Tag",
+        blank=True,
+        related_name="bases",
+        limit_choices_to=(
+            Q(category__relates_to="Bases") | Q(category__relates_to__isnull=True)
+        ),
+    )
     # users with these tags will have write access
     contributor_tags = models.ManyToManyField(
         "Tag",
@@ -81,7 +88,7 @@ class Base(TimeStampedModel):
         ResizableImage, null=True, blank=True, on_delete=models.CASCADE
     )
     state = models.CharField(
-        default="draft", choices=RESOURCE_STATE_CHOICES, max_length=10
+        default="private", choices=RESOURCE_STATE_CHOICES, max_length=10
     )
 
     contact_state = models.CharField(
@@ -238,7 +245,14 @@ class Resource(TimeStampedModel):
     internal_producers = models.ManyToManyField(
         User, blank=True, related_name="internal_producers"
     )
-    tags = models.ManyToManyField(Tag, blank=True, related_name="resources")
+    tags = models.ManyToManyField(
+        Tag,
+        blank=True,
+        related_name="resources",
+        limit_choices_to=(
+            Q(category__relates_to="Resource") | Q(category__relates_to__isnull=True)
+        ),
+    )
     label_state = models.CharField(
         max_length=10, default="", blank=True, choices=RESOURCE_LABEL_CHOICES
     )
