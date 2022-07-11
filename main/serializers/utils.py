@@ -133,7 +133,7 @@ def create_or_update_resizable_image(
     instance_validated_data, property_name, parent_instance=None
 ) -> ResizableImage:
     if property_name not in instance_validated_data:
-        return None
+        raise SkipField
     image_data = instance_validated_data.pop(property_name)
     if image_data is None:
         return None
