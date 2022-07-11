@@ -10,6 +10,7 @@ from main.factories import (
 )
 from main.models import Resource
 from main.models.models import ExternalProducer
+from main.serializers.base_resource_serializers import reset_specific_categories
 from main.tests.test_utils import authenticate, snake_to_camel_case
 
 
@@ -124,8 +125,9 @@ class TestResourceView(TestCase):
 
         # can add a producer with a tag
         external_producer_tag_category = TagCategoryFactory.create(
-            slug="externalProducer_00occupation"
+            slug="externalProducer_00occupation", relates_to=None
         )
+        reset_specific_categories()
         tag = TagFactory.create(category=external_producer_tag_category)
         new_data = {
             "name": "Name",
