@@ -186,7 +186,7 @@ class TestPin(TestCase):
     def test_contributors_can_pin(self):
         # read
         base = BaseFactory()
-        tag = TagFactory(category__relates_to="user")
+        tag = TagFactory(category__relates_to="User")
         base.contributor_tags.add(tag)
         authenticate.user.tags.add(tag)
 
