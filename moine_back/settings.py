@@ -172,6 +172,7 @@ if not IS_LOCAL_DEV:
         if DEBUG
         else config.getstr("environment.environment", "production"),
         "root": BASE_DIR,
+        "capture_email": True,
     }
     import rollbar
 
