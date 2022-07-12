@@ -1,27 +1,63 @@
 from django.db.models import OuterRef, Exists, Q
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
+from rest_framework.fields import SkipField
+
+from main.models import TagCategory
+from main.models.models import Resource, Base, ExternalProducer, Tag, Collection
 from main.models.user import User
 from main.query_changes.permissions import (
     resources_queryset_for_user,
-    bases_queryset_for_user,
 )
-
 from main.query_changes.stats_annotations import resources_queryset_with_stats
-from main.serializers.content_serializers import Base64FileField
-from main.serializers.custom import MoreFieldsModelSerializer
-
-from main.models.models import Resource, Base, ExternalProducer, Tag, Collection
 from main.serializers.user_serializer import (
     AuthSerializer,
     NestedUserSerializer,
     set_nested_user_fields,
 )
+from main.serializers.utils import (
+    MoreFieldsModelSerializer,
+    Base64FileField,
+    ResizableImageBase64Serializer,
+    create_or_update_resizable_image,
+)
+
+TERRITORY_CATEGORY_ID = None
+EXTERNAL_PRODUCER_CATEGORY_ID = None
+SUPPORT_CATEGORY_ID = None
+
+
+def reset_specific_categories():
+    global TERRITORY_CATEGORY_ID
+    global EXTERNAL_PRODUCER_CATEGORY_ID
+    global SUPPORT_CATEGORY_ID
+
+    try:
+        TERRITORY_CATEGORY_ID = TagCategory.objects.get(slug="territory_00city").pk
+    except TagCategory.DoesNotExist:
+        TERRITORY_CATEGORY_ID = None
+
+    try:
+        EXTERNAL_PRODUCER_CATEGORY_ID = TagCategory.objects.get(
+            slug="externalProducer_00occupation"
+        ).pk
+    except TagCategory.DoesNotExist:
+        SUPPORT_CATEGORY_ID = None
+    try:
+        SUPPORT_CATEGORY_ID = TagCategory.objects.get(slug="indexation_01RessType").pk
+    except TagCategory.DoesNotExist:
+        SUPPORT_CATEGORY_ID = None
+
+
+reset_specific_categories()
 
 
 class PrimaryKeyOccupationTagField(serializers.PrimaryKeyRelatedField):
     def get_queryset(self):
-        return Tag.objects.filter(category__slug="externalProducer_00occupation")
+        if EXTERNAL_PRODUCER_CATEGORY_ID:
+            return Tag.objects.filter(category=EXTERNAL_PRODUCER_CATEGORY_ID)
+        else:
+            return Tag.objects.none()
 
 
 class ExternalProducerSerializer(serializers.ModelSerializer):
@@ -34,7 +70,9 @@ class ExternalProducerSerializer(serializers.ModelSerializer):
 
 class PrimaryKeyCreatorField(serializers.PrimaryKeyRelatedField):
     def get_queryset(self):
-        # request = self.context.get('request', None)
+        request = self.context.get("request", None)
+        if request:
+            return User.objects.filter(pk=request.user.pk)
         return User.objects.all()
 
 
@@ -56,40 +94,12 @@ class BaseIsInstancePinnedSerializer(serializers.ModelSerializer):
         return getattr(obj, "is_pinned", False)
 
 
-class BasesPinStatusField(serializers.SerializerMethodField):
-    def __init__(self, model, request=None, **kwargs):
-        self.model = model
-        self.request = request
-        super().__init__(**kwargs)
-
-    def to_representation(self, value):
-        request = self.request or self.context["request"]
-        instance = value
-        query_test_root_base = (
-            Q(pk=instance.root_base_id)
-            if self.model == Resource
-            else Q(pk=instance.base_id)
-        )
-        if request.user.is_anonymous:
-            return []
-        bases = (
-            bases_queryset_for_user(request.user)
-            .filter(Q(can_write=True) | Q(can_add_resources=True))
-            .annotate(
-                is_pinned=(
-                    Exists(instance.pinned_in_bases.filter(pk=OuterRef("pk")))
-                    | query_test_root_base
-                )
-            )
-        )
-        return BaseIsInstancePinnedSerializer(bases, many=True).data
-
-
 class BaseResourceSerializer(MoreFieldsModelSerializer):
     class Meta:
         model = Resource
         abstract = True
         read_only_fields = [
+            "creator",
             "is_labeled",
             "stats",
             "content_stats",
@@ -97,7 +107,6 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
             "can_write",
             "label_state",
             "label_details",
-            "bases_pinned_in",
         ]
 
     authorized_users = NestedUserSerializer(many=True, required=False, allow_null=True)
@@ -108,16 +117,16 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
     content_stats = serializers.SerializerMethodField(read_only=True)
     contributors = NestedUserSerializer(many=True, required=False, allow_null=True)
     cover_image = Base64FileField(required=False, allow_null=True)
-    creator = PrimaryKeyCreatorField(
-        default=serializers.CurrentUserDefault(), required=False, allow_null=True
-    )
+    creator = PrimaryKeyCreatorField(read_only=True)
     creator_bases = PrimaryKeyBaseField(required=False, allow_null=True, many=True)
     external_producers = ExternalProducerSerializer(many=True, required=False)
     is_short = serializers.ReadOnlyField(default=True)
     root_base_title = serializers.SerializerMethodField()
     stats = serializers.SerializerMethodField(read_only=True)
     support_tags = serializers.SerializerMethodField()
-    bases_pinned_in = BasesPinStatusField(model=Resource)
+    pinned_in_bases = serializers.PrimaryKeyRelatedField(
+        queryset=Base.objects.all(), many=True, required=False
+    )
 
     @staticmethod
     def get_can_write(obj: Resource):
@@ -144,13 +153,26 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
 
     @staticmethod
     def get_support_tags(obj: Resource):
-        tags = obj.tags.filter(category__slug="indexation_01RessType").values_list(
-            "pk", flat=True
-        )
-        return tags
+        if SUPPORT_CATEGORY_ID:
+            if "tags" in getattr(obj, "_prefetched_objects_cache", []):
+                return [
+                    tag.pk
+                    for tag in obj.tags.all()
+                    if tag.category_id == SUPPORT_CATEGORY_ID
+                ]
+            else:
+                return obj.tags.filter(
+                    category__slug="indexation_01RessType"
+                ).values_list("pk", flat=True)
+        else:
+            return []
 
     def create(self, validated_data):
         instance = super().create(validated_data)
+        request = self.context.get("request")
+        if request:
+            instance.creator = request.user
+            instance.save()
         instance.can_write = True
         return instance
 
@@ -172,7 +194,7 @@ class ShortResourceSerializer(BaseResourceSerializer):
             "support_tags",
             "root_base",
             "root_base_title",
-            "bases_pinned_in",
+            "pinned_in_bases",
         ]
         abstract = False
 
@@ -188,7 +210,7 @@ class FullResourceSerializer(BaseResourceSerializer):
             "content_stats",
             "support_tags",
             "can_write",
-            "bases_pinned_in",
+            "pinned_in_bases",
         ]
         abstract = False
 
@@ -232,18 +254,20 @@ class PrimaryKeyResourcesForCollectionField(serializers.PrimaryKeyRelatedField):
             base = collection.base
         elif "base" in request.data:
             base = Base.objects.get(pk=request.data["base"])
-        return Resource.objects.filter(root_base=base)
+        return Resource.objects.filter(Q(root_base=base) | Q(pinned_in_bases=base))
 
 
 class CollectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Collection
-        fields = ["id", "name", "resources", "base", "bases_pinned_in"]
+        fields = ["id", "name", "resources", "base", "pinned_in_bases"]
 
     resources = PrimaryKeyResourcesForCollectionField(
         many=True, required=False, allow_null=True
     )
-    bases_pinned_in = BasesPinStatusField(model=Collection)
+    pinned_in_bases = serializers.PrimaryKeyRelatedField(
+        queryset=Base.objects.all(), many=True, required=False
+    )
 
 
 class BaseBaseSerializer(serializers.ModelSerializer):
@@ -278,19 +302,34 @@ class BaseBaseSerializer(serializers.ModelSerializer):
     )
     participant_type_tags = serializers.SerializerMethodField()
     territory_tags = serializers.SerializerMethodField()
-    profile_image = Base64FileField(required=False, allow_null=True)
+    profile_image = ResizableImageBase64Serializer(required=False, allow_null=True)
 
     def create(self, validated_data):
         user = self.context["request"].user
         if user.is_anonymous:
             raise ValidationError("Anonymous cannot create a base")
         validated_data["owner"] = user
-        return super().create(validated_data)
+        try:
+            image = create_or_update_resizable_image(validated_data, "profile_image")
+            instance = super().create(validated_data)
+            instance.profile_image = image
+            instance.save()
+        except SkipField:
+            instance = super().create(validated_data)
+        return instance
 
     def update(self, instance: Base, validated_data):
         set_nested_user_fields(instance, validated_data, "admins")
         set_nested_user_fields(instance, validated_data, "authorized_users")
         set_nested_user_fields(instance, validated_data, "contributors")
+        try:
+            image = create_or_update_resizable_image(
+                validated_data, "profile_image", instance
+            )
+            instance.profile_image = image
+            instance.save()
+        except SkipField:
+            pass
         return super().update(instance, validated_data)
 
     @staticmethod
@@ -305,7 +344,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
         user = self.context["request"].user
         pinned_resources_qs = resources_queryset_with_stats(
             resources_queryset_for_user(
-                user, obj.pinned_resources.prefetch_related("root_base"), full=False
+                user, obj.pinned_resources.prefetch_related("root_base__pk"), full=False
             )
         )
         annotated_qs = resources_queryset_with_stats(
@@ -316,7 +355,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
         ).data
 
     def get_collections(self, obj: Base):
-        pinned_collections_qs = obj.pinned_collections.prefetch_related("base")
+        pinned_collections_qs = obj.pinned_collections.prefetch_related("base__pk")
         return CollectionSerializer(
             obj.collections.union(pinned_collections_qs),
             many=True,
@@ -336,15 +375,25 @@ class BaseBaseSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def get_participant_type_tags(obj: Base):
-        return obj.tags.filter(
-            category__slug="externalProducer_00occupation"
-        ).values_list("pk", flat=True)
+        if EXTERNAL_PRODUCER_CATEGORY_ID:
+            return [
+                tag.pk
+                for tag in obj.tags.all()
+                if tag.category_id == EXTERNAL_PRODUCER_CATEGORY_ID
+            ]
+        else:
+            return []
 
     @staticmethod
     def get_territory_tags(obj: Base):
-        return obj.tags.filter(category__slug="territory_00city").values_list(
-            "pk", flat=True
-        )
+        if TERRITORY_CATEGORY_ID:
+            return [
+                tag.pk
+                for tag in obj.tags.all()
+                if tag.category_id == TERRITORY_CATEGORY_ID
+            ]
+        else:
+            return []
 
 
 class ShortBaseSerializer(BaseBaseSerializer):

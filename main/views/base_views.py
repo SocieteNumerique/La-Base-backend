@@ -9,7 +9,6 @@ from main.query_changes.permissions import bases_queryset_for_user
 from main.serializers.base_resource_serializers import (
     FullBaseSerializer,
     ShortBaseSerializer,
-    BasesPinStatusField,
 )
 from main.serializers.index_serializers import IndexAdminSerializer
 
@@ -81,6 +80,4 @@ def generic_pin_action(model, self, request, pk=None):
         else:
             getattr(base, f"pinned_{model_name}s").remove(instance)
         base.save()
-    return Response(
-        BasesPinStatusField(model=model, request=request).to_representation(instance)
-    )
+    return Response(instance.pinned_in_bases.values_list("pk", flat=True))

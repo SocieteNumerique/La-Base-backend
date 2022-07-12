@@ -8,7 +8,9 @@ from main.factories import (
     TagCategoryFactory,
     UserFactory,
 )
+from main.models import Resource
 from main.models.models import ExternalProducer
+from main.serializers.base_resource_serializers import reset_specific_categories
 from main.tests.test_utils import authenticate, snake_to_camel_case
 
 
@@ -20,6 +22,8 @@ class TestResourceView(TestCase):
         response = self.client.post(url, {"root_base": base.pk, "title": "My title"})
         self.assertEqual(response.status_code, 201)
         self.assertTrue(response.json()["canWrite"])
+        resource = Resource.objects.get(pk=response.json()["id"])
+        self.assertEqual(resource.creator, authenticate.user)
 
     @authenticate
     def test_can_update_resource(self):
@@ -53,24 +57,6 @@ class TestResourceView(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["tags"], [new_tag.pk])
-
-    @authenticate
-    def test_can_edit_resource_creator(self):
-        base = BaseFactory.create(owner=authenticate.user)
-        resource = ResourceFactory.create(root_base=base)
-        url = reverse("resource-detail", args=[resource.pk])
-
-        response = self.client.patch(
-            url, {"creator": authenticate.user.pk}, content_type="application/json"
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["creator"], authenticate.user.pk)
-
-        response = self.client.patch(
-            url, {"creator": None}, content_type="application/json"
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["creator"], None)
 
     @authenticate
     def test_can_edit_creator_bases(self):
@@ -139,8 +125,9 @@ class TestResourceView(TestCase):
 
         # can add a producer with a tag
         external_producer_tag_category = TagCategoryFactory.create(
-            slug="externalProducer_00occupation"
+            slug="externalProducer_00occupation", relates_to=None
         )
+        reset_specific_categories()
         tag = TagFactory.create(category=external_producer_tag_category)
         new_data = {
             "name": "Name",

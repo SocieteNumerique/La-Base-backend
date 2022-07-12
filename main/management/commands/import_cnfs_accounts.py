@@ -151,8 +151,8 @@ def import_accounts(limit_to_emails=None, max_n_accounts=None):
             form = MyPasswordResetForm(dict(email=email))
             if form.is_valid():
                 form.save(
-                    email_template_name="cnfs_account_creation_email.html",
-                    subject_template_name="cnfs_account_creation_subject.txt",
+                    email_template_name="email/cnfs/cnfs_account_creation_email.html",
+                    subject_template_name="email/cnfs/cnfs_account_creation_subject.txt",
                     domain_override=DOMAIN,
                     extra_email_context={
                         "first_name": user.first_name,
@@ -213,8 +213,8 @@ def import_cnfs_organizations(limit_to_emails=None, max_n_accounts=None):
             form = MyPasswordResetForm(dict(email=email))
             if form.is_valid():
                 form.save(
-                    email_template_name="cnfs_organization_account_creation_email.html",
-                    subject_template_name="cnfs_organization_account_creation_subject.txt",
+                    email_template_name="email/cnfs/cnfs_organization_account_creation_email.html",
+                    subject_template_name="email/cnfs/cnfs_organization_account_creation_subject.txt",
                     domain_override=DOMAIN,
                     extra_email_context={
                         "first_name": user.first_name,

@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
 import os
+import sys
 import getconf
 from pathlib import Path
 
@@ -19,6 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 IS_LOCAL_DEV = bool(os.environ.get("TELESCOOP_DEV"))
 DEBUG = IS_LOCAL_DEV
+IS_TESTING = "test" in sys.argv
 
 if IS_LOCAL_DEV:
     config_paths = ["local_settings.conf"]
@@ -99,6 +101,17 @@ if IS_LOCAL_DEV:
             "NAME": BASE_DIR / "db.sqlite3",
         }
     }
+    if not IS_TESTING and config.getstr("database.postgres"):
+        DATABASES = {
+            "default": {
+                "ENGINE": "django.db.backends.postgresql",
+                "NAME": config.getstr("database.name"),
+                "USER": config.getstr("database.user"),
+                "PASSWORD": config.getstr("database.password"),
+            }
+        }
+        # this is necessary for text search
+        INSTALLED_APPS.append("django.contrib.postgres")
 else:
     DATABASES = {
         "default": {
@@ -155,7 +168,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 if not IS_LOCAL_DEV:
     ROLLBAR = {
         "access_token": "c4ebf44512b4479fb018ee413ac08d2a",
-        "environment": "development" if DEBUG else "production",
+        "environment": "development"
+        if DEBUG
+        else config.getstr("environment.environment", "production"),
         "root": BASE_DIR,
     }
     import rollbar
@@ -181,9 +196,9 @@ AUTH_USER_MODEL = "main.User"
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": (
         "djangorestframework_camel_case.render.CamelCaseJSONRenderer",
-        "djangorestframework_camel_case.render.CamelCaseBrowsableAPIRenderer",
+        # "djangorestframework_camel_case.render.CamelCaseBrowsableAPIRenderer",
         # below renderer can be useful to debug queries with django-debug-toolbar
-        # "main.renderer.RendererNoForm",
+        "main.renderer.RendererNoForm",
     ),
     "DEFAULT_PARSER_CLASSES": (
         "djangorestframework_camel_case.parser.CamelCaseFormParser",

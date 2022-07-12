@@ -2,6 +2,7 @@ import uuid
 
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.db import models
+from django.db.models import Q
 
 from main.models.utils import TimeStampedModel
 
@@ -10,13 +11,10 @@ class UserManager(BaseUserManager):
     def create_user(
         self,
         email: str,
-        first_name=None,
-        last_name=None,
+        first_name="",
+        last_name="",
         password=None,
-        # TODO: having the user active by default removes email validation
-        #  so everyone can sign up with any email. Email validation should
-        #  be implemented one day.
-        is_active=True,
+        is_active=False,
         is_admin=False,
         is_superuser=False,
         cnfs_id=None,
@@ -38,15 +36,18 @@ class UserManager(BaseUserManager):
             cnfs_id=cnfs_id,
             cnfs_id_organization=cnfs_id_organization,
         )
-        user.set_password(password)
+        if password.startswith("pbkdf2_sha256"):
+            user.password = password
+        else:
+            user.set_password(password)
         user.save(using=self._db)
         return user
 
     def create_superuser(
         self,
         email: str,
-        first_name=None,
-        last_name=None,
+        first_name="",
+        last_name="",
         password=None,
         is_active: bool = True,
     ):
@@ -83,7 +84,14 @@ class User(AbstractBaseUser):
     is_superuser = models.BooleanField(default=False)
     activation_key = models.UUIDField(default=uuid.uuid4, editable=False)
 
-    tags = models.ManyToManyField("Tag", blank=True, related_name="users")
+    tags = models.ManyToManyField(
+        "Tag",
+        blank=True,
+        related_name="users",
+        limit_choices_to=(
+            Q(category__relates_to="User") | Q(category__relates_to__isnull=True)
+        ),
+    )
 
     cnfs_id = models.PositiveIntegerField(null=True, blank=True)
     cnfs_id_organization = models.PositiveIntegerField(null=True, blank=True)
