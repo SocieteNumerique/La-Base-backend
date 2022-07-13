@@ -195,6 +195,7 @@ class ShortResourceSerializer(BaseResourceSerializer):
             "root_base",
             "root_base_title",
             "pinned_in_bases",
+            "can_write",
         ]
         abstract = False
 
