@@ -12,7 +12,12 @@ from main.models.contents import (
     FileContent,
 )
 from main.models.models import Resource
-from main.serializers.utils import Base64FileField
+from main.serializers.utils import (
+    Base64FileField,
+    LicenseTextSerializer,
+    SPECIFIC_CATEGORY_IDS,
+    SPECIFIC_CATEGORY_SLUGS,
+)
 
 content_fields = [
     "id",
@@ -25,6 +30,8 @@ content_fields = [
     "type",
     "nb_col",
     "order",
+    "license_tags",
+    "use_resource_license",
 ]
 CONTENT_READ_ONLY_FIELDS = ["id", "created", "modified"]
 POSSIBLE_CONTENT_TYPES = ["text", "link", "linkedResource", "file"]
@@ -69,6 +76,32 @@ class BaseContentSerializer(serializers.ModelSerializer):
         abstract = True
 
     type = serializers.SerializerMethodField()
+    license_tags = serializers.SerializerMethodField()
+    license_text = LicenseTextSerializer(required=False)
+
+    @staticmethod
+    def get_license_tags(obj: ContentBlock):
+        res = []
+        access_tag_categories = ["license", "price", "needs_account"]
+        access_tag_category_slugs = [
+            SPECIFIC_CATEGORY_SLUGS[tag_category]
+            for tag_category in access_tag_categories
+        ]
+
+        if "tags" in getattr(obj, "_prefetched_objects_cache", []):
+            # TODO actually prefetch in resource serializer
+            for tag_category in access_tag_categories:
+                if SPECIFIC_CATEGORY_IDS[tag_category]:
+                    res += [
+                        tag.pk
+                        for tag in obj.tags.all()
+                        if tag.category_id == SPECIFIC_CATEGORY_IDS[tag_category]
+                    ]
+        else:
+            res += obj.tags.filter(
+                category__slug__in=access_tag_category_slugs
+            ).values_list("pk", flat=True)
+        return res
 
     @staticmethod
     def get_type(obj):

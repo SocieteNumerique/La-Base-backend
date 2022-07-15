@@ -12,6 +12,7 @@ from rest_framework.fields import SkipField
 from rest_framework.serializers import ModelSerializer
 
 from main.models import TagCategory, Tag
+from main.models.models import LicenseText
 from main.models.utils import ResizableImage
 
 
@@ -74,6 +75,21 @@ class Base64FileField(serializers.FileField):
             "link": full_link,
             "mime_type": mimetypes.guess_type(instance.name)[0],
         }
+
+
+class LicenseTextSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LicenseText
+        fields = ["name", "file", "link", "property_to_use"]
+
+    file = Base64FileField()
+
+    def update(self, instance, validated_data):
+        if "link" in validated_data and validated_data["link"] is not None:
+            instance.file = None
+        if "file" in validated_data and validated_data["file"] is not None:
+            instance.link = None
+        self.update(instance, validated_data)
 
 
 class ResizableImageBase64Serializer(serializers.ModelSerializer):

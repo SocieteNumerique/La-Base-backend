@@ -23,6 +23,7 @@ from main.serializers.utils import (
     create_or_update_resizable_image,
     SPECIFIC_CATEGORY_IDS,
     LICENSE_NEEDS_TEXT_TAG_ID_SET,
+    LicenseTextSerializer,
 )
 
 TERRITORY_CATEGORY_ID = None
@@ -135,6 +136,7 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
     pinned_in_bases = serializers.PrimaryKeyRelatedField(
         queryset=Base.objects.all(), many=True, required=False
     )
+    license_text = LicenseTextSerializer(required=False)
 
     @staticmethod
     def get_can_write(obj: Resource):
