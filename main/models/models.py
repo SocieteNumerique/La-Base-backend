@@ -148,6 +148,9 @@ class TagCategory(TimeStampedModel):
     accepts_free_tags = models.BooleanField(
         verbose_name="accepte des tags libres", default=True
     )
+    radio_display = models.BooleanField(
+        verbose_name="s'affiche avec des boutons radios", default=False
+    )
     relates_to = MultiSelectField(
         verbose_name="lié aux",
         choices=TAG_CATEGORY_RELATES_TO,

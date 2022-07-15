@@ -28,6 +28,7 @@ class BaseIndexSerializer(serializers.ModelSerializer):
             "accepts_free_tags",
             "base",
             "description",
+            "radio_display",
             "id",
             "is_draft",
             "name",

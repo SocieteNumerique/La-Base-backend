@@ -41,6 +41,11 @@ class Migration(migrations.Migration):
             name='has_global_license',
             field=models.BooleanField(default=False, verbose_name='Les contenus ont globalement la même licence'),
         ),
+        migrations.AddField(
+            model_name='tagcategory',
+            name='radio_display',
+            field=models.BooleanField(verbose_name="s'affiche avec des boutons radios", default=False),
+        ),
         migrations.AlterField(
             model_name='base',
             name='tags',
