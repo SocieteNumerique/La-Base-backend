@@ -1,10 +1,12 @@
 import datetime
 
 from django.db import models
-from django.db.models import Count, Q
+from django.db.models import Count
+from multiselectfield import MultiSelectField
 
 from main.models.user import User, UserGroup
 from main.models.utils import TimeStampedModel, ResizableImage
+from main.query_changes.utils import query_my_related_tags
 
 RESOURCE_PRODUCER_STATES = [
     ["me", "celui qui ajouté la ressource"],
@@ -26,6 +28,12 @@ BASE_CONTACT_STATE_CHOICES = [
     ("public", "Public"),
     ("private", "Privé"),
 ]
+TAG_CATEGORY_RELATES_TO = [
+    ("Resource", "Ressources"),
+    ("User", "Utilisateurs"),
+    ("Base", "Bases"),
+    ("Content", "Contenus"),
+]
 
 
 class Base(TimeStampedModel):
@@ -40,9 +48,7 @@ class Base(TimeStampedModel):
         "Tag",
         blank=True,
         related_name="bases",
-        limit_choices_to=(
-            Q(category__relates_to="Bases") | Q(category__relates_to__isnull=True)
-        ),
+        limit_choices_to=query_my_related_tags("Base"),
     )
     # users with these tags will have write access
     contributor_tags = models.ManyToManyField(
@@ -142,14 +148,9 @@ class TagCategory(TimeStampedModel):
     accepts_free_tags = models.BooleanField(
         verbose_name="accepte des tags libres", default=True
     )
-    relates_to = models.CharField(
-        max_length=10,
+    relates_to = MultiSelectField(
         verbose_name="lié aux",
-        choices=[
-            ("Resource", "Ressources"),
-            ("User", "Utilisateurs"),
-            ("Base", "Bases"),
-        ],
+        choices=TAG_CATEGORY_RELATES_TO,
         null=True,
         blank=True,
     )  # can be null, for example for external producer occupation
@@ -249,9 +250,7 @@ class Resource(TimeStampedModel):
         Tag,
         blank=True,
         related_name="resources",
-        limit_choices_to=(
-            Q(category__relates_to="Resource") | Q(category__relates_to__isnull=True)
-        ),
+        limit_choices_to=query_my_related_tags("Resource"),
     )
     label_state = models.CharField(
         max_length=10, default="", blank=True, choices=RESOURCE_LABEL_CHOICES

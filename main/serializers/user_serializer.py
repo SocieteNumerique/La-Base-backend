@@ -2,12 +2,12 @@ from django.contrib.auth import get_user_model, password_validation
 from django.contrib.auth.hashers import make_password
 from django.core import exceptions
 from django.db import IntegrityError
-from django.db.models import Q
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from main.models.models import Tag
 from main.models.user import User
+from main.query_changes.utils import query_my_related_tags
 from main.user_utils import send_email_confirmation
 
 UserModel = get_user_model()
@@ -56,11 +56,7 @@ class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, max_length=100)
     tags = serializers.PrimaryKeyRelatedField(
         many=True,
-        queryset=Tag.objects.filter(
-            Q(category__relates_to="User")  # can be externalProducer_00occupation
-            | Q(category__relates_to="Base")
-            | Q(category__relates_to__isnull=True)
-        ),
+        queryset=Tag.objects.filter(query_my_related_tags("User")),
         required=False,
         allow_null=True,
     )
@@ -91,9 +87,8 @@ class UserSerializer(serializers.ModelSerializer):
                 "un compte existe déjà avec cette adresse mail, veuillez vous connecter"
             )
         try:
-            cnfs_tag = Tag.objects.get(
-                name=CNFS_RESERVED_TAG_NAME,
-                category__relates_to="User",
+            cnfs_tag = Tag.objects.filter(query_my_related_tags("User")).get(
+                name=CNFS_RESERVED_TAG_NAME
             )
         except Tag.DoesNotExist:
             cnfs_tag = None
