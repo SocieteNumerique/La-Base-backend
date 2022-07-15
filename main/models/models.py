@@ -205,6 +205,12 @@ class Tag(TimeStampedModel):
         return self.name
 
 
+class LicenseText(TimeStampedModel):
+    name = models.CharField(verbose_name="nom", max_length=60)
+    link = models.URLField(verbose_name="lien", null=True, blank=True)
+    file = models.FileField(verbose_name="fichier", null=True, blank=True)
+
+
 class Resource(TimeStampedModel):
     class Meta:
         verbose_name = "Ressource"
@@ -268,6 +274,16 @@ class Resource(TimeStampedModel):
         blank=True,
         related_name="authorized_tags_in_resources",
         verbose_name="Tags d'utilisateurs avec accès en lecture",
+    )
+    has_global_license = models.BooleanField(
+        verbose_name="Les contenus ont globalement la même licence", default=False
+    )
+    license_text = models.ForeignKey(
+        "LicenseText",
+        verbose_name="Détail de licence propriétaire",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
     )
 
     def save(self, *args, **kwargs):

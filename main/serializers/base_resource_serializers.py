@@ -22,6 +22,7 @@ from main.serializers.utils import (
     ResizableImageBase64Serializer,
     create_or_update_resizable_image,
     SPECIFIC_CATEGORY_IDS,
+    LICENSE_NEEDS_TEXT_TAG_ID_SET,
 )
 
 TERRITORY_CATEGORY_ID = None
@@ -185,6 +186,29 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
 
     def update(self, instance: Resource, validated_data):
         set_nested_user_fields(instance, validated_data, "authorized_users")
+        if (
+            "tags" in validated_data
+            and len(LICENSE_NEEDS_TEXT_TAG_ID_SET.intersection(validated_data["tags"]))
+            == 0
+            and instance.license_text_id is not None
+        ):
+            instance.license_text.delete()
+        if (
+            "has_global_license" in validated_data
+            and not validated_data["has_global_license"]
+        ):
+            # TODO also copies that license on contents that used it?
+            # if we do that, manage to not have many copies, and not risk deleting common files
+            instance.tags.through.objects.filter(
+                tag__category_id__in=[
+                    SPECIFIC_CATEGORY_IDS["license"],
+                    SPECIFIC_CATEGORY_IDS["needs_account"],
+                    SPECIFIC_CATEGORY_IDS["price"],
+                ]
+            ).delete()
+            if instance.license_text_id is not None:
+                instance.license_text.delete()
+            instance.contents.update(use_resource_license=False)
         return super().update(instance, validated_data)
 
 
