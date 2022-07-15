@@ -1,14 +1,17 @@
 import base64
 import mimetypes
 import re
+import sys
 import uuid
 
 from django.core.files.base import ContentFile
+from django.db.models import Q
 from django.db.models.fields.files import FieldFile
 from rest_framework import serializers
 from rest_framework.fields import SkipField
 from rest_framework.serializers import ModelSerializer
 
+from main.models import TagCategory, Tag
 from main.models.utils import ResizableImage
 
 
@@ -86,6 +89,7 @@ class ResizableImageBase64Serializer(serializers.ModelSerializer):
 
     image = Base64FileField()
 
+    @staticmethod
     def apply_coordinates(self, instance, coordinates=None):
         if coordinates is None:
             instance.scale_x = None
@@ -144,3 +148,51 @@ def create_or_update_resizable_image(
         if image_instance:
             return serializer.update(image_instance, image_data)
     return serializer.create(image_data)
+
+
+SPECIFIC_CATEGORY_SLUGS = {
+    "territory": "territory_00city",
+    "external_producer": "externalProducer_00occupation",
+    "support": "indexation_01RessType",
+    "license": "license_01license",
+    "needs_account": "license_02needsAccount",
+    "price": "license_00price",
+}
+
+SPECIFIC_CATEGORY_IDS = {
+    "territory": None,
+    "external_producer": None,
+    "support": None,
+    "license": None,
+    "needs_account": None,
+    "price": None,
+}
+LICENSE_NEEDS_TEXT_TAG_ID_SET = None
+
+
+def reset_specific_categories():
+    if "migrate" in sys.argv or "backup_db" in sys.argv:
+        return
+    # before the first time migrations are being done,
+    # reset_specific_categories will not work
+
+    global SPECIFIC_CATEGORY_IDS
+    global LICENSE_NEEDS_TEXT_TAG_ID_SET
+
+    for category in SPECIFIC_CATEGORY_IDS:
+        try:
+            SPECIFIC_CATEGORY_IDS[category] = TagCategory.objects.get(
+                slug=SPECIFIC_CATEGORY_SLUGS[category]
+            ).pk
+        except TagCategory.DoesNotExist:
+            SPECIFIC_CATEGORY_IDS[category] = None
+
+    LICENSE_NEEDS_TEXT_TAG_ID_SET = set(
+        Tag.objects.filter(
+            Q(name="Propriétaire") | Q(name="Autre"),
+            category_id=SPECIFIC_CATEGORY_IDS["license"],
+        ).values_list("pk", flat=True)
+    )
+
+
+reset_specific_categories()

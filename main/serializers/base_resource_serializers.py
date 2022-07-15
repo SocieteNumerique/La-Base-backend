@@ -5,8 +5,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.fields import SkipField
 
-from main.models import TagCategory
-from main.models.models import Resource, Base, ExternalProducer, Tag, Collection
+from main.models.models import Resource, Base, ExternalProducer, Tag, Collection, TagCategory
 from main.models.user import User
 from main.query_changes.permissions import (
     resources_queryset_for_user,
@@ -22,6 +21,7 @@ from main.serializers.utils import (
     Base64FileField,
     ResizableImageBase64Serializer,
     create_or_update_resizable_image,
+    SPECIFIC_CATEGORY_IDS,
 )
 
 TERRITORY_CATEGORY_ID = None
@@ -59,8 +59,10 @@ if "migrate" not in sys.argv and "backup_db" not in sys.argv:
 
 class PrimaryKeyOccupationTagField(serializers.PrimaryKeyRelatedField):
     def get_queryset(self):
-        if EXTERNAL_PRODUCER_CATEGORY_ID:
-            return Tag.objects.filter(category=EXTERNAL_PRODUCER_CATEGORY_ID)
+        if SPECIFIC_CATEGORY_IDS["external_producer"]:
+            return Tag.objects.filter(
+                category_id=SPECIFIC_CATEGORY_IDS["external_producer"]
+            )
         else:
             return Tag.objects.none()
 
@@ -158,12 +160,12 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
 
     @staticmethod
     def get_support_tags(obj: Resource):
-        if SUPPORT_CATEGORY_ID:
+        if SPECIFIC_CATEGORY_IDS["support"]:
             if "tags" in getattr(obj, "_prefetched_objects_cache", []):
                 return [
                     tag.pk
                     for tag in obj.tags.all()
-                    if tag.category_id == SUPPORT_CATEGORY_ID
+                    if tag.category_id == SPECIFIC_CATEGORY_IDS["support"]
                 ]
             else:
                 return obj.tags.filter(
@@ -181,7 +183,7 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
         instance.can_write = True
         return instance
 
-    def update(self, instance, validated_data):
+    def update(self, instance: Resource, validated_data):
         set_nested_user_fields(instance, validated_data, "authorized_users")
         return super().update(instance, validated_data)
 
@@ -381,22 +383,22 @@ class BaseBaseSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def get_participant_type_tags(obj: Base):
-        if EXTERNAL_PRODUCER_CATEGORY_ID:
+        if SPECIFIC_CATEGORY_IDS["external_producer"]:
             return [
                 tag.pk
                 for tag in obj.tags.all()
-                if tag.category_id == EXTERNAL_PRODUCER_CATEGORY_ID
+                if tag.category_id == SPECIFIC_CATEGORY_IDS["external_producer"]
             ]
         else:
             return []
 
     @staticmethod
     def get_territory_tags(obj: Base):
-        if TERRITORY_CATEGORY_ID:
+        if SPECIFIC_CATEGORY_IDS["territory"]:
             return [
                 tag.pk
                 for tag in obj.tags.all()
-                if tag.category_id == TERRITORY_CATEGORY_ID
+                if tag.category_id == SPECIFIC_CATEGORY_IDS["territory"]
             ]
         else:
             return []
