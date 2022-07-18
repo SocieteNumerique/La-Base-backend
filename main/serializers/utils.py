@@ -5,6 +5,7 @@ import sys
 import uuid
 
 from django.core.files.base import ContentFile
+from django.db import OperationalError
 from django.db.models import Q
 from django.db.models.fields.files import FieldFile
 from rest_framework import serializers
@@ -183,7 +184,7 @@ SPECIFIC_CATEGORY_IDS = {
     "needs_account": None,
     "price": None,
 }
-LICENSE_NEEDS_TEXT_TAG_ID_SET = None
+LICENSE_NEEDS_TEXT_TAG_ID_SET = set()
 
 
 def reset_specific_categories():
@@ -195,20 +196,23 @@ def reset_specific_categories():
     global SPECIFIC_CATEGORY_IDS
     global LICENSE_NEEDS_TEXT_TAG_ID_SET
 
-    for category in SPECIFIC_CATEGORY_IDS:
-        try:
-            SPECIFIC_CATEGORY_IDS[category] = TagCategory.objects.get(
-                slug=SPECIFIC_CATEGORY_SLUGS[category]
-            ).pk
-        except TagCategory.DoesNotExist:
-            SPECIFIC_CATEGORY_IDS[category] = None
+    try:
+        for category in SPECIFIC_CATEGORY_IDS:
+            try:
+                SPECIFIC_CATEGORY_IDS[category] = TagCategory.objects.get(
+                    slug=SPECIFIC_CATEGORY_SLUGS[category]
+                ).pk
+            except TagCategory.DoesNotExist:
+                SPECIFIC_CATEGORY_IDS[category] = None
 
-    LICENSE_NEEDS_TEXT_TAG_ID_SET = set(
-        Tag.objects.filter(
-            Q(name="Propriétaire") | Q(name="Autre"),
-            category_id=SPECIFIC_CATEGORY_IDS["license"],
-        ).values_list("pk", flat=True)
-    )
+        LICENSE_NEEDS_TEXT_TAG_ID_SET = set(
+            Tag.objects.filter(
+                Q(name="Propriétaire") | Q(name="Autre"),
+                category_id=SPECIFIC_CATEGORY_IDS["license"],
+            ).values_list("pk", flat=True)
+        )
+    except OperationalError:
+        pass
 
 
 reset_specific_categories()
