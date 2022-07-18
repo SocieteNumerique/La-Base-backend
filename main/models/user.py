@@ -1,5 +1,3 @@
-import uuid
-
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.db import models
 from django.db.models import Q
@@ -73,16 +71,17 @@ class User(AbstractBaseUser):
 
     username = None
     email = models.EmailField(
-        verbose_name="email address",
+        verbose_name="adresse email",
         max_length=255,
         unique=True,
     )
-    first_name = models.CharField(max_length=100, default="")
-    last_name = models.CharField(max_length=100, default="")
-    is_active = models.BooleanField(default=True)
-    is_admin = models.BooleanField(default=False)
-    is_superuser = models.BooleanField(default=False)
-    activation_key = models.UUIDField(default=uuid.uuid4, editable=False)
+    first_name = models.CharField(verbose_name="prénom", max_length=100, default="")
+    last_name = models.CharField(verbose_name="nom", max_length=100, default="")
+    is_active = models.BooleanField(verbose_name="email validé", default=True)
+    is_admin = models.BooleanField(verbose_name="est admin", default=False)
+    is_superuser = models.BooleanField(
+        verbose_name="est super-utilisateur", default=False
+    )
 
     tags = models.ManyToManyField(
         "Tag",
@@ -93,8 +92,10 @@ class User(AbstractBaseUser):
         ),
     )
 
-    cnfs_id = models.PositiveIntegerField(null=True, blank=True)
-    cnfs_id_organization = models.PositiveIntegerField(null=True, blank=True)
+    cnfs_id = models.PositiveIntegerField(verbose_name="id CNFS", null=True, blank=True)
+    cnfs_id_organization = models.PositiveIntegerField(
+        verbose_name="est employeur de l'id CNFS", null=True, blank=True
+    )
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
