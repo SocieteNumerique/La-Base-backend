@@ -17,6 +17,25 @@ from main.models.models import LicenseText
 from main.models.utils import ResizableImage
 
 
+def create_or_update_nested_object(
+    instance_validated_data, property_name, serializer, parent_instance=None
+):
+    if property_name not in instance_validated_data:
+        raise SkipField
+    child_data = instance_validated_data.pop(property_name)
+    if child_data is None:
+        return None
+
+    serializer = serializer()
+    if parent_instance is not None:
+        child_instance = getattr(parent_instance, property_name)
+        if child_instance:
+            return serializer.update(child_instance, child_data)
+    child_instance = serializer.create(child_data)
+    child_instance.save()
+    return child_instance
+
+
 class MoreFieldsModelSerializer(ModelSerializer):
     def get_field_names(self, declared_fields, info):
         expanded_fields = super().get_field_names(declared_fields, info)
@@ -153,18 +172,12 @@ class ResizableImageBase64Serializer(serializers.ModelSerializer):
 def create_or_update_resizable_image(
     instance_validated_data, property_name, parent_instance=None
 ) -> ResizableImage:
-    if property_name not in instance_validated_data:
-        raise SkipField
-    image_data = instance_validated_data.pop(property_name)
-    if image_data is None:
-        return None
-
-    serializer = ResizableImageBase64Serializer()
-    if parent_instance is not None:
-        image_instance = getattr(parent_instance, property_name)
-        if image_instance:
-            return serializer.update(image_instance, image_data)
-    return serializer.create(image_data)
+    return create_or_update_nested_object(
+        instance_validated_data,
+        property_name,
+        ResizableImageBase64Serializer,
+        parent_instance,
+    )
 
 
 SPECIFIC_CATEGORY_SLUGS = {
