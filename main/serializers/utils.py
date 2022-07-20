@@ -100,16 +100,47 @@ class Base64FileField(serializers.FileField):
 class LicenseTextSerializer(serializers.ModelSerializer):
     class Meta:
         model = LicenseText
-        fields = ["name", "file", "link", "property_to_use"]
+        fields = ["id", "file", "link", "property_to_use"]
 
-    file = Base64FileField()
+    file = Base64FileField(allow_null=True, required=True)
 
     def update(self, instance, validated_data):
-        if "link" in validated_data and validated_data["link"] is not None:
+        if "link" in validated_data and validated_data.pop("link") is not None:
             instance.file = None
-        if "file" in validated_data and validated_data["file"] is not None:
+        if "file" in validated_data and validated_data.pop("file") is not None:
             instance.link = None
-        self.update(instance, validated_data)
+        super().update(instance, validated_data)
+
+
+def create_or_update_license_text(
+    instance_validated_data, property_name, parent_instance=None
+) -> LicenseText:
+    return create_or_update_nested_object(
+        instance_validated_data, property_name, LicenseTextSerializer, parent_instance
+    )
+
+
+def set_nested_license_data(validated_data, instance):
+    try:
+        license_text = create_or_update_license_text(
+            validated_data, "license_text", instance
+        )
+        instance.license_text = license_text
+        instance.save()
+    except SkipField:
+        pass
+    if (
+        "tags" in validated_data
+        and len(
+            LICENSE_NEEDS_TEXT_TAG_ID_SET.intersection(
+                [tag.pk for tag in validated_data["tags"]]
+            )
+        )
+        == 0
+        and instance.license_text_id is not None
+    ):
+        instance.license_text.delete()
+        instance.license_text = None
 
 
 class ResizableImageBase64Serializer(serializers.ModelSerializer):
@@ -185,9 +216,9 @@ SPECIFIC_CATEGORY_SLUGS = {
     "external_producer": "externalProducer_00occupation",
     "support": "indexation_01RessType",
     "license": "license_01license",
-    "free_license": "licence_03free",
-    "other_license": "licence_04other",
-    "needs_account": "license_02needsAccount",
+    "free_license": "license_02free",
+    "other_license": "license_03other",
+    "needs_account": "license_04access",
     "price": "license_00price",
 }
 

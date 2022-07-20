@@ -22,9 +22,9 @@ from main.serializers.utils import (
     ResizableImageBase64Serializer,
     create_or_update_resizable_image,
     SPECIFIC_CATEGORY_IDS,
-    LICENSE_NEEDS_TEXT_TAG_ID_SET,
     LicenseTextSerializer,
     get_license_tags,
+    set_nested_license_data,
 )
 
 TERRITORY_CATEGORY_ID = None
@@ -138,7 +138,7 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
     pinned_in_bases = serializers.PrimaryKeyRelatedField(
         queryset=Base.objects.all(), many=True, required=False
     )
-    license_text = LicenseTextSerializer(required=False)
+    license_text = LicenseTextSerializer(required=False, allow_null=True)
 
     @staticmethod
     def get_can_write(obj: Resource):
@@ -194,19 +194,12 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
 
     def update(self, instance: Resource, validated_data):
         set_nested_user_fields(instance, validated_data, "authorized_users")
-        if (
-            "tags" in validated_data
-            and len(LICENSE_NEEDS_TEXT_TAG_ID_SET.intersection(validated_data["tags"]))
-            == 0
-            and instance.license_text_id is not None
-        ):
-            instance.license_text.delete()
-        if (
-            "has_global_license" in validated_data
-            and not validated_data["has_global_license"]
-        ):
+        set_nested_license_data(validated_data, instance)
+        instance = super().update(instance, validated_data)
+        if instance.has_global_license:
+            # we forget former global license
             # TODO also copies that license on contents that used it?
-            # if we do that, manage to not have many copies, and not risk deleting common files
+            #  if we do that, manage to not have many copies, and not risk deleting common files
             instance.tags.through.objects.filter(
                 tag__category_id__in=[
                     SPECIFIC_CATEGORY_IDS["license"],
@@ -216,8 +209,10 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
             ).delete()
             if instance.license_text_id is not None:
                 instance.license_text.delete()
+                instance.license_text = None
+                instance.save()
             instance.contents.update(use_resource_license=False)
-        return super().update(instance, validated_data)
+        return instance
 
 
 class ShortResourceSerializer(BaseResourceSerializer):

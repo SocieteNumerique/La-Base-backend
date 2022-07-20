@@ -16,9 +16,10 @@ from main.serializers.utils import (
     Base64FileField,
     LicenseTextSerializer,
     get_license_tags,
+    set_nested_license_data,
 )
 
-content_fields = [
+CONTENT_FIELDS = [
     "id",
     "title",
     "annotation",
@@ -31,6 +32,8 @@ content_fields = [
     "order",
     "license_tags",
     "use_resource_license",
+    "license_text",
+    "tags",
 ]
 CONTENT_READ_ONLY_FIELDS = ["id", "created", "modified"]
 POSSIBLE_CONTENT_TYPES = ["text", "link", "linkedResource", "file"]
@@ -67,16 +70,22 @@ class ContentBlockSerializer(serializers.ModelSerializer):
         read_only_fields = CONTENT_READ_ONLY_FIELDS
         model = ContentBlock
 
+    license_text = LicenseTextSerializer(required=False, allow_null=True)
+
+    def update(self, instance: ContentBlock, validated_data):
+        set_nested_license_data(validated_data, instance)
+        return super().update(instance, validated_data)
+
 
 class BaseContentSerializer(serializers.ModelSerializer):
     class Meta:
-        fields = content_fields
-        read_only_fields = CONTENT_READ_ONLY_FIELDS
+        fields = CONTENT_FIELDS
+        read_only_fields = CONTENT_FIELDS
         abstract = True
 
     type = serializers.SerializerMethodField()
     license_tags = serializers.SerializerMethodField()
-    license_text = LicenseTextSerializer(required=False)
+    license_text = LicenseTextSerializer(required=False, allow_null=True)
 
     @staticmethod
     def get_license_tags(obj: ContentBlock):
@@ -85,6 +94,17 @@ class BaseContentSerializer(serializers.ModelSerializer):
     @staticmethod
     def get_type(obj):
         raise NotImplementedError
+
+    def update(self, instance, validated_data):
+        instance = super().update(instance, validated_data)
+        if instance.use_resource_license:
+            instance.tags.set([])
+            # TODO if more tags than license tags, filter them here
+            if instance.license_text_id is not None:
+                instance.license_text.delete()
+                instance.license_text = None
+            instance.save()
+        return instance
 
 
 class LinkContentSerializer(BaseContentSerializer):
@@ -164,7 +184,7 @@ def content_type_to_child_model(content_type):
 
 class ReadContentSerializer(serializers.ModelSerializer):
     class Meta:
-        fields = content_fields + ["link", "with_preview", "linked_resource", "text"]
+        fields = CONTENT_FIELDS + ["link", "with_preview", "linked_resource", "text"]
         read_only_fields = CONTENT_READ_ONLY_FIELDS
         model = ContentBlock
 
