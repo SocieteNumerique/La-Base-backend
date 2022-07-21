@@ -226,7 +226,9 @@ class WriteContentSerializer(serializers.BaseSerializer):
         if "type" in data:
             local_data.pop("type")
 
-        res = ContentBlockSerializer(partial=True).to_internal_value(local_data)
+        res = ContentBlockSerializer(
+            context=self.context, partial=True
+        ).to_internal_value(local_data)
 
         # At this point either
         # - there was only generic fields, and we managed all the data
