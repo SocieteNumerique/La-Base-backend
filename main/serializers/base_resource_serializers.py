@@ -196,7 +196,7 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
         set_nested_user_fields(instance, validated_data, "authorized_users")
         set_nested_license_data(validated_data, instance)
         instance = super().update(instance, validated_data)
-        if instance.has_global_license:
+        if not instance.has_global_license:
             # we forget former global license
             # TODO also copies that license on contents that used it?
             #  if we do that, manage to not have many copies, and not risk deleting common files
