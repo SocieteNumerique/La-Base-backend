@@ -24,6 +24,7 @@ from main.serializers.utils import (
     SPECIFIC_CATEGORY_IDS,
     LICENSE_NEEDS_TEXT_TAG_ID_SET,
     LicenseTextSerializer,
+    get_license_tags,
 )
 
 TERRITORY_CATEGORY_ID = None
@@ -113,6 +114,7 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
             "stats",
             "content_stats",
             "support_tags",
+            "license_tags",
             "can_write",
             "label_state",
             "label_details",
@@ -176,6 +178,10 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
                 ).values_list("pk", flat=True)
         else:
             return []
+
+    @staticmethod
+    def get_license_tags(obj: Resource):
+        return get_license_tags(obj)
 
     def create(self, validated_data):
         instance = super().create(validated_data)

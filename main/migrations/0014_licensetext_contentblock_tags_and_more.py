@@ -46,6 +46,16 @@ class Migration(migrations.Migration):
             name='radio_display',
             field=models.BooleanField(verbose_name="s'affiche avec des boutons radios", default=False),
         ),
+        migrations.AddField(
+            model_name='tagcategory',
+            name='group_tags_by_family',
+            field=models.BooleanField(default=False, help_text='nécessite de bien renseigner les slugs des tags', verbose_name='trie les tags par famille'),
+        ),
+        migrations.AddField(
+            model_name='tag',
+            name='slug',
+            field=models.CharField(blank=True, help_text='Convention : famille1,famille2DuTagDansCategorie + _ + ordreÀDeuxChiffresDansLaFamille + slugDuTag, ex contenu,logiciel_03licenceParticuliere', max_length=40, null=True, verbose_name='Slug - à ne pas modifier'),
+        ),
         migrations.AlterField(
             model_name='base',
             name='tags',

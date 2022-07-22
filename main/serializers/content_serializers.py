@@ -15,8 +15,7 @@ from main.models.models import Resource
 from main.serializers.utils import (
     Base64FileField,
     LicenseTextSerializer,
-    SPECIFIC_CATEGORY_IDS,
-    SPECIFIC_CATEGORY_SLUGS,
+    get_license_tags,
 )
 
 content_fields = [
@@ -81,27 +80,7 @@ class BaseContentSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def get_license_tags(obj: ContentBlock):
-        res = []
-        access_tag_categories = ["license", "price", "needs_account"]
-        access_tag_category_slugs = [
-            SPECIFIC_CATEGORY_SLUGS[tag_category]
-            for tag_category in access_tag_categories
-        ]
-
-        if "tags" in getattr(obj, "_prefetched_objects_cache", []):
-            # TODO actually prefetch in resource serializer
-            for tag_category in access_tag_categories:
-                if SPECIFIC_CATEGORY_IDS[tag_category]:
-                    res += [
-                        tag.pk
-                        for tag in obj.tags.all()
-                        if tag.category_id == SPECIFIC_CATEGORY_IDS[tag_category]
-                    ]
-        else:
-            res += obj.tags.filter(
-                category__slug__in=access_tag_category_slugs
-            ).values_list("pk", flat=True)
-        return res
+        return get_license_tags(obj)
 
     @staticmethod
     def get_type(obj):

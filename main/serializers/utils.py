@@ -172,6 +172,8 @@ SPECIFIC_CATEGORY_SLUGS = {
     "external_producer": "externalProducer_00occupation",
     "support": "indexation_01RessType",
     "license": "license_01license",
+    "free_license": "licence_03free",
+    "other_license": "licence_04other",
     "needs_account": "license_02needsAccount",
     "price": "license_00price",
 }
@@ -213,6 +215,35 @@ def reset_specific_categories():
         )
     except OperationalError:
         pass
+
+
+def get_license_tags(obj):
+    res = []
+    access_tag_categories = [
+        "license",
+        "free_license",
+        "other_license",
+        "price",
+        "needs_account",
+    ]
+    access_tag_category_slugs = [
+        SPECIFIC_CATEGORY_SLUGS[tag_category] for tag_category in access_tag_categories
+    ]
+
+    if "tags" in getattr(obj, "_prefetched_objects_cache", []):
+        # TODO actually prefetch in parent serializer
+        for tag_category in access_tag_categories:
+            if SPECIFIC_CATEGORY_IDS[tag_category]:
+                res += [
+                    tag.pk
+                    for tag in obj.tags.all()
+                    if tag.category_id == SPECIFIC_CATEGORY_IDS[tag_category]
+                ]
+    else:
+        res += obj.tags.filter(
+            category__slug__in=access_tag_category_slugs
+        ).values_list("pk", flat=True)
+    return res
 
 
 reset_specific_categories()

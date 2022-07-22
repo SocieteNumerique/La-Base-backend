@@ -170,6 +170,11 @@ class TagCategory(TimeStampedModel):
         blank=True,
         help_text="si une catégorie de tag n'est liée à aucune base, elle est globale",
     )
+    group_tags_by_family = models.BooleanField(
+        verbose_name="trie les tags par famille",
+        default=False,
+        help_text="nécessite de bien renseigner les slugs des tags",
+    )
 
     def __str__(self):
         return self.name
@@ -203,6 +208,13 @@ class Tag(TimeStampedModel):
     is_free = models.BooleanField(verbose_name="est un tag libre", default=False)
     is_draft = models.BooleanField(verbose_name="est un brouillon", default=False)
     definition = models.TextField(null=True, blank=True)
+    slug = models.CharField(
+        verbose_name="Slug - à ne pas modifier",
+        max_length=40,
+        help_text="Convention : famille1,famille2DuTagDansCategorie + _ + ordreÀDeuxChiffresDansLaFamille + slugDuTag, ex contenu,logiciel_03licenceParticuliere",
+        null=True,
+        blank=True,
+    )
 
     def __str__(self):
         return self.name
