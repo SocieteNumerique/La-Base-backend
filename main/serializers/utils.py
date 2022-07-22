@@ -100,16 +100,9 @@ class Base64FileField(serializers.FileField):
 class LicenseTextSerializer(serializers.ModelSerializer):
     class Meta:
         model = LicenseText
-        fields = ["id", "file", "link", "property_to_use"]
+        fields = ["id", "file", "link"]
 
     file = Base64FileField(allow_null=True, required=True)
-
-    def update(self, instance, validated_data):
-        if "link" in validated_data and validated_data.pop("link") is not None:
-            instance.file = None
-        if "file" in validated_data and validated_data.pop("file") is not None:
-            instance.link = None
-        super().update(instance, validated_data)
 
 
 def create_or_update_license_text(

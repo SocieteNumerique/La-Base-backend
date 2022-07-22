@@ -225,12 +225,6 @@ class LicenseText(TimeStampedModel):
     link = models.URLField(verbose_name="lien", null=True, blank=True)
     file = models.FileField(verbose_name="fichier", null=True, blank=True)
 
-    def property_to_use(self):
-        if self.link is not None:
-            return "link"
-        if self.file is not None:
-            return "file"
-
 
 class Resource(TimeStampedModel):
     class Meta:
