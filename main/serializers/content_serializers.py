@@ -17,6 +17,7 @@ from main.serializers.utils import (
     LicenseTextSerializer,
     get_license_tags,
     set_nested_license_data,
+    SPECIFIC_CATEGORY_IDS,
 )
 
 CONTENT_FIELDS = [
@@ -105,6 +106,19 @@ class BaseContentSerializer(serializers.ModelSerializer):
                 instance.license_text.delete()
                 instance.license_text = None
             instance.save()
+
+        if instance.license_knowledge != "specific":
+            # forget former specific license
+            instance.tags.through.objects.filter(
+                tag__category_id__in=[
+                    SPECIFIC_CATEGORY_IDS["license"],
+                    SPECIFIC_CATEGORY_IDS["free_license"],
+                ]
+            ).delete()
+            if instance.license_text_id is not None:
+                instance.license_text.delete()
+                instance.license_text = None
+                instance.save()
         return instance
 
 

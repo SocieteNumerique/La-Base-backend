@@ -122,18 +122,18 @@ def set_nested_license_data(validated_data, instance):
         instance.save()
     except SkipField:
         pass
-    if (
-        "tags" in validated_data
-        and len(
+    if "tags" in validated_data:
+        if len(
             LICENSE_NEEDS_TEXT_TAG_ID_SET.intersection(
                 [tag.pk for tag in validated_data["tags"]]
             )
-        )
-        == 0
-        and instance.license_text_id is not None
-    ):
-        instance.license_text.delete()
-        instance.license_text = None
+        ):
+            instance.tags.through.objects.filter(
+                tag_id__in=LICENSE_NEEDS_TEXT_TAG_ID_SET
+            ).delete()
+        elif instance.license_text_id is not None:
+            instance.license_text.delete()
+            instance.license_text = None
 
 
 class ResizableImageBase64Serializer(serializers.ModelSerializer):
@@ -219,6 +219,7 @@ SPECIFIC_CATEGORY_IDS = {
     "external_producer": None,
     "support": None,
     "license": None,
+    "free_license": None,
     "needs_account": None,
     "price": None,
 }
