@@ -211,7 +211,7 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
                 instance.license_text.delete()
                 instance.license_text = None
                 instance.save()
-            instance.contents.update(use_resource_license=False)
+            instance.contents.update(use_resource_license_and_access=False)
         return instance
 
 

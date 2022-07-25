@@ -31,8 +31,9 @@ CONTENT_FIELDS = [
     "nb_col",
     "order",
     "license_tags",
-    "use_resource_license",
+    "use_resource_license_and_access",
     "license_text",
+    "license_knowledge",
     "tags",
 ]
 CONTENT_READ_ONLY_FIELDS = ["id", "created", "modified"]
@@ -97,7 +98,7 @@ class BaseContentSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         instance = super().update(instance, validated_data)
-        if instance.use_resource_license:
+        if instance.use_resource_license_and_access:
             instance.tags.set([])
             # TODO if more tags than license tags, filter them here
             if instance.license_text_id is not None:

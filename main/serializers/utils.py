@@ -210,7 +210,6 @@ SPECIFIC_CATEGORY_SLUGS = {
     "support": "indexation_01RessType",
     "license": "license_01license",
     "free_license": "license_02free",
-    "other_license": "license_03other",
     "needs_account": "license_04access",
     "price": "license_00price",
 }
@@ -259,7 +258,6 @@ def get_license_tags(obj):
     access_tag_categories = [
         "license",
         "free_license",
-        "other_license",
         "price",
         "needs_account",
     ]

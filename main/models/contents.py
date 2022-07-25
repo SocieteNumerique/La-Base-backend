@@ -38,9 +38,18 @@ class ContentBlock(TimeStampedModel):
         related_name="contents",
         limit_choices_to=query_my_related_tags("Content"),
     )
-    use_resource_license = models.BooleanField(
+    use_resource_license_and_access = models.BooleanField(
         verbose_name="a les mêmes accès et licence que la ressource parente",
         default=False,
+    )
+    license_knowledge = models.CharField(
+        choices=[
+            ("specific", "Spécifique au contenu"),
+            ("resource", "Identique à la ressource"),
+            ("unknown", "Inconnue"),
+        ],
+        max_length=10,
+        default="unknown",
     )
     license_text = models.ForeignKey(
         "main.LicenseText",
