@@ -49,7 +49,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='tag',
             name='slug',
-            field=models.CharField(blank=True, help_text='Convention : famille1,famille2DuTagDansCategorie + _ + ordreÀDeuxChiffresDansLaFamille + slugDuTag, ex contenu,logiciel_03licenceParticuliere', max_length=40, null=True, verbose_name='Slug - à ne pas modifier'),
+            field=models.CharField(blank=True, default='', help_text='Convention : famille1,famille2DuTagDansCategorie + _ + ordreÀDeuxChiffresDansLaFamille + slugDuTag, ex contenu,logiciel_03licenceParticuliere', max_length=40, null=True, verbose_name='Slug - à ne pas modifier'),
         ),
         migrations.AddField(
             model_name='tagcategory',
@@ -90,5 +90,13 @@ class Migration(migrations.Migration):
             model_name='resource',
             name='license_text',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='main.licensetext', verbose_name='Détail de licence propriétaire'),
+        ),
+        migrations.AlterModelOptions(
+            name='tag',
+            options={'ordering': ('slug', 'name')},
+        ),
+        migrations.AlterUniqueTogether(
+            name='tag',
+            unique_together={('name', 'category', 'slug')},
         ),
     ]

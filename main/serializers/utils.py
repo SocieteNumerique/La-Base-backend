@@ -114,6 +114,21 @@ def create_or_update_license_text(
 
 
 def set_nested_license_data(validated_data, instance):
+    def remove_free():
+        free_license_tags = Tag.objects.filter(
+            category_id=SPECIFIC_CATEGORY_IDS["free_license"]
+        ).values_list("pk", flat=True)
+        instance.tags.through.objects.filter(tag_id__in=free_license_tags).delete()
+        if "tags" in validated_data:
+            validated_data["tags"] = [
+                t for t in validated_data["tags"] if t.pk not in free_license_tags
+            ]
+
+    def remove_license_text():
+        if instance.license_text_id is not None:
+            instance.license_text.delete()
+            validated_data["license_text"] = None
+
     try:
         license_text = create_or_update_license_text(
             validated_data, "license_text", instance
@@ -122,18 +137,24 @@ def set_nested_license_data(validated_data, instance):
         instance.save()
     except SkipField:
         pass
+
     if "tags" in validated_data:
         if len(
-            LICENSE_NEEDS_TEXT_TAG_ID_SET.intersection(
-                [tag.pk for tag in validated_data["tags"]]
-            )
+            [
+                tag.pk
+                for tag in validated_data["tags"]
+                if tag.category_id == SPECIFIC_CATEGORY_IDS["license"]
+            ]
         ):
-            instance.tags.through.objects.filter(
-                tag_id__in=LICENSE_NEEDS_TEXT_TAG_ID_SET
-            ).delete()
-        elif instance.license_text_id is not None:
-            instance.license_text.delete()
-            instance.license_text = None
+            if LICENSE_NEEDS_TEXT_TAG_ID_SET.intersection(
+                [tag.pk for tag in validated_data["tags"]]
+            ):
+                remove_free()
+            else:
+                remove_license_text()
+        else:
+            remove_license_text()
+            remove_free()
 
 
 class ResizableImageBase64Serializer(serializers.ModelSerializer):

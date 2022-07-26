@@ -187,8 +187,11 @@ class TagManager(models.Manager):
 
 class Tag(TimeStampedModel):
     class Meta:
-        ordering = ("name",)
-        unique_together = ("name", "category")
+        ordering = (
+            "slug",
+            "name",
+        )
+        unique_together = ("name", "category", "slug")
 
     default_manager = models.Manager()
     objects = TagManager()
@@ -214,6 +217,7 @@ class Tag(TimeStampedModel):
         help_text="Convention : famille1,famille2DuTagDansCategorie + _ + ordreÀDeuxChiffresDansLaFamille + slugDuTag, ex contenu,logiciel_03licenceParticuliere",
         null=True,
         blank=True,
+        default="",
     )
 
     def __str__(self):
