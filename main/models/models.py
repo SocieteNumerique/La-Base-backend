@@ -225,7 +225,7 @@ class Tag(TimeStampedModel):
 
 
 class LicenseText(TimeStampedModel):
-    name = models.CharField(verbose_name="nom", max_length=60)
+    name = models.CharField(verbose_name="nom", max_length=60, null=True, blank=True)
     link = models.URLField(verbose_name="lien", null=True, blank=True)
     file = models.FileField(verbose_name="fichier", null=True, blank=True)
 

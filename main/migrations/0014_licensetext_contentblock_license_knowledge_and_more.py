@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('created', models.DateTimeField(auto_now_add=True)),
                 ('modified', models.DateTimeField(auto_now=True)),
-                ('name', models.CharField(max_length=60, verbose_name='nom')),
+                ('name', models.CharField(max_length=60, verbose_name='nom', blank=True, null=True)),
                 ('link', models.URLField(blank=True, null=True, verbose_name='lien')),
                 ('file', models.FileField(blank=True, null=True, upload_to='', verbose_name='fichier')),
             ],

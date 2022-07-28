@@ -100,7 +100,7 @@ class Base64FileField(serializers.FileField):
 class LicenseTextSerializer(serializers.ModelSerializer):
     class Meta:
         model = LicenseText
-        fields = ["id", "file", "link"]
+        fields = ["id", "file", "link", "name"]
 
     file = Base64FileField(allow_null=True, required=True)
 
@@ -113,7 +113,7 @@ def create_or_update_license_text(
     )
 
 
-def set_nested_license_data(validated_data, instance):
+def set_nested_license_data(validated_data, instance):  # noqa: C901
     def remove_free():
         free_license_tags = Tag.objects.filter(
             category_id=SPECIFIC_CATEGORY_IDS["free_license"]
@@ -129,6 +129,31 @@ def set_nested_license_data(validated_data, instance):
             instance.license_text.delete()
             validated_data["license_text"] = None
 
+    def remove_license_text_name():
+        test_proprietary = (
+            len(
+                [
+                    tag.pk
+                    for tag in validated_data["tags"]
+                    if tag.category_id == SPECIFIC_CATEGORY_IDS["license"]
+                    and tag.slug == "main_01proprietary"
+                ]
+            )
+            > 0
+        )
+        if not test_proprietary:
+            return
+        try:
+            instance.license_text.name = ""
+            instance.license_text.save()
+        except AttributeError:
+            pass
+
+        try:
+            validated_data["license_text"]["name"] = ""
+        except KeyError:
+            pass
+
     try:
         license_text = create_or_update_license_text(
             validated_data, "license_text", instance
@@ -138,23 +163,29 @@ def set_nested_license_data(validated_data, instance):
     except SkipField:
         pass
 
-    if "tags" in validated_data:
-        if len(
-            [
-                tag.pk
-                for tag in validated_data["tags"]
-                if tag.category_id == SPECIFIC_CATEGORY_IDS["license"]
-            ]
-        ):
-            if LICENSE_NEEDS_TEXT_TAG_ID_SET.intersection(
-                [tag.pk for tag in validated_data["tags"]]
-            ):
-                remove_free()
-            else:
-                remove_license_text()
-        else:
-            remove_license_text()
-            remove_free()
+    if "tags" not in validated_data:
+        return
+
+    test_license_data = len(
+        [
+            tag.pk
+            for tag in validated_data["tags"]
+            if tag.category_id == SPECIFIC_CATEGORY_IDS["license"]
+        ]
+    )
+    test_license_needs_text = LICENSE_NEEDS_TEXT_TAG_ID_SET.intersection(
+        [tag.pk for tag in validated_data["tags"]]
+    )
+
+    if not test_license_data:
+        remove_license_text()
+        remove_free()
+        return
+    if test_license_needs_text:
+        remove_free()
+        remove_license_text_name()
+    else:
+        remove_license_text()
 
 
 class ResizableImageBase64Serializer(serializers.ModelSerializer):
