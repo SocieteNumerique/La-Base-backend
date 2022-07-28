@@ -275,21 +275,15 @@ def reset_specific_categories():
         pass
 
 
-def get_license_tags(obj):
+def get_specific_tags(obj, categories):
     res = []
-    access_tag_categories = [
-        "license",
-        "free_license",
-        "price",
-        "needs_account",
-    ]
     access_tag_category_slugs = [
-        SPECIFIC_CATEGORY_SLUGS[tag_category] for tag_category in access_tag_categories
+        SPECIFIC_CATEGORY_SLUGS[tag_category] for tag_category in categories
     ]
 
     if "tags" in getattr(obj, "_prefetched_objects_cache", []):
         # TODO actually prefetch in parent serializer
-        for tag_category in access_tag_categories:
+        for tag_category in categories:
             if SPECIFIC_CATEGORY_IDS[tag_category]:
                 res += [
                     tag.pk

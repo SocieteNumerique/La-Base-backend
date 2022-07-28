@@ -23,7 +23,7 @@ from main.serializers.utils import (
     create_or_update_resizable_image,
     SPECIFIC_CATEGORY_IDS,
     LicenseTextSerializer,
-    get_license_tags,
+    get_specific_tags,
     set_nested_license_data,
 )
 
@@ -115,6 +115,7 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
             "content_stats",
             "support_tags",
             "license_tags",
+            "access_price_tags",
             "can_write",
             "label_state",
             "label_details",
@@ -139,6 +140,8 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
         queryset=Base.objects.all(), many=True, required=False
     )
     license_text = LicenseTextSerializer(required=False, allow_null=True)
+    license_tags = serializers.SerializerMethodField()
+    access_price_tags = serializers.SerializerMethodField()
 
     @staticmethod
     def get_can_write(obj: Resource):
@@ -165,23 +168,15 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
 
     @staticmethod
     def get_support_tags(obj: Resource):
-        if SPECIFIC_CATEGORY_IDS["support"]:
-            if "tags" in getattr(obj, "_prefetched_objects_cache", []):
-                return [
-                    tag.pk
-                    for tag in obj.tags.all()
-                    if tag.category_id == SPECIFIC_CATEGORY_IDS["support"]
-                ]
-            else:
-                return obj.tags.filter(
-                    category__slug="indexation_01RessType"
-                ).values_list("pk", flat=True)
-        else:
-            return []
+        return get_specific_tags(obj, ["support"])
 
     @staticmethod
     def get_license_tags(obj: Resource):
-        return get_license_tags(obj)
+        return get_specific_tags(obj, ["license", "free_license"])
+
+    @staticmethod
+    def get_access_price_tags(obj: Resource):
+        return get_specific_tags(obj, ["needs_account", "price"])
 
     def create(self, validated_data):
         instance = super().create(validated_data)
@@ -244,6 +239,8 @@ class FullResourceSerializer(BaseResourceSerializer):
             "stats",
             "content_stats",
             "support_tags",
+            "license_tags",
+            "access_price_tags",
             "can_write",
             "pinned_in_bases",
         ]

@@ -15,7 +15,7 @@ from main.models.models import Resource
 from main.serializers.utils import (
     Base64FileField,
     LicenseTextSerializer,
-    get_license_tags,
+    get_specific_tags,
     set_nested_license_data,
     SPECIFIC_CATEGORY_IDS,
 )
@@ -32,6 +32,7 @@ CONTENT_FIELDS = [
     "nb_col",
     "order",
     "license_tags",
+    "access_price_tags",
     "use_resource_license_and_access",
     "license_text",
     "license_knowledge",
@@ -87,11 +88,16 @@ class BaseContentSerializer(serializers.ModelSerializer):
 
     type = serializers.SerializerMethodField()
     license_tags = serializers.SerializerMethodField()
+    access_price_tags = serializers.SerializerMethodField()
     license_text = LicenseTextSerializer(required=False, allow_null=True)
 
     @staticmethod
     def get_license_tags(obj: ContentBlock):
-        return get_license_tags(obj)
+        return get_specific_tags(obj, ["license", "free_license"])
+
+    @staticmethod
+    def get_access_price_tags(obj: ContentBlock):
+        return get_specific_tags(obj, ["needs_account", "price"])
 
     @staticmethod
     def get_type(obj):
