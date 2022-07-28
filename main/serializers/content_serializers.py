@@ -75,10 +75,6 @@ class ContentBlockSerializer(serializers.ModelSerializer):
 
     license_text = LicenseTextSerializer(required=False, allow_null=True)
 
-    def update(self, instance: ContentBlock, validated_data):
-        set_nested_license_data(validated_data, instance)
-        return super().update(instance, validated_data)
-
 
 class BaseContentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -104,6 +100,7 @@ class BaseContentSerializer(serializers.ModelSerializer):
         raise NotImplementedError
 
     def update(self, instance, validated_data):
+        set_nested_license_data(validated_data, instance)
         instance = super().update(instance, validated_data)
         if instance.use_resource_license_and_access:
             instance.tags.set([])
@@ -281,28 +278,26 @@ class WriteContentSerializer(serializers.BaseSerializer):
         return res
 
     def update(self, instance, validated_data):
-        local_data = copy(validated_data)
-        if "type" in local_data:
-            local_data.pop("type")
-        block = ContentBlockSerializer().update(instance, local_data)
+        if "type" in validated_data:
+            validated_data.pop("type")
 
         block_child_model = content_block_instance_to_child_model(instance)
         child_serializer = get_serializer_by_child_model(block_child_model)()
 
-        return child_serializer.update(getattr(block, block_child_model), local_data)
+        return child_serializer.update(
+            getattr(instance, block_child_model), validated_data
+        )
 
     def create(self, validated_data):
         if "type" not in validated_data:
             raise ValueError("type not found and required")
 
-        content_type = validated_data["type"]
+        content_type = validated_data.pop("type")
         if content_type not in POSSIBLE_CONTENT_TYPES:
             raise ValueError("invalid content_type")
 
-        local_data = copy(validated_data)
-        local_data.pop("type")
         model = self.get_model_by_type(content_type)
-        return model.objects.create(**local_data)
+        return model.objects.create(**validated_data)
 
 
 # ----------------------- Sections -----------------------
