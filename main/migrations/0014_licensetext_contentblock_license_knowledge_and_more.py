@@ -39,7 +39,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='contentblock',
             name='use_resource_license_and_access',
-            field=models.BooleanField(default=False, verbose_name='a les mêmes accès et licence que la ressource parente'),
+            field=models.BooleanField(default=True, verbose_name='a les mêmes accès et licence que la ressource parente'),
         ),
         migrations.AddField(
             model_name='resource',

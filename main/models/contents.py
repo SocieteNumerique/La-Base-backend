@@ -40,7 +40,7 @@ class ContentBlock(TimeStampedModel):
     )
     use_resource_license_and_access = models.BooleanField(
         verbose_name="a les mêmes accès et licence que la ressource parente",
-        default=False,
+        default=True,
     )
     license_knowledge = models.CharField(
         choices=[
