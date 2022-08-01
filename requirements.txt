@@ -15,4 +15,4 @@ ipython==8.0.1
 Pillow==9.1.1
 rollbar==0.16.2
 telescoop-auth==0.0.8
-telescoop-backup==0.1.1
+telescoop-backup==0.1.2
