@@ -1,3 +1,5 @@
+import sys
+
 from django.db.models import OuterRef, Exists, Q
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -49,7 +51,10 @@ def reset_specific_categories():
         SUPPORT_CATEGORY_ID = None
 
 
-reset_specific_categories()
+if "migrate" not in sys.argv:
+    # before the first time migrations are being done,
+    # reset_specific_categories will not work
+    reset_specific_categories()
 
 
 class PrimaryKeyOccupationTagField(serializers.PrimaryKeyRelatedField):
