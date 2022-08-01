@@ -51,7 +51,7 @@ def reset_specific_categories():
         SUPPORT_CATEGORY_ID = None
 
 
-if "migrate" not in sys.argv:
+if "migrate" not in sys.argv and "backup_db" not in sys.argv:
     # before the first time migrations are being done,
     # reset_specific_categories will not work
     reset_specific_categories()
