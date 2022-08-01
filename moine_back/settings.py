@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "telescoop_auth",
     "main",
     "rest_framework",
+    "telescoop_backup",
 ]
 if IS_LOCAL_DEV:
     INSTALLED_APPS.append("debug_toolbar")
@@ -242,3 +243,8 @@ else:
 
 # allow password reset for a week (by default 1 day)
 PASSWORD_RESET_TIMEOUT = 3600 * 24 * 7
+
+# telescoop-backup
+BACKUP_ACCESS = config.getstr("db_backup.access")
+BACKUP_SECRET = config.getstr("db_backup.secret")
+BACKUP_BUCKET = config.getstr("db_backup.bucket")

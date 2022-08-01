@@ -71,6 +71,7 @@ urlpatterns = [
     ),
     path("api/auth/", include("telescoop_auth.urls")),
     path("api/", include(router.urls)),
+    path("backup/", include("telescoop_backup.urls")),
     *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),
     *static(settings.STATIC_URL, document_root=settings.STATIC_ROOT),
 ]
