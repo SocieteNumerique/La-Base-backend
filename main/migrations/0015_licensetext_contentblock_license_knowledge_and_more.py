@@ -8,7 +8,7 @@ import multiselectfield.db.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('main', '0013_alter_base_state'),
+        ('main', '0014_remove_user_activation_key_alter_base_tags_and_more'),
     ]
 
     operations = [
