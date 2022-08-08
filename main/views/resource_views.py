@@ -95,6 +95,8 @@ class ResourceView(
 
     @action(detail=True, methods=["GET"])
     def contents(self, request, pk=None):
+        # TODO optimize queryset to avoid later content tags requests:
+        #  prefetch("contents__tags") doesn't help
         obj: Resource = self.get_object()
         serializer = ContentBySectionSerializer(
             obj, context=self.get_serializer_context()

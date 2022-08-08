@@ -5,8 +5,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.fields import SkipField
 
-from main.models import TagCategory
-from main.models.models import Resource, Base, ExternalProducer, Tag, Collection
+from main.models.models import Resource, Base, ExternalProducer, Tag, Collection, TagCategory
 from main.models.user import User
 from main.query_changes.permissions import (
     resources_queryset_for_user,
@@ -22,6 +21,10 @@ from main.serializers.utils import (
     Base64FileField,
     ResizableImageBase64Serializer,
     create_or_update_resizable_image,
+    SPECIFIC_CATEGORY_IDS,
+    LicenseTextSerializer,
+    get_specific_tags,
+    set_nested_license_data,
 )
 
 TERRITORY_CATEGORY_ID = None
@@ -59,8 +62,10 @@ if "migrate" not in sys.argv and "backup_db" not in sys.argv:
 
 class PrimaryKeyOccupationTagField(serializers.PrimaryKeyRelatedField):
     def get_queryset(self):
-        if EXTERNAL_PRODUCER_CATEGORY_ID:
-            return Tag.objects.filter(category=EXTERNAL_PRODUCER_CATEGORY_ID)
+        if SPECIFIC_CATEGORY_IDS["external_producer"]:
+            return Tag.objects.filter(
+                category_id=SPECIFIC_CATEGORY_IDS["external_producer"]
+            )
         else:
             return Tag.objects.none()
 
@@ -109,6 +114,8 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
             "stats",
             "content_stats",
             "support_tags",
+            "license_tags",
+            "access_price_tags",
             "can_write",
             "label_state",
             "label_details",
@@ -132,6 +139,9 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
     pinned_in_bases = serializers.PrimaryKeyRelatedField(
         queryset=Base.objects.all(), many=True, required=False
     )
+    license_text = LicenseTextSerializer(required=False, allow_null=True)
+    license_tags = serializers.SerializerMethodField()
+    access_price_tags = serializers.SerializerMethodField()
 
     @staticmethod
     def get_can_write(obj: Resource):
@@ -158,19 +168,15 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
 
     @staticmethod
     def get_support_tags(obj: Resource):
-        if SUPPORT_CATEGORY_ID:
-            if "tags" in getattr(obj, "_prefetched_objects_cache", []):
-                return [
-                    tag.pk
-                    for tag in obj.tags.all()
-                    if tag.category_id == SUPPORT_CATEGORY_ID
-                ]
-            else:
-                return obj.tags.filter(
-                    category__slug="indexation_01RessType"
-                ).values_list("pk", flat=True)
-        else:
-            return []
+        return get_specific_tags(obj, ["support"])
+
+    @staticmethod
+    def get_license_tags(obj: Resource):
+        return get_specific_tags(obj, ["license", "free_license"])
+
+    @staticmethod
+    def get_access_price_tags(obj: Resource):
+        return get_specific_tags(obj, ["needs_account", "price"])
 
     def create(self, validated_data):
         instance = super().create(validated_data)
@@ -181,9 +187,27 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
         instance.can_write = True
         return instance
 
-    def update(self, instance, validated_data):
+    def update(self, instance: Resource, validated_data):
         set_nested_user_fields(instance, validated_data, "authorized_users")
-        return super().update(instance, validated_data)
+        set_nested_license_data(validated_data, instance)
+        instance = super().update(instance, validated_data)
+        if not instance.has_global_license:
+            # we forget former global license
+            # TODO also copies that license on contents that used it?
+            #  if we do that, manage to not have many copies, and not risk deleting common files
+            instance.tags.through.objects.filter(
+                tag__category_id__in=[
+                    SPECIFIC_CATEGORY_IDS["license"],
+                    SPECIFIC_CATEGORY_IDS["needs_account"],
+                    SPECIFIC_CATEGORY_IDS["price"],
+                ]
+            ).delete()
+            if instance.license_text_id is not None:
+                instance.license_text.delete()
+                instance.license_text = None
+                instance.save()
+            instance.contents.update(use_resource_license_and_access=False)
+        return instance
 
 
 class ShortResourceSerializer(BaseResourceSerializer):
@@ -215,6 +239,8 @@ class FullResourceSerializer(BaseResourceSerializer):
             "stats",
             "content_stats",
             "support_tags",
+            "license_tags",
+            "access_price_tags",
             "can_write",
             "pinned_in_bases",
         ]
@@ -381,22 +407,22 @@ class BaseBaseSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def get_participant_type_tags(obj: Base):
-        if EXTERNAL_PRODUCER_CATEGORY_ID:
+        if SPECIFIC_CATEGORY_IDS["external_producer"]:
             return [
                 tag.pk
                 for tag in obj.tags.all()
-                if tag.category_id == EXTERNAL_PRODUCER_CATEGORY_ID
+                if tag.category_id == SPECIFIC_CATEGORY_IDS["external_producer"]
             ]
         else:
             return []
 
     @staticmethod
     def get_territory_tags(obj: Base):
-        if TERRITORY_CATEGORY_ID:
+        if SPECIFIC_CATEGORY_IDS["territory"]:
             return [
                 tag.pk
                 for tag in obj.tags.all()
-                if tag.category_id == TERRITORY_CATEGORY_ID
+                if tag.category_id == SPECIFIC_CATEGORY_IDS["territory"]
             ]
         else:
             return []

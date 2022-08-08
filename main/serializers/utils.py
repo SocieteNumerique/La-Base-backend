@@ -1,15 +1,39 @@
 import base64
 import mimetypes
 import re
+import sys
 import uuid
 
 from django.core.files.base import ContentFile
+from django.db import OperationalError
+from django.db.models import Q
 from django.db.models.fields.files import FieldFile
 from rest_framework import serializers
 from rest_framework.fields import SkipField
 from rest_framework.serializers import ModelSerializer
 
+from main.models import TagCategory, Tag
+from main.models.models import LicenseText
 from main.models.utils import ResizableImage
+
+
+def create_or_update_nested_object(
+    instance_validated_data, property_name, serializer, parent_instance=None
+):
+    if property_name not in instance_validated_data:
+        raise SkipField
+    child_data = instance_validated_data.pop(property_name)
+    if child_data is None:
+        return None
+
+    serializer = serializer()
+    if parent_instance is not None:
+        child_instance = getattr(parent_instance, property_name)
+        if child_instance:
+            return serializer.update(child_instance, child_data)
+    child_instance = serializer.create(child_data)
+    child_instance.save()
+    return child_instance
 
 
 class MoreFieldsModelSerializer(ModelSerializer):
@@ -73,6 +97,97 @@ class Base64FileField(serializers.FileField):
         }
 
 
+class LicenseTextSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LicenseText
+        fields = ["id", "file", "link", "name"]
+
+    file = Base64FileField(allow_null=True, required=True)
+
+
+def create_or_update_license_text(
+    instance_validated_data, property_name, parent_instance=None
+) -> LicenseText:
+    return create_or_update_nested_object(
+        instance_validated_data, property_name, LicenseTextSerializer, parent_instance
+    )
+
+
+def set_nested_license_data(validated_data, instance):  # noqa: C901
+    def remove_free():
+        free_license_tags = Tag.objects.filter(
+            category_id=SPECIFIC_CATEGORY_IDS["free_license"]
+        ).values_list("pk", flat=True)
+        instance.tags.through.objects.filter(tag_id__in=free_license_tags).delete()
+        if "tags" in validated_data:
+            validated_data["tags"] = [
+                t for t in validated_data["tags"] if t.pk not in free_license_tags
+            ]
+
+    def remove_license_text():
+        if instance.license_text_id is not None:
+            instance.license_text.delete()
+            validated_data["license_text"] = None
+
+    def remove_license_text_name():
+        test_proprietary = (
+            len(
+                [
+                    tag.pk
+                    for tag in validated_data["tags"]
+                    if tag.category_id == SPECIFIC_CATEGORY_IDS["license"]
+                    and tag.slug == "main_01proprietary"
+                ]
+            )
+            > 0
+        )
+        if not test_proprietary:
+            return
+        try:
+            instance.license_text.name = ""
+            instance.license_text.save()
+        except AttributeError:
+            pass
+
+        try:
+            validated_data["license_text"]["name"] = ""
+        except KeyError:
+            pass
+
+    try:
+        license_text = create_or_update_license_text(
+            validated_data, "license_text", instance
+        )
+        instance.license_text = license_text
+        instance.save()
+    except SkipField:
+        pass
+
+    if "tags" not in validated_data:
+        return
+
+    test_license_data = len(
+        [
+            tag.pk
+            for tag in validated_data["tags"]
+            if tag.category_id == SPECIFIC_CATEGORY_IDS["license"]
+        ]
+    )
+    test_license_needs_text = LICENSE_NEEDS_TEXT_TAG_ID_SET.intersection(
+        [tag.pk for tag in validated_data["tags"]]
+    )
+
+    if not test_license_data:
+        remove_license_text()
+        remove_free()
+        return
+    if test_license_needs_text:
+        remove_free()
+        remove_license_text_name()
+    else:
+        remove_license_text()
+
+
 class ResizableImageBase64Serializer(serializers.ModelSerializer):
     class Meta:
         model = ResizableImage
@@ -86,6 +201,7 @@ class ResizableImageBase64Serializer(serializers.ModelSerializer):
 
     image = Base64FileField()
 
+    @staticmethod
     def apply_coordinates(self, instance, coordinates=None):
         if coordinates is None:
             instance.scale_x = None
@@ -132,15 +248,84 @@ class ResizableImageBase64Serializer(serializers.ModelSerializer):
 def create_or_update_resizable_image(
     instance_validated_data, property_name, parent_instance=None
 ) -> ResizableImage:
-    if property_name not in instance_validated_data:
-        raise SkipField
-    image_data = instance_validated_data.pop(property_name)
-    if image_data is None:
-        return None
+    return create_or_update_nested_object(
+        instance_validated_data,
+        property_name,
+        ResizableImageBase64Serializer,
+        parent_instance,
+    )
 
-    serializer = ResizableImageBase64Serializer()
-    if parent_instance is not None:
-        image_instance = getattr(parent_instance, property_name)
-        if image_instance:
-            return serializer.update(image_instance, image_data)
-    return serializer.create(image_data)
+
+SPECIFIC_CATEGORY_SLUGS = {
+    "territory": "territory_00city",
+    "external_producer": "externalProducer_00occupation",
+    "support": "indexation_01RessType",
+    "license": "license_01license",
+    "free_license": "license_02free",
+    "needs_account": "license_04access",
+    "price": "license_00price",
+}
+
+SPECIFIC_CATEGORY_IDS = {
+    "territory": None,
+    "external_producer": None,
+    "support": None,
+    "license": None,
+    "free_license": None,
+    "needs_account": None,
+    "price": None,
+}
+LICENSE_NEEDS_TEXT_TAG_ID_SET = set()
+
+
+def reset_specific_categories():
+    if "migrate" in sys.argv or "backup_db" in sys.argv:
+        return
+    # before the first time migrations are being done,
+    # reset_specific_categories will not work
+
+    global SPECIFIC_CATEGORY_IDS
+    global LICENSE_NEEDS_TEXT_TAG_ID_SET
+
+    try:
+        for category in SPECIFIC_CATEGORY_IDS:
+            try:
+                SPECIFIC_CATEGORY_IDS[category] = TagCategory.objects.get(
+                    slug=SPECIFIC_CATEGORY_SLUGS[category]
+                ).pk
+            except TagCategory.DoesNotExist:
+                SPECIFIC_CATEGORY_IDS[category] = None
+
+        LICENSE_NEEDS_TEXT_TAG_ID_SET = set(
+            Tag.objects.filter(
+                Q(slug="main_01proprietary") | Q(slug="main_02other"),
+                category_id=SPECIFIC_CATEGORY_IDS["license"],
+            ).values_list("pk", flat=True)
+        )
+    except OperationalError:
+        pass
+
+
+def get_specific_tags(obj, categories):
+    res = []
+    access_tag_category_slugs = [
+        SPECIFIC_CATEGORY_SLUGS[tag_category] for tag_category in categories
+    ]
+
+    if "tags" in getattr(obj, "_prefetched_objects_cache", []):
+        # TODO actually prefetch in parent serializer
+        for tag_category in categories:
+            if SPECIFIC_CATEGORY_IDS[tag_category]:
+                res += [
+                    tag.pk
+                    for tag in obj.tags.all()
+                    if tag.category_id == SPECIFIC_CATEGORY_IDS[tag_category]
+                ]
+    else:
+        res += obj.tags.filter(
+            category__slug__in=access_tag_category_slugs
+        ).values_list("pk", flat=True)
+    return res
+
+
+reset_specific_categories()

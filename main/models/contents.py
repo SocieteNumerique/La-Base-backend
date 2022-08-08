@@ -1,7 +1,8 @@
 from django.db import models
 
-from main.models.models import Resource
+from main.models.models import Resource, Tag
 from main.models.utils import TimeStampedModel
+from main.query_changes.utils import query_my_related_tags
 
 
 class ContentSection(TimeStampedModel):
@@ -31,6 +32,32 @@ class ContentBlock(TimeStampedModel):
     section = models.ForeignKey(ContentSection, models.CASCADE, related_name="contents")
     nb_col = models.IntegerField(default=2)
     order = models.BigIntegerField()
+    tags = models.ManyToManyField(
+        Tag,
+        blank=True,
+        related_name="contents",
+        limit_choices_to=query_my_related_tags("Content"),
+    )
+    use_resource_license_and_access = models.BooleanField(
+        verbose_name="a les mêmes accès et licence que la ressource parente",
+        default=True,
+    )
+    license_knowledge = models.CharField(
+        choices=[
+            ("specific", "Spécifique au contenu"),
+            ("resource", "Identique à la ressource"),
+            ("unknown", "Inconnue"),
+        ],
+        max_length=10,
+        default="unknown",
+    )
+    license_text = models.ForeignKey(
+        "main.LicenseText",
+        verbose_name="Détail de licence propriétaire",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
 
 
 class LinkedResourceContent(ContentBlock):

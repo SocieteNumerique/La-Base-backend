@@ -12,9 +12,15 @@ from main.models.contents import (
     FileContent,
 )
 from main.models.models import Resource
-from main.serializers.utils import Base64FileField
+from main.serializers.utils import (
+    Base64FileField,
+    LicenseTextSerializer,
+    get_specific_tags,
+    set_nested_license_data,
+    SPECIFIC_CATEGORY_IDS,
+)
 
-content_fields = [
+CONTENT_FIELDS = [
     "id",
     "title",
     "annotation",
@@ -25,6 +31,12 @@ content_fields = [
     "type",
     "nb_col",
     "order",
+    "license_tags",
+    "access_price_tags",
+    "use_resource_license_and_access",
+    "license_text",
+    "license_knowledge",
+    "tags",
 ]
 CONTENT_READ_ONLY_FIELDS = ["id", "created", "modified"]
 POSSIBLE_CONTENT_TYPES = ["text", "link", "linkedResource", "file"]
@@ -61,18 +73,56 @@ class ContentBlockSerializer(serializers.ModelSerializer):
         read_only_fields = CONTENT_READ_ONLY_FIELDS
         model = ContentBlock
 
+    license_text = LicenseTextSerializer(required=False, allow_null=True)
+
 
 class BaseContentSerializer(serializers.ModelSerializer):
     class Meta:
-        fields = content_fields
-        read_only_fields = CONTENT_READ_ONLY_FIELDS
+        fields = CONTENT_FIELDS
+        read_only_fields = CONTENT_FIELDS
         abstract = True
 
     type = serializers.SerializerMethodField()
+    license_tags = serializers.SerializerMethodField()
+    access_price_tags = serializers.SerializerMethodField()
+    license_text = LicenseTextSerializer(required=False, allow_null=True)
+
+    @staticmethod
+    def get_license_tags(obj: ContentBlock):
+        return get_specific_tags(obj, ["license", "free_license"])
+
+    @staticmethod
+    def get_access_price_tags(obj: ContentBlock):
+        return get_specific_tags(obj, ["needs_account", "price"])
 
     @staticmethod
     def get_type(obj):
         raise NotImplementedError
+
+    def update(self, instance, validated_data):
+        set_nested_license_data(validated_data, instance)
+        instance = super().update(instance, validated_data)
+        if instance.use_resource_license_and_access:
+            instance.tags.set([])
+            # TODO if more tags than license tags, filter them here
+            if instance.license_text_id is not None:
+                instance.license_text.delete()
+                instance.license_text = None
+            instance.save()
+
+        if instance.license_knowledge != "specific":
+            # forget former specific license
+            instance.tags.through.objects.filter(
+                tag__category_id__in=[
+                    SPECIFIC_CATEGORY_IDS["license"],
+                    SPECIFIC_CATEGORY_IDS["free_license"],
+                ]
+            ).delete()
+            if instance.license_text_id is not None:
+                instance.license_text.delete()
+                instance.license_text = None
+                instance.save()
+        return instance
 
 
 class LinkContentSerializer(BaseContentSerializer):
@@ -152,7 +202,7 @@ def content_type_to_child_model(content_type):
 
 class ReadContentSerializer(serializers.ModelSerializer):
     class Meta:
-        fields = content_fields + ["link", "with_preview", "linked_resource", "text"]
+        fields = CONTENT_FIELDS + ["link", "with_preview", "linked_resource", "text"]
         read_only_fields = CONTENT_READ_ONLY_FIELDS
         model = ContentBlock
 
@@ -194,7 +244,9 @@ class WriteContentSerializer(serializers.BaseSerializer):
         if "type" in data:
             local_data.pop("type")
 
-        res = ContentBlockSerializer(partial=True).to_internal_value(local_data)
+        res = ContentBlockSerializer(
+            context=self.context, partial=True
+        ).to_internal_value(local_data)
 
         # At this point either
         # - there was only generic fields, and we managed all the data
@@ -226,28 +278,26 @@ class WriteContentSerializer(serializers.BaseSerializer):
         return res
 
     def update(self, instance, validated_data):
-        local_data = copy(validated_data)
-        if "type" in local_data:
-            local_data.pop("type")
-        block = ContentBlockSerializer().update(instance, local_data)
+        if "type" in validated_data:
+            validated_data.pop("type")
 
         block_child_model = content_block_instance_to_child_model(instance)
         child_serializer = get_serializer_by_child_model(block_child_model)()
 
-        return child_serializer.update(getattr(block, block_child_model), local_data)
+        return child_serializer.update(
+            getattr(instance, block_child_model), validated_data
+        )
 
     def create(self, validated_data):
         if "type" not in validated_data:
             raise ValueError("type not found and required")
 
-        content_type = validated_data["type"]
+        content_type = validated_data.pop("type")
         if content_type not in POSSIBLE_CONTENT_TYPES:
             raise ValueError("invalid content_type")
 
-        local_data = copy(validated_data)
-        local_data.pop("type")
         model = self.get_model_by_type(content_type)
-        return model.objects.create(**local_data)
+        return model.objects.create(**validated_data)
 
 
 # ----------------------- Sections -----------------------
