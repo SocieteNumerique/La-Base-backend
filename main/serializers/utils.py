@@ -298,7 +298,7 @@ def reset_specific_categories():
 
         LICENSE_NEEDS_TEXT_TAG_ID_SET = set(
             Tag.objects.filter(
-                Q(name="Propriétaire") | Q(name="Autre"),
+                Q(slug="main_01proprietary") | Q(slug="main_02other"),
                 category_id=SPECIFIC_CATEGORY_IDS["license"],
             ).values_list("pk", flat=True)
         )
