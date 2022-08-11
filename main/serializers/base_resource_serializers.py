@@ -1,11 +1,15 @@
-import sys
-
 from django.db.models import OuterRef, Exists, Q
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.fields import SkipField
 
-from main.models.models import Resource, Base, ExternalProducer, Tag, Collection, TagCategory
+from main.models.models import (
+    Resource,
+    Base,
+    ExternalProducer,
+    Tag,
+    Collection,
+)
 from main.models.user import User
 from main.query_changes.permissions import (
     resources_queryset_for_user,
@@ -26,38 +30,6 @@ from main.serializers.utils import (
     get_specific_tags,
     set_nested_license_data,
 )
-
-TERRITORY_CATEGORY_ID = None
-EXTERNAL_PRODUCER_CATEGORY_ID = None
-SUPPORT_CATEGORY_ID = None
-
-
-def reset_specific_categories():
-    global TERRITORY_CATEGORY_ID
-    global EXTERNAL_PRODUCER_CATEGORY_ID
-    global SUPPORT_CATEGORY_ID
-
-    try:
-        TERRITORY_CATEGORY_ID = TagCategory.objects.get(slug="territory_00city").pk
-    except TagCategory.DoesNotExist:
-        TERRITORY_CATEGORY_ID = None
-
-    try:
-        EXTERNAL_PRODUCER_CATEGORY_ID = TagCategory.objects.get(
-            slug="externalProducer_00occupation"
-        ).pk
-    except TagCategory.DoesNotExist:
-        SUPPORT_CATEGORY_ID = None
-    try:
-        SUPPORT_CATEGORY_ID = TagCategory.objects.get(slug="indexation_01RessType").pk
-    except TagCategory.DoesNotExist:
-        SUPPORT_CATEGORY_ID = None
-
-
-if "migrate" not in sys.argv and "backup_db" not in sys.argv:
-    # before the first time migrations are being done,
-    # reset_specific_categories will not work
-    reset_specific_categories()
 
 
 class PrimaryKeyOccupationTagField(serializers.PrimaryKeyRelatedField):
