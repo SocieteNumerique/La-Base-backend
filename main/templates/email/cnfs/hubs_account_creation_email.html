@@ -1,0 +1,37 @@
+{% autoescape off %}
+Bonjour à toutes et à tous,
+
+La Base (labase.anct.gouv.fr), 1ère plateforme nationale de celles et ceux qui participent au développement d'un numérique d'intérêt général, est en ligne depuis quelques jours. Vous y avez peut-être déjà fait un tour, créé un compte ou publié une ressource et nous vous en remercions !
+En tant que membre d’un Hub territorial pour un numérique inclusif, nous avons souhaité vous donner un accès privilégié à trois bases en particulier :
+
+- Les deux bases Conseillers numériques France Services qui prennent la suite de la Ressourcerie de l’espace Coop à laquelle vous aviez jusque-là accès :
+  o La base Conseillers numériques France Services reprend les ressources anciennement publiées sur la Ressourcerie
+  o La base Conseillers numériques France Services – contributions contient les différentes fiches ressources publiées par les CNFS eux-mêmes et leur permet d’échanger entre eux des ressources. Il s’agit d’une nouveauté par rapport à la Ressourcerie précédente qui n’avait pas d’espace de partage pour les CNFS eux-mêmes.
+
+- La base Hub territorial pour un numérique inclusif, administrée par la Banque des Territoires et l’ANCT qui prend la suite du drive Société Numérique auquel certains d’entre vous avaient des difficultés d’accès. Elle est pour l’instant vide, mais sera prochainement enrichie de vos contributions ainsi que des nôtres !
+
+Vous trouverez ci-dessous quelques réponses à des questions régulièrement posées :
+
+- Qu’est-ce que La Base ?
+
+La Base est la plateforme de mise en réseau des ressources produites par les acteurs et actrices du numérique d'intérêt général, notamment sur l'inclusion et la médiation numériques. La Base permet aux utilisateurs et aux utilisatrices, qu'il s'agisse d'agents et agentes de collectivités, de médiateurs ou médiatrices numériques, Hubs territoriaux pour un numérique inclusif, associations, structures de l'ESS, élus, ou toute autre personne intéressée de près ou de loin par le numérique d'intérêt général, de partager ou documenter des outils, ressources, dispositifs.
+
+- Comment me rendre sur La Base ?
+
+Votre compte a déjà été créé avec le mail {{ email }}. Il faut simplement modifier votre mot de passe en suivant ce
+lien :
+{% block reset_link %}
+  {{ protocol }}://{{ domain }}{% url 'password_reset_confirm' uidb64=uid token=token %}
+{% endblock %}.
+
+- Est-ce important de créer mon compte avec mon adresse {{ email }} ?
+
+Oui ! L'inscription sur La Base avec votre adresse {{ email }} conditionne votre ajout aux Bases fermées Conseillers numériques France Services et Hub territorial pour un numérique inclusif. Il est donc essentiel de réaliser votre inscription avec cette adresse mail et si vous le souhaitez, vous pourrez ensuite la modifier et la remplacer par l'adresse mail de votre choix via votre compte.
+
+
+En cas de questions, vous pouvez nous écrire à cette adresse : labase@anct.gouv.fr
+
+Bonne journée !
+
+L’équipe Conseillers numériques France Services
+{% endautoescape %}

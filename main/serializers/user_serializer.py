@@ -13,6 +13,7 @@ from main.user_utils import send_email_confirmation
 UserModel = get_user_model()
 CNFS_RESERVED_TAG_NAME = "Conseiller numérique France Services"
 CNFS_EMAIL_DOMAIN = "@conseiller-numerique.fr"
+HUBS_RESERVED_TAG_NAME = "Hub territorial pour un numérique inclusif"
 
 
 class AuthSerializer(serializers.ModelSerializer):
