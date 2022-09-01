@@ -202,7 +202,7 @@ class ResizableImageBase64Serializer(serializers.ModelSerializer):
     image = Base64FileField()
 
     @staticmethod
-    def apply_coordinates(self, instance, coordinates=None):
+    def apply_coordinates(instance, coordinates=None):
         if coordinates is None:
             instance.scale_x = None
             instance.scale_y = None

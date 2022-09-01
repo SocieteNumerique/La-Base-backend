@@ -1,5 +1,3 @@
-import datetime
-
 from django.db import models
 from django.db.models import Count
 from multiselectfield import MultiSelectField
@@ -239,7 +237,7 @@ class Resource(TimeStampedModel):
         default="draft", choices=RESOURCE_STATE_CHOICES, max_length=10
     )
     cover_image = models.FileField(null=True, blank=True)
-    resource_created_on = models.DateField(default=datetime.date.today)
+    resource_created_on = models.CharField(max_length=50, null=True, blank=True)
     creator = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True, related_name="creator"
     )
