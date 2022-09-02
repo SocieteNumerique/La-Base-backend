@@ -17,3 +17,5 @@ from .contents import (  # noqa: F401
 from .user import User, UserGroup  # noqa: F401
 
 from .utils import ResizableImage  # noqa: F401
+
+from .visit_counts import BaseVisit, ResourceVisit  # noqa: F401

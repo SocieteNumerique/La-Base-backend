@@ -29,6 +29,7 @@ from main.views import (
     search_view,
     user_views,
 )
+from main.views.visit_counts import increment_visit_count
 from moine_back.settings import IS_LOCAL_DEV
 
 router = routers.DefaultRouter()
@@ -70,6 +71,11 @@ urlpatterns = [
         user_views.send_email_confirmation_view,
     ),
     path("api/auth/", include("telescoop_auth.urls")),
+    path(
+        "api/visit/<str:object_type>/<int:pk>",
+        increment_visit_count,
+        name="increment-visit-count",
+    ),
     path("api/", include(router.urls)),
     path("backup/", include("telescoop_backup.urls")),
     *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),

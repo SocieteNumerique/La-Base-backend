@@ -106,6 +106,10 @@ class Base(TimeStampedModel):
     def __str__(self):
         return self.title
 
+    @property
+    def visit_count(self):
+        return self.visits.count()
+
 
 class Collection(TimeStampedModel):
     class Meta:
@@ -332,6 +336,10 @@ class Resource(TimeStampedModel):
 
     def __str__(self):
         return self.title
+
+    @property
+    def visit_count(self):
+        return self.visits.count()
 
 
 class ExternalProducer(TimeStampedModel):
