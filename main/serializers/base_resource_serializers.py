@@ -32,6 +32,10 @@ from main.serializers.utils import (
 )
 
 
+class Object(object):
+    pass
+
+
 class PrimaryKeyOccupationTagField(serializers.PrimaryKeyRelatedField):
     def get_queryset(self):
         if SPECIFIC_CATEGORY_IDS["external_producer"]:
@@ -346,17 +350,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
 
     def get_resources(self, obj: Base):
         user = self.context["request"].user
-        pinned_resources_qs = resources_queryset_with_stats(
-            resources_queryset_for_user(
-                user, obj.pinned_resources.prefetch_related("root_base__pk"), full=False
-            )
-        )
-        annotated_qs = resources_queryset_with_stats(
-            resources_queryset_for_user(user, obj.resources, full=False)
-        )
-        return ShortResourceSerializer(
-            annotated_qs.union(pinned_resources_qs), many=True, context=self.context
-        ).data
+        return obj.get_paginated_resources(user, 1)
 
     def get_collections(self, obj: Base):
         pinned_collections_qs = obj.pinned_collections.prefetch_related("base__pk")

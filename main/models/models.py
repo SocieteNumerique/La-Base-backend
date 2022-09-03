@@ -1,10 +1,15 @@
+import math
+from collections import OrderedDict
+
 from django.db import models
 from django.db.models import Count
 from multiselectfield import MultiSelectField
+from rest_framework import pagination
 
 from main.models.user import User, UserGroup
 from main.models.utils import TimeStampedModel, ResizableImage
 from main.query_changes.utils import query_my_related_tags
+from moine_back.settings import RESOURCE_PAGE_SIZE
 
 RESOURCE_PRODUCER_STATES = [
     ["me", "celui qui ajouté la ressource"],
@@ -32,6 +37,10 @@ TAG_CATEGORY_RELATES_TO = [
     ("Base", "Bases"),
     ("Content", "Contenus"),
 ]
+
+
+class Object(object):
+    pass
 
 
 class Base(TimeStampedModel):
@@ -105,6 +114,44 @@ class Base(TimeStampedModel):
 
     def __str__(self):
         return self.title
+
+    def get_paginated_resources(self, user: User, page=1):
+        """
+        Get paginated data of serialized resources displayed on this base
+        (pinned in this base or whose root is this base).
+        """
+        from main.query_changes.permissions import resources_queryset_for_user
+        from main.query_changes.stats_annotations import resources_queryset_with_stats
+        from main.serializers.base_resource_serializers import ShortResourceSerializer
+
+        pinned_resources_qs = resources_queryset_with_stats(
+            resources_queryset_for_user(
+                user,
+                self.pinned_resources.prefetch_related("root_base__pk"),
+                full=False,
+            )
+        )
+        annotated_qs = resources_queryset_with_stats(
+            resources_queryset_for_user(user, self.resources, full=False)
+        )
+        qs = annotated_qs.union(pinned_resources_qs)
+
+        paginator = pagination.PageNumberPagination()
+        paginator.page_size = RESOURCE_PAGE_SIZE
+        fake_request = Object()
+        fake_request.query_params = {"page": page}
+        page = paginator.paginate_queryset(qs, fake_request)
+        serializer = ShortResourceSerializer(page, many=True)
+        return OrderedDict(
+            [
+                ("count", paginator.page.paginator.count),
+                (
+                    "page_count",
+                    math.ceil(paginator.page.paginator.count / RESOURCE_PAGE_SIZE),
+                ),
+                ("results", serializer.data),
+            ]
+        )
 
 
 class Collection(TimeStampedModel):
