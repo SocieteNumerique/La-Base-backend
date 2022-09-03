@@ -121,8 +121,8 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
 
     @staticmethod
     def get_stats(obj: Resource):
-        # TODO actually save / compute that
-        res = {"views": None, "pinned": None}
+        # TODO actually compute pinned
+        res = {"visit_count": getattr(obj, "visit_count", 0), "pinned": None}
         return res
 
     @staticmethod
@@ -287,6 +287,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
             "participant_type_tags",
             "territory_tags",
             "profile_image",
+            "visit_count",
         ]
 
     owner = AuthSerializer(required=False, read_only=True)
@@ -298,6 +299,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
     contributors = NestedUserSerializer(many=True, required=False, allow_null=True)
     resources = serializers.SerializerMethodField()
     can_write = serializers.SerializerMethodField()
+    visit_count = serializers.SerializerMethodField()
     can_add_resources = serializers.SerializerMethodField()
     collections = serializers.SerializerMethodField()
     resources_in_pinned_collections = serializers.SerializerMethodField()
@@ -339,6 +341,10 @@ class BaseBaseSerializer(serializers.ModelSerializer):
     @staticmethod
     def get_can_write(obj: Base):
         return getattr(obj, "can_write", False)
+
+    @staticmethod
+    def get_visit_count(obj: Base):
+        return getattr(obj, "visit_count", 0)
 
     @staticmethod
     def get_can_add_resources(obj: Base):

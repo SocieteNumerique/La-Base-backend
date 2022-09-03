@@ -20,6 +20,7 @@ class FileContentInline(admin.TabularInline):
 class ResourceAdmin(admin.ModelAdmin):
     inlines = [TextContentInline, FileContentInline, ContentSectionInline]
     search_fields = ("title",)
+    list_display = ("title", "root_base", "creator", "instance_visit_count")
     autocomplete_fields = [
         "creator",
         "internal_producers",
