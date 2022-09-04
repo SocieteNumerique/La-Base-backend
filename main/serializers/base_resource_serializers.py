@@ -10,7 +10,6 @@ from main.models.models import (
     Tag,
     Collection,
 )
-from main.models.user import User
 from main.query_changes.permissions import (
     resources_queryset_for_user,
 )
@@ -19,6 +18,7 @@ from main.serializers.user_serializer import (
     AuthSerializer,
     NestedUserSerializer,
     set_nested_user_fields,
+    UserSerializerForSearch,
 )
 from main.serializers.utils import (
     MoreFieldsModelSerializer,
@@ -48,14 +48,6 @@ class ExternalProducerSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
     occupation = PrimaryKeyOccupationTagField()
-
-
-class PrimaryKeyCreatorField(serializers.PrimaryKeyRelatedField):
-    def get_queryset(self):
-        request = self.context.get("request", None)
-        if request:
-            return User.objects.filter(pk=request.user.pk)
-        return User.objects.all()
 
 
 class PrimaryKeyBaseField(serializers.PrimaryKeyRelatedField):
@@ -101,7 +93,7 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
     content_stats = serializers.SerializerMethodField(read_only=True)
     contributors = NestedUserSerializer(many=True, required=False, allow_null=True)
     cover_image = Base64FileField(required=False, allow_null=True)
-    creator = PrimaryKeyCreatorField(read_only=True)
+    creator = UserSerializerForSearch(required=False, allow_null=True)
     creator_bases = PrimaryKeyBaseField(required=False, allow_null=True, many=True)
     external_producers = ExternalProducerSerializer(many=True, required=False)
     is_short = serializers.ReadOnlyField(default=True)
@@ -197,6 +189,7 @@ class ShortResourceSerializer(BaseResourceSerializer):
             "root_base_title",
             "pinned_in_bases",
             "can_write",
+            "creator",
         ]
         abstract = False
 
