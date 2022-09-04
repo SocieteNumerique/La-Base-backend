@@ -270,9 +270,7 @@ class CollectionSerializer(serializers.ModelSerializer):
         model = Collection
         fields = ["id", "name", "resources", "base", "pinned_in_bases"]
 
-    resources = PrimaryKeyResourcesForCollectionField(
-        many=True, required=False, allow_null=True
-    )
+    resources = ShortResourceSerializer(many=True, required=False, allow_null=True)
     pinned_in_bases = serializers.PrimaryKeyRelatedField(
         queryset=Base.objects.all(), many=True, required=False
     )
