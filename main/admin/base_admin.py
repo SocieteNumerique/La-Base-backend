@@ -5,7 +5,7 @@ from main.models.models import Base
 
 @admin.register(Base)
 class BaseAdmin(admin.ModelAdmin):
-    list_display = ("title", "owner")
+    list_display = ("title", "owner", "instance_visit_count")
     search_fields = ("title",)
     autocomplete_fields = [
         "owner",

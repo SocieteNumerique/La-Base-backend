@@ -106,6 +106,12 @@ class Base(TimeStampedModel):
     def __str__(self):
         return self.title
 
+    @property
+    def instance_visit_count(self):
+        return self.visits.count()
+
+    instance_visit_count.fget.short_description = "Nombre de vues"
+
 
 class Collection(TimeStampedModel):
     class Meta:
@@ -332,6 +338,12 @@ class Resource(TimeStampedModel):
 
     def __str__(self):
         return self.title
+
+    @property
+    def instance_visit_count(self):
+        return self.visits.count()
+
+    instance_visit_count.fget.short_description = "Nombre de vues"
 
 
 class ExternalProducer(TimeStampedModel):
