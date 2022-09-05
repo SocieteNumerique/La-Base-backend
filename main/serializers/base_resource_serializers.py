@@ -10,7 +10,6 @@ from main.models.models import (
     Tag,
     Collection,
 )
-from main.models.user import User
 from main.query_changes.permissions import (
     resources_queryset_for_user,
 )
@@ -19,6 +18,7 @@ from main.serializers.user_serializer import (
     AuthSerializer,
     NestedUserSerializer,
     set_nested_user_fields,
+    UserSerializerForSearch,
 )
 from main.serializers.utils import (
     MoreFieldsModelSerializer,
@@ -48,14 +48,6 @@ class ExternalProducerSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
     occupation = PrimaryKeyOccupationTagField()
-
-
-class PrimaryKeyCreatorField(serializers.PrimaryKeyRelatedField):
-    def get_queryset(self):
-        request = self.context.get("request", None)
-        if request:
-            return User.objects.filter(pk=request.user.pk)
-        return User.objects.all()
 
 
 class PrimaryKeyBaseField(serializers.PrimaryKeyRelatedField):
@@ -101,7 +93,7 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
     content_stats = serializers.SerializerMethodField(read_only=True)
     contributors = NestedUserSerializer(many=True, required=False, allow_null=True)
     cover_image = Base64FileField(required=False, allow_null=True)
-    creator = PrimaryKeyCreatorField(read_only=True)
+    creator = UserSerializerForSearch(required=False, allow_null=True)
     creator_bases = PrimaryKeyBaseField(required=False, allow_null=True, many=True)
     external_producers = ExternalProducerSerializer(many=True, required=False)
     is_short = serializers.ReadOnlyField(default=True)
@@ -121,8 +113,8 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
 
     @staticmethod
     def get_stats(obj: Resource):
-        # TODO actually save / compute that
-        res = {"views": None, "pinned": None}
+        # TODO actually compute pinned
+        res = {"visit_count": getattr(obj, "visit_count", 0), "pinned": None}
         return res
 
     @staticmethod
@@ -197,6 +189,7 @@ class ShortResourceSerializer(BaseResourceSerializer):
             "root_base_title",
             "pinned_in_bases",
             "can_write",
+            "creator",
         ]
         abstract = False
 
@@ -295,6 +288,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
             "participant_type_tags",
             "territory_tags",
             "profile_image",
+            "visit_count",
         ]
 
     owner = AuthSerializer(required=False, read_only=True)
@@ -306,6 +300,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
     contributors = NestedUserSerializer(many=True, required=False, allow_null=True)
     resources = serializers.SerializerMethodField()
     can_write = serializers.SerializerMethodField()
+    visit_count = serializers.SerializerMethodField()
     can_add_resources = serializers.SerializerMethodField()
     collections = serializers.SerializerMethodField()
     resources_in_pinned_collections = serializers.SerializerMethodField()
@@ -347,6 +342,10 @@ class BaseBaseSerializer(serializers.ModelSerializer):
     @staticmethod
     def get_can_write(obj: Base):
         return getattr(obj, "can_write", False)
+
+    @staticmethod
+    def get_visit_count(obj: Base):
+        return getattr(obj, "visit_count", 0)
 
     @staticmethod
     def get_can_add_resources(obj: Base):
