@@ -170,6 +170,18 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
         return instance
 
 
+class VeryShortResourceSerializer(BaseResourceSerializer):
+    class Meta(BaseResourceSerializer.Meta):
+        fields = [
+            "id",
+            "title",
+            "is_short",
+        ]
+        abstract = False
+
+    is_short = serializers.ReadOnlyField(default=True)
+
+
 class ShortResourceSerializer(BaseResourceSerializer):
     class Meta(BaseResourceSerializer.Meta):
         fields = [
@@ -247,7 +259,9 @@ class PrimaryKeyResourcesForCollectionField(serializers.PrimaryKeyRelatedField):
             base = collection.base
         elif "base" in request.data:
             base = Base.objects.get(pk=request.data["base"])
-        return Resource.objects.filter(Q(root_base=base) | Q(pinned_in_bases=base))
+        return Resource.objects.filter(
+            Q(root_base=base) | Q(pinned_in_bases=base)
+        ).distinct()
 
 
 class BaseCollectionSerializer(serializers.ModelSerializer):
@@ -295,6 +309,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
     )
     contributors = NestedUserSerializer(many=True, required=False, allow_null=True)
     resources = serializers.SerializerMethodField()
+    resource_choices = serializers.SerializerMethodField()
     can_write = serializers.SerializerMethodField()
     visit_count = serializers.SerializerMethodField()
     can_add_resources = serializers.SerializerMethodField()
@@ -350,6 +365,10 @@ class BaseBaseSerializer(serializers.ModelSerializer):
         user = self.context["request"].user
         return obj.get_paginated_resources(user, 1)
 
+    def get_resource_choices(self, obj: Base):
+        user = self.context["request"].user
+        return VeryShortResourceSerializer(obj.resources_for_user(user), many=True).data
+
     def get_collections(self, obj: Base):
         pinned_collections_qs = obj.pinned_collections.prefetch_related("base__pk")
         return ReadCollectionSerializer(
@@ -396,6 +415,7 @@ class FullBaseSerializer(BaseBaseSerializer):
             "contact",
             "description",
             "resources",
+            "resource_choices",
             "collections",
             "contributors",
             "contributor_tags",

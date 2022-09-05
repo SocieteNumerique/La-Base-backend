@@ -110,11 +110,8 @@ class Base(TimeStampedModel):
     def __str__(self):
         return self.title
 
-    def get_paginated_resources(self, user: User, page=1):
-        """
-        Get paginated data of serialized resources displayed on this base
-        (pinned in this base or whose root is this base).
-        """
+    def resources_for_user(self, user: User):
+        """Resources pinned on base or rooted on base accessible for user."""
         from main.query_changes.permissions import resources_queryset_for_user
         from main.query_changes.stats_annotations import resources_queryset_with_stats
 
@@ -130,6 +127,14 @@ class Base(TimeStampedModel):
         )
         qs = annotated_qs.union(pinned_resources_qs)
 
+        return qs
+
+    def get_paginated_resources(self, user: User, page=1):
+        """
+        Get paginated data of serialized resources displayed on this base
+        (pinned in this base or whose root is this base).
+        """
+        qs = self.resources_for_user(user)
         return paginated_resources_from_qs(qs, page)
 
     @property
