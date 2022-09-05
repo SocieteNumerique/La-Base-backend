@@ -1,4 +1,4 @@
-from django.db.models import OuterRef, Exists, Q
+from django.db.models import Q
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.fields import SkipField
@@ -10,10 +10,6 @@ from main.models.models import (
     Tag,
     Collection,
 )
-from main.query_changes.permissions import (
-    resources_queryset_for_user,
-)
-from main.query_changes.stats_annotations import resources_queryset_with_stats
 from main.serializers.user_serializer import (
     AuthSerializer,
     NestedUserSerializer,
@@ -174,6 +170,18 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
         return instance
 
 
+class VeryShortResourceSerializer(BaseResourceSerializer):
+    class Meta(BaseResourceSerializer.Meta):
+        fields = [
+            "id",
+            "title",
+            "is_short",
+        ]
+        abstract = False
+
+    is_short = serializers.ReadOnlyField(default=True)
+
+
 class ShortResourceSerializer(BaseResourceSerializer):
     class Meta(BaseResourceSerializer.Meta):
         fields = [
@@ -251,7 +259,9 @@ class PrimaryKeyResourcesForCollectionField(serializers.PrimaryKeyRelatedField):
             base = collection.base
         elif "base" in request.data:
             base = Base.objects.get(pk=request.data["base"])
-        return Resource.objects.filter(Q(root_base=base) | Q(pinned_in_bases=base))
+        return Resource.objects.filter(
+            Q(root_base=base) | Q(pinned_in_bases=base)
+        ).distinct()
 
 
 class BaseCollectionSerializer(serializers.ModelSerializer):
@@ -299,11 +309,11 @@ class BaseBaseSerializer(serializers.ModelSerializer):
     )
     contributors = NestedUserSerializer(many=True, required=False, allow_null=True)
     resources = serializers.SerializerMethodField()
+    resource_choices = serializers.SerializerMethodField()
     can_write = serializers.SerializerMethodField()
     visit_count = serializers.SerializerMethodField()
     can_add_resources = serializers.SerializerMethodField()
     collections = serializers.SerializerMethodField()
-    resources_in_pinned_collections = serializers.SerializerMethodField()
     contributor_tags = serializers.PrimaryKeyRelatedField(
         many=True, queryset=Tag.objects.all(), required=False, allow_null=True
     )
@@ -355,6 +365,10 @@ class BaseBaseSerializer(serializers.ModelSerializer):
         user = self.context["request"].user
         return obj.get_paginated_resources(user, 1)
 
+    def get_resource_choices(self, obj: Base):
+        user = self.context["request"].user
+        return VeryShortResourceSerializer(obj.resources_for_user(user), many=True).data
+
     def get_collections(self, obj: Base):
         pinned_collections_qs = obj.pinned_collections.prefetch_related("base__pk")
         return ReadCollectionSerializer(
@@ -362,17 +376,6 @@ class BaseBaseSerializer(serializers.ModelSerializer):
             many=True,
             context=self.context,
         ).data
-
-    def get_resources_in_pinned_collections(self, obj: Base):
-        user = self.context["request"].user
-        qs = resources_queryset_with_stats(
-            resources_queryset_for_user(user, full=False)
-            .exclude(root_base=obj)
-            .filter(
-                Exists(obj.pinned_collections.filter(id__in=OuterRef("collections")))
-            )
-        )
-        return ShortResourceSerializer(qs, many=True, context=self.context).data
 
     @staticmethod
     def get_participant_type_tags(obj: Base):
@@ -412,8 +415,8 @@ class FullBaseSerializer(BaseBaseSerializer):
             "contact",
             "description",
             "resources",
+            "resource_choices",
             "collections",
-            "resources_in_pinned_collections",
             "contributors",
             "contributor_tags",
             "authorized_users",
