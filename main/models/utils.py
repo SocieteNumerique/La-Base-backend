@@ -1,8 +1,14 @@
+import math
+from collections import OrderedDict
 from io import BytesIO
 
 from PIL import Image
 from django.core.files.storage import default_storage
 from django.db import models
+from django.db.models import QuerySet
+from rest_framework import pagination
+
+from moine_back.settings import RESOURCE_PAGE_SIZE
 
 
 class TimeStampedModel(models.Model):
@@ -46,3 +52,28 @@ def resize_image(image):
         default_storage.save(image.name, memfile)
         memfile.close()
         img.close()
+
+
+class Object(object):
+    pass
+
+
+def paginated_resources_from_qs(qs: QuerySet, page: int):
+    from main.serializers.base_resource_serializers import ShortResourceSerializer
+
+    paginator = pagination.PageNumberPagination()
+    paginator.page_size = RESOURCE_PAGE_SIZE
+    fake_request = Object()
+    fake_request.query_params = {"page": page}
+    page = paginator.paginate_queryset(qs, fake_request)
+    serializer = ShortResourceSerializer(page, many=True)
+    return OrderedDict(
+        [
+            ("count", paginator.page.paginator.count),
+            (
+                "page_count",
+                math.ceil(paginator.page.paginator.count / RESOURCE_PAGE_SIZE),
+            ),
+            ("results", serializer.data),
+        ]
+    )

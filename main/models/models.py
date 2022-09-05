@@ -3,7 +3,11 @@ from django.db.models import Count
 from multiselectfield import MultiSelectField
 
 from main.models.user import User, UserGroup
-from main.models.utils import TimeStampedModel, ResizableImage
+from main.models.utils import (
+    TimeStampedModel,
+    ResizableImage,
+    paginated_resources_from_qs,
+)
 from main.query_changes.utils import query_my_related_tags
 
 RESOURCE_PRODUCER_STATES = [
@@ -106,6 +110,28 @@ class Base(TimeStampedModel):
     def __str__(self):
         return self.title
 
+    def get_paginated_resources(self, user: User, page=1):
+        """
+        Get paginated data of serialized resources displayed on this base
+        (pinned in this base or whose root is this base).
+        """
+        from main.query_changes.permissions import resources_queryset_for_user
+        from main.query_changes.stats_annotations import resources_queryset_with_stats
+
+        pinned_resources_qs = resources_queryset_with_stats(
+            resources_queryset_for_user(
+                user,
+                self.pinned_resources.prefetch_related("root_base__pk"),
+                full=False,
+            )
+        )
+        annotated_qs = resources_queryset_with_stats(
+            resources_queryset_for_user(user, self.resources, full=False)
+        )
+        qs = annotated_qs.union(pinned_resources_qs)
+
+        return paginated_resources_from_qs(qs, page)
+
     @property
     def instance_visit_count(self):
         return self.visits.count()
@@ -125,6 +151,16 @@ class Collection(TimeStampedModel):
 
     def __str__(self):
         return f"{self.name} - base {self.base.title}"
+
+    def get_paginated_resources(self, user: User, page=1):
+        from main.query_changes.permissions import resources_queryset_for_user
+        from main.query_changes.stats_annotations import resources_queryset_with_stats
+
+        qs = resources_queryset_with_stats(
+            resources_queryset_for_user(user, self.resources, full=False)
+        )
+
+        return paginated_resources_from_qs(qs, page)
 
 
 class TagCategory(TimeStampedModel):

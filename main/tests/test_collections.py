@@ -64,7 +64,9 @@ class TestResourceView(TestCase):
         collection.resources.add(resource)
         url = reverse("collection-detail", args=[collection.pk])
         res = self.client.get(url)
-        self.assertListEqual(res.data["resources"], [resource.pk])
+        self.assertListEqual(
+            [resource["id"] for resource in res.data["resources"]], [resource.pk]
+        )
 
         base2 = BaseFactory.create(owner=authenticate.user)
         resource.root_base = base2
@@ -83,7 +85,8 @@ class TestResourceView(TestCase):
         url = reverse("collection-detail", args=[collection.pk])
         res = self.client.get(url)
         self.assertListEqual(
-            res.data["resources"], [resource.pk for resource in resources[:3]]
+            [resource["id"] for resource in res.data["resources"]],
+            [resource.pk for resource in resources[:3]],
         )
 
         new_pks = [resource.pk for resource in resources[3:]]
@@ -100,4 +103,7 @@ class TestResourceView(TestCase):
         collection.resources.add(resource)
         url = reverse("base-detail", args=[base.pk])
         res = self.client.get(url)
-        self.assertEqual(res.data["collections"][0]["resources"], [resource.pk])
+        self.assertEqual(
+            [resource["id"] for resource in res.data["collections"][0]["resources"]],
+            [resource.pk],
+        )

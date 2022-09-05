@@ -3,7 +3,10 @@ from rest_framework.decorators import action
 
 from main.models.models import Collection
 from main.query_changes.permissions import bases_queryset_for_user
-from main.serializers.base_resource_serializers import CollectionSerializer
+from main.serializers.base_resource_serializers import (
+    ReadCollectionSerializer,
+    UpdateCollectionSerializer,
+)
 from main.views.base_views import generic_pin_action
 
 
@@ -14,7 +17,10 @@ class CollectionView(
     mixins.UpdateModelMixin,
     viewsets.GenericViewSet,
 ):
-    serializer_class = CollectionSerializer
+    def get_serializer_class(self):
+        if self.action in ["retrieve", "list"]:
+            return ReadCollectionSerializer
+        return UpdateCollectionSerializer
 
     def get_queryset(self):
         return Collection.objects.filter(

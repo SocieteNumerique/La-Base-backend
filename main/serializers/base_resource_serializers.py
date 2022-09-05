@@ -254,16 +254,24 @@ class PrimaryKeyResourcesForCollectionField(serializers.PrimaryKeyRelatedField):
         return Resource.objects.filter(Q(root_base=base) | Q(pinned_in_bases=base))
 
 
-class CollectionSerializer(serializers.ModelSerializer):
+class BaseCollectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Collection
         fields = ["id", "name", "resources", "base", "pinned_in_bases"]
 
-    resources = PrimaryKeyResourcesForCollectionField(
-        many=True, required=False, allow_null=True
-    )
+    resources = ShortResourceSerializer(many=True, required=False, allow_null=True)
     pinned_in_bases = serializers.PrimaryKeyRelatedField(
         queryset=Base.objects.all(), many=True, required=False
+    )
+
+
+class ReadCollectionSerializer(BaseCollectionSerializer):
+    pass
+
+
+class UpdateCollectionSerializer(BaseCollectionSerializer):
+    resources = PrimaryKeyResourcesForCollectionField(
+        many=True, required=False, allow_null=True
     )
 
 
@@ -345,21 +353,11 @@ class BaseBaseSerializer(serializers.ModelSerializer):
 
     def get_resources(self, obj: Base):
         user = self.context["request"].user
-        pinned_resources_qs = resources_queryset_with_stats(
-            resources_queryset_for_user(
-                user, obj.pinned_resources.prefetch_related("root_base__pk"), full=False
-            )
-        )
-        annotated_qs = resources_queryset_with_stats(
-            resources_queryset_for_user(user, obj.resources, full=False)
-        )
-        return ShortResourceSerializer(
-            annotated_qs.union(pinned_resources_qs), many=True, context=self.context
-        ).data
+        return obj.get_paginated_resources(user, 1)
 
     def get_collections(self, obj: Base):
         pinned_collections_qs = obj.pinned_collections.prefetch_related("base__pk")
-        return CollectionSerializer(
+        return ReadCollectionSerializer(
             obj.collections.union(pinned_collections_qs),
             many=True,
             context=self.context,
