@@ -38,10 +38,6 @@ TAG_CATEGORY_RELATES_TO = [
 ]
 
 
-class Object(object):
-    pass
-
-
 class Base(TimeStampedModel):
     title = models.CharField(max_length=100, verbose_name="titre")
     owner = models.ForeignKey(

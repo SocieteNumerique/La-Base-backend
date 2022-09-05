@@ -32,10 +32,6 @@ from main.serializers.utils import (
 )
 
 
-class Object(object):
-    pass
-
-
 class PrimaryKeyOccupationTagField(serializers.PrimaryKeyRelatedField):
     def get_queryset(self):
         if SPECIFIC_CATEGORY_IDS["external_producer"]:
@@ -265,7 +261,7 @@ class PrimaryKeyResourcesForCollectionField(serializers.PrimaryKeyRelatedField):
         return Resource.objects.filter(Q(root_base=base) | Q(pinned_in_bases=base))
 
 
-class CollectionSerializer(serializers.ModelSerializer):
+class BaseCollectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Collection
         fields = ["id", "name", "resources", "base", "pinned_in_bases"]
@@ -273,6 +269,16 @@ class CollectionSerializer(serializers.ModelSerializer):
     resources = ShortResourceSerializer(many=True, required=False, allow_null=True)
     pinned_in_bases = serializers.PrimaryKeyRelatedField(
         queryset=Base.objects.all(), many=True, required=False
+    )
+
+
+class ReadCollectionSerializer(BaseCollectionSerializer):
+    pass
+
+
+class UpdateCollectionSerializer(BaseCollectionSerializer):
+    resources = PrimaryKeyResourcesForCollectionField(
+        many=True, required=False, allow_null=True
     )
 
 
@@ -352,7 +358,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
 
     def get_collections(self, obj: Base):
         pinned_collections_qs = obj.pinned_collections.prefetch_related("base__pk")
-        return CollectionSerializer(
+        return ReadCollectionSerializer(
             obj.collections.union(pinned_collections_qs),
             many=True,
             context=self.context,
