@@ -1,5 +1,5 @@
 from django.http import HttpRequest
-from rest_framework import mixins, viewsets, filters
+from rest_framework import mixins, viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
@@ -138,6 +138,17 @@ class ContentView(
         if self.action in ["retrieve", "list"]:
             return ReadContentSerializer
         return WriteContentSerializer
+
+    def create(self, request, *args, **kwargs):
+        is_many = isinstance(request.data, list)
+        serializer = self.get_serializer(data=request.data, many=is_many)
+        # from here it is the package's function
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data, status=status.HTTP_201_CREATED, headers=headers
+        )
 
     @action(detail=False, methods=["PATCH"])
     def order(self, request):
