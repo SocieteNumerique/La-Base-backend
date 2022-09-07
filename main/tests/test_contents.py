@@ -65,3 +65,27 @@ class TestResourceView(TestCase):
         text = response.json()["text"]
         self.assertTrue("<h4>" in text)
         self.assertTrue("<p>" in text)
+
+    @authenticate
+    def test_multiple_contents(self):
+        response = self.client.post(
+            self.url,
+            [
+                {
+                    "type": "text",
+                    "text": "",
+                    "section": self.section.pk,
+                    "order": 0,
+                    "resource": self.resource.pk,
+                },
+                {
+                    "type": "text",
+                    "text": "",
+                    "section": self.section.pk,
+                    "order": 1,
+                    "resource": self.resource.pk,
+                },
+            ],
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 201)
