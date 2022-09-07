@@ -89,7 +89,7 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
     content_stats = serializers.SerializerMethodField(read_only=True)
     contributors = NestedUserSerializer(many=True, required=False, allow_null=True)
     cover_image = Base64FileField(required=False, allow_null=True)
-    creator = UserSerializerForSearch(required=False, allow_null=True)
+    creator = UserSerializerForSearch(required=False, allow_null=True, read_only=True)
     creator_bases = PrimaryKeyBaseField(required=False, allow_null=True, many=True)
     external_producers = ExternalProducerSerializer(many=True, required=False)
     is_short = serializers.ReadOnlyField(default=True)
