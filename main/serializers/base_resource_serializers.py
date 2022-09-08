@@ -10,6 +10,8 @@ from main.models.models import (
     Tag,
     Collection,
 )
+from main.query_changes.permissions import resources_queryset_for_user
+from main.query_changes.stats_annotations import resources_queryset_with_stats
 from main.serializers.user_serializer import (
     AuthSerializer,
     NestedUserSerializer,
@@ -89,7 +91,7 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
     content_stats = serializers.SerializerMethodField(read_only=True)
     contributors = NestedUserSerializer(many=True, required=False, allow_null=True)
     cover_image = Base64FileField(required=False, allow_null=True)
-    creator = UserSerializerForSearch(required=False, allow_null=True)
+    creator = UserSerializerForSearch(required=False, allow_null=True, read_only=True)
     creator_bases = PrimaryKeyBaseField(required=False, allow_null=True, many=True)
     external_producers = ExternalProducerSerializer(many=True, required=False)
     is_short = serializers.ReadOnlyField(default=True)
@@ -269,10 +271,20 @@ class BaseCollectionSerializer(serializers.ModelSerializer):
         model = Collection
         fields = ["id", "name", "resources", "base", "pinned_in_bases"]
 
-    resources = ShortResourceSerializer(many=True, required=False, allow_null=True)
+    resources = serializers.SerializerMethodField()
     pinned_in_bases = serializers.PrimaryKeyRelatedField(
         queryset=Base.objects.all(), many=True, required=False
     )
+
+    def get_resources(self, obj: Collection):
+        qs = resources_queryset_with_stats(
+            resources_queryset_for_user(
+                self.context["request"].user,
+                obj.resources,
+                full=False,
+            )
+        )
+        return ShortResourceSerializer(qs, many=True).data
 
 
 class ReadCollectionSerializer(BaseCollectionSerializer):
