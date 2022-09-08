@@ -10,7 +10,7 @@ from main.factories import (
 )
 from main.models import Resource
 from main.models.models import ExternalProducer
-from main.serializers.base_resource_serializers import reset_specific_categories
+from main.serializers.utils import reset_specific_categories
 from main.tests.test_utils import authenticate, snake_to_camel_case
 
 

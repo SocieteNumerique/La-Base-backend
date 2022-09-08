@@ -1,8 +1,8 @@
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.db import models
-from django.db.models import Q
 
 from main.models.utils import TimeStampedModel
+from main.query_changes.utils import query_my_related_tags
 
 
 class UserManager(BaseUserManager):
@@ -87,9 +87,7 @@ class User(AbstractBaseUser):
         "Tag",
         blank=True,
         related_name="users",
-        limit_choices_to=(
-            Q(category__relates_to="User") | Q(category__relates_to__isnull=True)
-        ),
+        limit_choices_to=query_my_related_tags("User"),
     )
 
     cnfs_id = models.PositiveIntegerField(verbose_name="id CNFS", null=True, blank=True)

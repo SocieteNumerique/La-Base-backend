@@ -4,8 +4,10 @@ from rest_framework import mixins, viewsets, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from main.models.models import TagCategory
-from main.query_changes.permissions import bases_queryset_for_user
+from main.models.models import TagCategory, Base
+from main.query_changes.permissions import (
+    bases_queryset_for_user,
+)
 from main.serializers.base_resource_serializers import (
     FullBaseSerializer,
     ShortBaseSerializer,
@@ -63,6 +65,15 @@ class BaseView(
             instance, context=self.get_serializer_context()
         )
         return Response(serializer.data)
+
+    @action(detail=True, methods=["get"])
+    def resources(self, request, pk=None):
+        instance: Base = self.get_object()
+        return Response(
+            instance.get_paginated_resources(
+                request.user, request.query_params.get("page")
+            )
+        )
 
 
 def generic_pin_action(model, self, request, pk=None):

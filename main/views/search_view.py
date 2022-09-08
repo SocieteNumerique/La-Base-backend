@@ -9,10 +9,11 @@ from main.serializers.base_resource_serializers import (
     ShortBaseSerializer,
 )
 from main.serializers.user_serializer import UserSerializerForSearch
+from moine_back.settings import BASE_PAGE_SIZE
 
 
 class StandardResultsSetPagination(PageNumberPagination):
-    page_size = 12
+    page_size = BASE_PAGE_SIZE
     page_size_query_param = "page_size"
     max_page_size = 100
 
