@@ -12,6 +12,7 @@ from main.models.models import (
 )
 from main.query_changes.permissions import resources_queryset_for_user
 from main.query_changes.stats_annotations import resources_queryset_with_stats
+from main.serializers.pagination import paginated_resources_from_base
 from main.serializers.user_serializer import (
     AuthSerializer,
     NestedUserSerializer,
@@ -284,7 +285,7 @@ class BaseCollectionSerializer(serializers.ModelSerializer):
                 full=False,
             )
         )
-        return ShortResourceSerializer(qs, many=True).data
+        return ShortResourceSerializer(qs, many=True, context=self.context).data
 
 
 class ReadCollectionSerializer(BaseCollectionSerializer):
@@ -376,7 +377,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
 
     def get_resources(self, obj: Base):
         user = self.context["request"].user
-        return obj.get_paginated_resources(user, 1)
+        return paginated_resources_from_base(obj, user, 1, context=self.context)
 
     def get_resource_choices(self, obj: Base):
         user = self.context["request"].user

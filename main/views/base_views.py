@@ -13,6 +13,7 @@ from main.serializers.base_resource_serializers import (
     ShortBaseSerializer,
 )
 from main.serializers.index_serializers import IndexAdminSerializer
+from main.serializers.pagination import paginated_resources_from_base
 
 
 class BaseHasWriteAccessFilter(filters.BaseFilterBackend):
@@ -70,8 +71,8 @@ class BaseView(
     def resources(self, request, pk=None):
         instance: Base = self.get_object()
         return Response(
-            instance.get_paginated_resources(
-                request.user, request.query_params.get("page")
+            paginated_resources_from_base(
+                instance, request.user, request.query_params.get("page")
             )
         )
 
