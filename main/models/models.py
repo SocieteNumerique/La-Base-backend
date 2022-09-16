@@ -268,7 +268,9 @@ class Resource(TimeStampedModel):
     state = models.CharField(
         default="draft", choices=RESOURCE_STATE_CHOICES, max_length=10
     )
-    cover_image = models.FileField(null=True, blank=True)
+    profile_image = models.ForeignKey(
+        ResizableImage, null=True, blank=True, on_delete=models.CASCADE
+    )
     resource_created_on = models.CharField(max_length=50, null=True, blank=True)
     creator = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True, related_name="creator"

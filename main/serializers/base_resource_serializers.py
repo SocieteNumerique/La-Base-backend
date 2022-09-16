@@ -21,7 +21,6 @@ from main.serializers.user_serializer import (
 )
 from main.serializers.utils import (
     MoreFieldsModelSerializer,
-    Base64FileField,
     ResizableImageBase64Serializer,
     create_or_update_resizable_image,
     SPECIFIC_CATEGORY_IDS,
@@ -91,7 +90,7 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
     can_write = serializers.SerializerMethodField()
     content_stats = serializers.SerializerMethodField(read_only=True)
     contributors = NestedUserSerializer(many=True, required=False, allow_null=True)
-    cover_image = Base64FileField(required=False, allow_null=True)
+    profile_image = ResizableImageBase64Serializer(required=False, allow_null=True)
     creator = UserSerializerForSearch(required=False, allow_null=True, read_only=True)
     creator_bases = PrimaryKeyBaseField(required=False, allow_null=True, many=True)
     external_producers = ExternalProducerSerializer(many=True, required=False)
@@ -142,7 +141,13 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
         return get_specific_tags(obj, ["needs_account", "price"])
 
     def create(self, validated_data):
-        instance = super().create(validated_data)
+        try:
+            image = create_or_update_resizable_image(validated_data, "profile_image")
+            instance = super().create(validated_data)
+            instance.profile_image = image
+            instance.save()
+        except SkipField:
+            instance = super().create(validated_data)
         request = self.context.get("request")
         if request:
             instance.creator = request.user
@@ -153,6 +158,14 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
     def update(self, instance: Resource, validated_data):
         set_nested_user_fields(instance, validated_data, "authorized_users")
         set_nested_license_data(validated_data, instance)
+        try:
+            image = create_or_update_resizable_image(
+                validated_data, "profile_image", instance
+            )
+            instance.profile_image = image
+            instance.save()
+        except SkipField:
+            pass
         instance = super().update(instance, validated_data)
         if not instance.has_global_license:
             # we forget former global license
@@ -201,6 +214,7 @@ class ShortResourceSerializer(BaseResourceSerializer):
             "pinned_in_bases",
             "can_write",
             "creator",
+            "profile_image",
         ]
         abstract = False
 
