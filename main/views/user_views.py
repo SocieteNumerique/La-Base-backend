@@ -20,7 +20,6 @@ from main.models import User
 from main.serializers.user_serializer import (
     UserSerializer,
     ChangePasswordSerializer,
-    AuthSerializer,
 )
 from main.user_utils import normalize_email, send_email_confirmation
 
@@ -36,13 +35,13 @@ account_activation_token = TokenGenerator()
 class UserView(
     mixins.CreateModelMixin,
     mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
     def get_serializer_class(self):
-        if self.action == "create":
-            return UserSerializer
-        elif self.action == "password":
+        if self.action == "password":
             return ChangePasswordSerializer
+        return UserSerializer
 
     def get_object(self, queryset=None):
         obj = self.request.user
@@ -80,7 +79,7 @@ class UserView(
     def me(self, request):
         if request.user.is_anonymous:
             return Response(status=400)
-        return Response(AuthSerializer(request.user).data)
+        return Response(UserSerializer(request.user).data)
 
     model = get_user_model()
     serializer_class = UserSerializer
@@ -142,7 +141,7 @@ def login(request):
 
     Returns:
         JSON object::
-            AuthSerializer
+            UserSerializer
     """
 
     data = request.data
@@ -163,7 +162,7 @@ def login(request):
     if user is not None:
         user.backend = AUTHENTICATION_BACKENDS[0]
         django_login(request, user)
-        return Response(AuthSerializer(user).data)
+        return Response(UserSerializer(user).data)
     else:
         return Response(
             "Email et mot de passe ne correspondent pas",

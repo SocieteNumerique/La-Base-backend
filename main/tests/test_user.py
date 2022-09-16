@@ -3,9 +3,9 @@ from urllib.parse import urlencode
 
 import faker
 from django.contrib.auth import authenticate as django_authenticate
+from django.core import mail
 from django.test import TestCase
 from django.urls import reverse
-from django.core import mail
 
 from main.factories import UserFactory, TagFactory, TagCategoryFactory
 from main.models.user import User
@@ -198,3 +198,18 @@ class TestUserView(TestCase):
         res = self.client.get(url)
         self.assertEqual(res.status_code, 302)
         self.assertTrue(User.objects.get().is_active)
+
+    @authenticate
+    def test_can_delete_user(self):
+        url = reverse("user-detail", args=[authenticate.user.pk])
+        res = self.client.delete(url)
+        self.assertEqual(res.status_code, 204)
+        self.assertEqual(User.objects.filter(pk=authenticate.user.pk).count(), 0)
+
+    @authenticate
+    def test_cannot_delete_another_user(self):
+        other_user = UserFactory.create()
+        url = reverse("user-detail", args=[other_user.pk])
+        res = self.client.delete(url)
+        self.assertEqual(res.status_code, 204)
+        self.assertEqual(User.objects.filter(pk=authenticate.user.pk).count(), 0)
