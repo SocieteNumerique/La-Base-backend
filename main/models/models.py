@@ -98,6 +98,7 @@ class Base(TimeStampedModel):
     state = models.CharField(
         default="private", choices=RESOURCE_STATE_CHOICES, max_length=10
     )
+    is_certified = models.BooleanField(default=False, verbose_name="Est certifiée")
 
     contact_state = models.CharField(
         max_length=10,

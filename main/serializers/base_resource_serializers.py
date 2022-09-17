@@ -307,6 +307,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
             "owner",
             "can_write",
             "can_add_resources",
+            "is_certified",
             "participant_type_tags",
             "territory_tags",
             "profile_image",
