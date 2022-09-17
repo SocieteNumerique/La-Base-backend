@@ -149,7 +149,10 @@ class Collection(TimeStampedModel):
     class Meta:
         unique_together = ("name", "base")
 
-    name = models.CharField(max_length=25, verbose_name="nom")
+    name = models.CharField(max_length=50, verbose_name="nom")
+    description = models.CharField(
+        max_length=100, verbose_name="description", default="", blank=True
+    )
     base = models.ForeignKey(Base, on_delete=models.CASCADE, related_name="collections")
     resources = models.ManyToManyField(
         "Resource", blank=True, related_name="collections"

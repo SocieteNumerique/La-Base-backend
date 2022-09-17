@@ -269,7 +269,7 @@ class PrimaryKeyResourcesForCollectionField(serializers.PrimaryKeyRelatedField):
 class BaseCollectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Collection
-        fields = ["id", "name", "resources", "base", "pinned_in_bases"]
+        fields = ["id", "name", "description", "resources", "base", "pinned_in_bases"]
 
     resources = serializers.SerializerMethodField()
     pinned_in_bases = serializers.PrimaryKeyRelatedField(
