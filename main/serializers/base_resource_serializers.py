@@ -285,11 +285,13 @@ class BaseCollectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Collection
         fields = ["id", "name", "description", "resources", "base", "pinned_in_bases"]
+        fields = ["id", "name", "resources", "base", "pinned_in_bases", "profile_image"]
 
     resources = serializers.SerializerMethodField()
     pinned_in_bases = serializers.PrimaryKeyRelatedField(
         queryset=Base.objects.all(), many=True, required=False
     )
+    profile_image = ResizableImageBase64Serializer(required=False, allow_null=True)
 
     def get_resources(self, obj: Collection):
         qs = resources_queryset_with_stats(
@@ -310,6 +312,28 @@ class UpdateCollectionSerializer(BaseCollectionSerializer):
     resources = PrimaryKeyResourcesForCollectionField(
         many=True, required=False, allow_null=True
     )
+
+    def create(self, validated_data):
+        try:
+            image = create_or_update_resizable_image(validated_data, "profile_image")
+            instance = super().create(validated_data)
+            instance.profile_image = image
+            instance.save()
+        except SkipField:
+            instance = super().create(validated_data)
+        return instance
+
+    def update(self, instance: Resource, validated_data):
+        try:
+            image = create_or_update_resizable_image(
+                validated_data, "profile_image", instance
+            )
+            instance.profile_image = image
+            instance.save()
+        except SkipField:
+            pass
+        instance = super().update(instance, validated_data)
+        return instance
 
 
 class BaseBaseSerializer(serializers.ModelSerializer):

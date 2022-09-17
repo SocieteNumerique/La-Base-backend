@@ -148,6 +148,9 @@ class Collection(TimeStampedModel):
     resources = models.ManyToManyField(
         "Resource", blank=True, related_name="collections"
     )
+    profile_image = models.ForeignKey(
+        ResizableImage, null=True, blank=True, on_delete=models.CASCADE
+    )
 
     def __str__(self):
         return f"{self.name} - base {self.base.title}"
