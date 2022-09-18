@@ -15,30 +15,6 @@ CNFS_RESERVED_TAG_NAME = "Conseiller numérique France Services"
 CNFS_EMAIL_DOMAIN = "@conseiller-numerique.fr"
 
 
-class AuthSerializer(serializers.ModelSerializer):
-    is_cnfs = serializers.SerializerMethodField()
-
-    class Meta:
-        model = User
-        fields = ("id", "first_name", "last_name", "email", "is_admin", "is_cnfs")
-
-    @staticmethod
-    def validate_password(self, value):
-        errors = None
-        try:
-            password_validation.validate_password(password=value, user=User)
-        except exceptions.ValidationError as e:
-            errors = list(e.messages)
-
-        if errors:
-            raise serializers.ValidationError(errors)
-        return make_password(value)
-
-    @staticmethod
-    def get_is_cnfs(obj: User):
-        return obj.cnfs_id is not None or obj.cnfs_id_organization is not None
-
-
 class ChangePasswordSerializer(serializers.Serializer):
     model = UserModel
 
@@ -53,10 +29,11 @@ class UserSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(required=True, max_length=100, min_length=2)
     last_name = serializers.CharField(required=True, max_length=100, min_length=2)
     email = serializers.EmailField(required=True, max_length=100)
-    password = serializers.CharField(write_only=True, required=True, max_length=100)
+    password = serializers.CharField(write_only=True, required=False, max_length=100)
+    is_cnfs = serializers.SerializerMethodField()
     tags = serializers.PrimaryKeyRelatedField(
         many=True,
-        queryset=Tag.objects.filter(query_my_related_tags("User")),
+        queryset=Tag.objects.filter(category__relates_to__contains="User"),
         required=False,
         allow_null=True,
     )
@@ -64,6 +41,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserModel
         fields = (
+            "id",
             "first_name",
             "last_name",
             "email",
@@ -71,8 +49,13 @@ class UserSerializer(serializers.ModelSerializer):
             "is_superuser",
             "is_admin",
             "is_staff",
+            "is_cnfs",
             "tags",
         )
+
+    @staticmethod
+    def get_is_cnfs(obj: User):
+        return obj.cnfs_id is not None or obj.cnfs_id_organization is not None
 
     def create(self, validated_data):
         try:
@@ -120,8 +103,8 @@ class UserSerializer(serializers.ModelSerializer):
         return make_password(value)
 
 
-class UserSerializerForSearch(AuthSerializer):
-    class Meta(AuthSerializer.Meta):
+class UserSerializerForSearch(UserSerializer):
+    class Meta(UserSerializer.Meta):
         fields = (
             "id",
             "first_name",

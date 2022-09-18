@@ -13,7 +13,6 @@ from main.models.models import (
 from main.query_changes.permissions import resources_queryset_for_user
 from main.query_changes.stats_annotations import resources_queryset_with_stats
 from main.serializers.user_serializer import (
-    AuthSerializer,
     NestedUserSerializer,
     set_nested_user_fields,
     UserSerializerForSearch,
@@ -314,7 +313,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
             "visit_count",
         ]
 
-    owner = AuthSerializer(required=False, read_only=True)
+    owner = UserSerializerForSearch(required=False, read_only=True)
     admins = NestedUserSerializer(many=True, required=False, allow_null=True)
     authorized_users = NestedUserSerializer(many=True, required=False, allow_null=True)
     authorized_user_tags = serializers.PrimaryKeyRelatedField(
