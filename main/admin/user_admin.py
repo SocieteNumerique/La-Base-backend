@@ -6,7 +6,15 @@ class UserAdmin(UserAdmin_):
         (None, {"fields": ("email", "password", "tags")}),
         (
             "Personal info",
-            {"fields": ("first_name", "last_name", "cnfs_id", "cnfs_id_organization")},
+            {
+                "fields": (
+                    "first_name",
+                    "last_name",
+                    "cnfs_id",
+                    "cnfs_id_organization",
+                    "last_login",
+                )
+            },
         ),
         ("Permissions", {"fields": ("is_active", "is_admin", "is_superuser")}),
     )
