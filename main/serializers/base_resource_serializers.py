@@ -12,15 +12,14 @@ from main.models.models import (
 )
 from main.query_changes.permissions import resources_queryset_for_user
 from main.query_changes.stats_annotations import resources_queryset_with_stats
+from main.serializers.pagination import paginated_resources_from_base
 from main.serializers.user_serializer import (
-    AuthSerializer,
     NestedUserSerializer,
     set_nested_user_fields,
     UserSerializerForSearch,
 )
 from main.serializers.utils import (
     MoreFieldsModelSerializer,
-    Base64FileField,
     ResizableImageBase64Serializer,
     create_or_update_resizable_image,
     SPECIFIC_CATEGORY_IDS,
@@ -90,7 +89,7 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
     can_write = serializers.SerializerMethodField()
     content_stats = serializers.SerializerMethodField(read_only=True)
     contributors = NestedUserSerializer(many=True, required=False, allow_null=True)
-    cover_image = Base64FileField(required=False, allow_null=True)
+    profile_image = ResizableImageBase64Serializer(required=False, allow_null=True)
     creator = UserSerializerForSearch(required=False, allow_null=True, read_only=True)
     creator_bases = PrimaryKeyBaseField(required=False, allow_null=True, many=True)
     external_producers = ExternalProducerSerializer(many=True, required=False)
@@ -141,7 +140,13 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
         return get_specific_tags(obj, ["needs_account", "price"])
 
     def create(self, validated_data):
-        instance = super().create(validated_data)
+        try:
+            image = create_or_update_resizable_image(validated_data, "profile_image")
+            instance = super().create(validated_data)
+            instance.profile_image = image
+            instance.save()
+        except SkipField:
+            instance = super().create(validated_data)
         request = self.context.get("request")
         if request:
             instance.creator = request.user
@@ -152,6 +157,14 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
     def update(self, instance: Resource, validated_data):
         set_nested_user_fields(instance, validated_data, "authorized_users")
         set_nested_license_data(validated_data, instance)
+        try:
+            image = create_or_update_resizable_image(
+                validated_data, "profile_image", instance
+            )
+            instance.profile_image = image
+            instance.save()
+        except SkipField:
+            pass
         instance = super().update(instance, validated_data)
         if not instance.has_global_license:
             # we forget former global license
@@ -200,6 +213,7 @@ class ShortResourceSerializer(BaseResourceSerializer):
             "pinned_in_bases",
             "can_write",
             "creator",
+            "profile_image",
         ]
         abstract = False
 
@@ -269,12 +283,21 @@ class PrimaryKeyResourcesForCollectionField(serializers.PrimaryKeyRelatedField):
 class BaseCollectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Collection
-        fields = ["id", "name", "resources", "base", "pinned_in_bases"]
+        fields = [
+            "id",
+            "name",
+            "description",
+            "resources",
+            "base",
+            "pinned_in_bases",
+            "profile_image",
+        ]
 
     resources = serializers.SerializerMethodField()
     pinned_in_bases = serializers.PrimaryKeyRelatedField(
         queryset=Base.objects.all(), many=True, required=False
     )
+    profile_image = ResizableImageBase64Serializer(required=False, allow_null=True)
 
     def get_resources(self, obj: Collection):
         qs = resources_queryset_with_stats(
@@ -284,7 +307,7 @@ class BaseCollectionSerializer(serializers.ModelSerializer):
                 full=False,
             )
         )
-        return ShortResourceSerializer(qs, many=True).data
+        return ShortResourceSerializer(qs, many=True, context=self.context).data
 
 
 class ReadCollectionSerializer(BaseCollectionSerializer):
@@ -295,6 +318,28 @@ class UpdateCollectionSerializer(BaseCollectionSerializer):
     resources = PrimaryKeyResourcesForCollectionField(
         many=True, required=False, allow_null=True
     )
+
+    def create(self, validated_data):
+        try:
+            image = create_or_update_resizable_image(validated_data, "profile_image")
+            instance = super().create(validated_data)
+            instance.profile_image = image
+            instance.save()
+        except SkipField:
+            instance = super().create(validated_data)
+        return instance
+
+    def update(self, instance: Resource, validated_data):
+        try:
+            image = create_or_update_resizable_image(
+                validated_data, "profile_image", instance
+            )
+            instance.profile_image = image
+            instance.save()
+        except SkipField:
+            pass
+        instance = super().update(instance, validated_data)
+        return instance
 
 
 class BaseBaseSerializer(serializers.ModelSerializer):
@@ -307,13 +352,14 @@ class BaseBaseSerializer(serializers.ModelSerializer):
             "owner",
             "can_write",
             "can_add_resources",
+            "is_certified",
             "participant_type_tags",
             "territory_tags",
             "profile_image",
             "visit_count",
         ]
 
-    owner = AuthSerializer(required=False, read_only=True)
+    owner = UserSerializerForSearch(required=False, read_only=True)
     admins = NestedUserSerializer(many=True, required=False, allow_null=True)
     authorized_users = NestedUserSerializer(many=True, required=False, allow_null=True)
     authorized_user_tags = serializers.PrimaryKeyRelatedField(
@@ -375,7 +421,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
 
     def get_resources(self, obj: Base):
         user = self.context["request"].user
-        return obj.get_paginated_resources(user, 1)
+        return paginated_resources_from_base(obj, user, 1, context=self.context)
 
     def get_resource_choices(self, obj: Base):
         user = self.context["request"].user

@@ -62,7 +62,8 @@ def bases_queryset_for_user(user: User, init_queryset=Base.objects, full=True):
 
 def resources_queryset_for_user(user: User, init_queryset=Resource.objects, full=True):
     init_queryset = (
-        init_queryset.prefetch_related("root_base")
+        init_queryset.filter(root_base_id__isnull=False)
+        .prefetch_related("root_base")
         .prefetch_related("tags")
         .prefetch_related("root_base__contributor_tags")
         .prefetch_related("pinned_in_bases")

@@ -264,6 +264,7 @@ SPECIFIC_CATEGORY_SLUGS = {
     "free_license": "license_02free",
     "needs_account": "license_04access",
     "price": "license_00price",
+    "participant": "general_00participantType",
 }
 
 SPECIFIC_CATEGORY_IDS = {
@@ -274,6 +275,7 @@ SPECIFIC_CATEGORY_IDS = {
     "free_license": None,
     "needs_account": None,
     "price": None,
+    "participant": None,
 }
 LICENSE_NEEDS_TEXT_TAG_ID_SET = set()
 
