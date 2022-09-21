@@ -7,7 +7,10 @@ from main.query_changes.permissions import (
     bases_queryset_for_user,
     resources_queryset_for_user,
 )
-from main.query_changes.stats_annotations import resources_queryset_with_stats
+from main.query_changes.stats_annotations import (
+    resources_queryset_with_stats,
+    bases_queryset_with_stats,
+)
 
 BASES_SEARCH_FIELDS = ["title"]
 RESOURCES_SEARCH_FIELDS = ["title", "description"]
@@ -34,7 +37,7 @@ def filter_queryset(qs, text, search_fields, tag_operator, tags):
 def search_bases(user, text, tag_operator="OR", tags=None):
     if tags is None:
         tags = []
-    qs = bases_queryset_for_user(user, full=False)
+    qs = bases_queryset_with_stats(bases_queryset_for_user(user, full=False))
     qs = filter_queryset(qs, text, BASES_SEARCH_FIELDS, tag_operator, tags)
     qs = qs.order_by("-modified")
     possible_tags = (
