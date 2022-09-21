@@ -8,6 +8,7 @@ from main.models.models import TagCategory, Base
 from main.query_changes.permissions import (
     bases_queryset_for_user,
 )
+from main.query_changes.stats_annotations import bases_queryset_with_stats
 from main.serializers.base_resource_serializers import (
     FullBaseSerializer,
     ShortBaseSerializer,
@@ -41,7 +42,9 @@ class BaseView(
 
     def get_queryset(self):
         full = self.kwargs.get("pk") or self.request.method == "POST"
-        return bases_queryset_for_user(self.request.user, full=full)
+        return bases_queryset_with_stats(
+            bases_queryset_for_user(self.request.user, full=full)
+        )
 
     def perform_create(self, serializer: FullBaseSerializer):
         serializer.save()

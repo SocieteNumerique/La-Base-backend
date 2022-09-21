@@ -29,6 +29,10 @@ from main.serializers.utils import (
 )
 
 
+class HasStatsMixin:
+    stats = serializers.SerializerMethodField(read_only=True)
+
+
 class PrimaryKeyOccupationTagField(serializers.PrimaryKeyRelatedField):
     def get_queryset(self):
         if SPECIFIC_CATEGORY_IDS["external_producer"]:

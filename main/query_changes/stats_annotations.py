@@ -1,6 +1,7 @@
 from django.db.models import Q, Count, Prefetch
 
 from main.models.models import Resource, Tag
+from main.serializers.utils import SPECIFIC_CATEGORY_SLUGS
 
 
 def resources_queryset_with_stats(init_queryset=Resource.objects):
@@ -20,22 +21,13 @@ def resources_queryset_with_stats(init_queryset=Resource.objects):
 
 
 def bases_queryset_with_stats(init_queryset=Resource.objects):
-    prefetch_supports = Prefetch(
+    prefetch_tags = Prefetch(
         "tags",
-        queryset=Tag.objects.filter(category__slug="indexation_01RessType"),
-        to_attr="supports",
+        queryset=Tag.objects.filter(
+            category__slug=SPECIFIC_CATEGORY_SLUGS["participant"]
+        ),
+        to_attr="participant_types",
     )
-    return (
-        init_queryset.annotate(
-            nb_files=Count(
-                "contents", distinct=True, filter=Q(contents__filecontent__isnull=False)
-            ),
-        )
-        .annotate(
-            nb_links=Count(
-                "contents", distinct=True, filter=Q(contents__linkcontent__isnull=False)
-            ),
-        )
-        .prefetch_related(prefetch_supports)
-        .annotate(visit_count=Count("visits", distinct=True))
+    return init_queryset.prefetch_related(prefetch_tags).annotate(
+        visit_count=Count("visits", distinct=True)
     )
