@@ -60,7 +60,9 @@ def bases_queryset_for_user(user: User, init_queryset=Base.objects, full=True):
     )
 
 
-def resources_queryset_for_user(user: User, init_queryset=Resource.objects, full=True):
+def resources_queryset_for_user(
+    user: User, init_queryset=Resource.objects, restrict_to_base=None
+):
     init_queryset = (
         init_queryset.filter(root_base_id__isnull=False)
         .prefetch_related("root_base")
@@ -69,6 +71,9 @@ def resources_queryset_for_user(user: User, init_queryset=Resource.objects, full
         .prefetch_related("pinned_in_bases")
         .prefetch_related("tags")
     )
+
+    if restrict_to_base:
+        init_queryset = init_queryset.filter(root_base=restrict_to_base)
 
     if user.is_superuser:
         return init_queryset.annotate(can_write=Value(True))

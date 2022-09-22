@@ -138,6 +138,28 @@ class TestSearch(TestCase):
             [tag.pk],
         )
 
+    def test_search_ressources_restricted(self):
+        resource = ResourceFactory.create(title="MyTitle", state="public")
+        ResourceFactory.create(title="OtherTitle", state="public")
+        self.assertEqual(
+            search_resources(
+                AnonymousUser(), "MyTitle", restrict_to_base=resource.root_base
+            )["queryset"].count(),
+            1,
+        )
+        self.assertEqual(
+            search_resources(
+                AnonymousUser(), "OtherTitle", restrict_to_base=resource.root_base
+            )["queryset"].count(),
+            0,
+        )
+        self.assertEqual(
+            search_resources(AnonymousUser(), "", restrict_to_base=resource.root_base)[
+                "queryset"
+            ].count(),
+            1,
+        )
+
 
 class TestSearchView(TestCase):
     @classmethod

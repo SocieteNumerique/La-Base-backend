@@ -43,9 +43,12 @@ class SearchView(
             search_function = search_users
         else:
             raise APIException(f"Unknown data type ({data_type})")
-        return search_function(
-            self.request.user, text=text, tag_operator=tag_operator, tags=tags
-        )
+        kwargs = {"text": text, "tag_operator": tag_operator, "tags": tags}
+
+        if base := self.request.data.get("restrict_to_base"):
+            kwargs["restrict_to_base"] = base
+
+        return search_function(self.request.user, **kwargs)
 
     def get_serializer_class(self):
         data_type = self.request.data["data_type"]

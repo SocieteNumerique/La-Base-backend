@@ -51,7 +51,7 @@ def get_paginated_resources_from_collection(
     from main.query_changes.stats_annotations import resources_queryset_with_stats
 
     qs = resources_queryset_with_stats(
-        resources_queryset_for_user(user, collection.resources, full=False)
+        resources_queryset_for_user(user, collection.resources)
     )
 
     return paginated_resources_from_qs(qs, page)

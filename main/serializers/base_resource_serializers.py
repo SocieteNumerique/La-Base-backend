@@ -308,7 +308,6 @@ class BaseCollectionSerializer(serializers.ModelSerializer):
             resources_queryset_for_user(
                 self.context["request"].user,
                 obj.resources,
-                full=False,
             )
         )
         return ShortResourceSerializer(qs, many=True, context=self.context).data
