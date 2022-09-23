@@ -61,19 +61,27 @@ def bases_queryset_for_user(user: User, init_queryset=Base.objects, full=True):
 
 
 def resources_queryset_for_user(
-    user: User, init_queryset=Resource.objects, restrict_to_base=None
+    user: User,
+    init_queryset=Resource.objects,
+    restrict_to_base_id=None,
 ):
-    init_queryset = (
-        init_queryset.filter(root_base_id__isnull=False)
-        .prefetch_related("root_base")
-        .prefetch_related("tags")
-        .prefetch_related("root_base__contributor_tags")
-        .prefetch_related("pinned_in_bases")
-        .prefetch_related("tags")
-    )
-
-    if restrict_to_base:
-        init_queryset = init_queryset.filter(root_base=restrict_to_base)
+    if restrict_to_base_id:
+        base = Base.objects.get(pk=restrict_to_base_id)
+        resources_pks = (
+            base.pinned_resources.all()
+            .union(base.resources.all())
+            .values_list("pk", flat=True)
+        )
+        init_queryset = Resource.objects.filter(pk__in=resources_pks)
+    else:
+        init_queryset = (
+            init_queryset.filter(root_base_id__isnull=False)
+            .prefetch_related("root_base")
+            .prefetch_related("tags")
+            .prefetch_related("root_base__contributor_tags")
+            .prefetch_related("pinned_in_bases")
+            .prefetch_related("tags")
+        )
 
     if user.is_superuser:
         return init_queryset.annotate(can_write=Value(True))

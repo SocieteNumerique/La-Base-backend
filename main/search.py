@@ -47,12 +47,12 @@ def search_bases(user, text, tag_operator="OR", tags=None):
 
 
 def search_resources(
-    user, text, tag_operator="OR", tags=None, restrict_to_base=None, live=None
+    user, text, tag_operator="OR", tags=None, restrict_to_base_id=None, live=None
 ):
     if tags is None:
         tags = []
     qs = resources_queryset_with_stats(
-        resources_queryset_for_user(user, restrict_to_base=restrict_to_base)
+        resources_queryset_for_user(user, restrict_to_base_id=restrict_to_base_id)
     )
     qs = filter_queryset(qs, text, RESOURCES_SEARCH_FIELDS, tag_operator, tags)
     if live is not None:

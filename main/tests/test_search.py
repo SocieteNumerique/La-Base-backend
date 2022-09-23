@@ -143,20 +143,20 @@ class TestSearch(TestCase):
         ResourceFactory.create(title="OtherTitle", state="public")
         self.assertEqual(
             search_resources(
-                AnonymousUser(), "MyTitle", restrict_to_base=resource.root_base
+                AnonymousUser(), "MyTitle", restrict_to_base_id=resource.root_base.pk
             )["queryset"].count(),
             1,
         )
         self.assertEqual(
             search_resources(
-                AnonymousUser(), "OtherTitle", restrict_to_base=resource.root_base
+                AnonymousUser(), "OtherTitle", restrict_to_base_id=resource.root_base.pk
             )["queryset"].count(),
             0,
         )
         self.assertEqual(
-            search_resources(AnonymousUser(), "", restrict_to_base=resource.root_base)[
-                "queryset"
-            ].count(),
+            search_resources(
+                AnonymousUser(), "", restrict_to_base_id=resource.root_base.pk
+            )["queryset"].count(),
             1,
         )
 
