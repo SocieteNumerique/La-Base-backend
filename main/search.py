@@ -46,11 +46,20 @@ def search_bases(user, text, tag_operator="OR", tags=None):
     return {"queryset": qs, "possible_tags": possible_tags}
 
 
-def search_resources(user, text, tag_operator="OR", tags=None):
+def search_resources(
+    user, text, tag_operator="OR", tags=None, restrict_to_base=None, live=None
+):
     if tags is None:
         tags = []
-    qs = resources_queryset_with_stats(resources_queryset_for_user(user, full=False))
+    qs = resources_queryset_with_stats(
+        resources_queryset_for_user(user, restrict_to_base=restrict_to_base)
+    )
     qs = filter_queryset(qs, text, RESOURCES_SEARCH_FIELDS, tag_operator, tags)
+    if live is not None:
+        if live:
+            qs = qs.filter(~Q(state="draft"))
+        else:
+            qs = qs.filter(Q(state="draft"))
     qs = qs.order_by("-modified")
     possible_tags = (
         Tag.objects.filter(resources__in=qs).values_list("pk", flat=True).distinct()

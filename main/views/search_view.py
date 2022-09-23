@@ -31,21 +31,27 @@ class SearchView(
         text = self.request.data.get("text", "")
         tag_operator = self.request.data.get("tag_operator", "OR")
         tags = self.request.data.get("tags")
+
+        search_kwargs = {"text": text, "tag_operator": tag_operator, "tags": tags}
+
         try:
             data_type = self.request.data["data_type"]
         except KeyError:
             raise ParseError("'data_type' needs to be in request body")
         if data_type == "resources":
             search_function = search_resources
+            if base := self.request.data.get("restrict_to_base"):
+                search_kwargs["restrict_to_base"] = base
+            if (live := self.request.data.get("live")) is not None:
+                search_kwargs["live"] = live
         elif data_type == "bases":
             search_function = search_bases
         elif data_type == "users":
             search_function = search_users
         else:
             raise APIException(f"Unknown data type ({data_type})")
-        return search_function(
-            self.request.user, text=text, tag_operator=tag_operator, tags=tags
-        )
+
+        return search_function(self.request.user, **search_kwargs)
 
     def get_serializer_class(self):
         data_type = self.request.data["data_type"]

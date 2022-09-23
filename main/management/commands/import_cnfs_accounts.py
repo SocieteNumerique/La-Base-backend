@@ -109,7 +109,7 @@ def import_accounts(limit_to_emails=None, max_n_accounts=None):
 
         n_accounts_created = 0
         for line in reader:
-            if max_n_accounts and n_accounts_created > max_n_accounts:
+            if max_n_accounts and n_accounts_created >= max_n_accounts:
                 print(f"already created {max_n_accounts} accounts")
                 break
 

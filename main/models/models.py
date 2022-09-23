@@ -119,11 +119,10 @@ class Base(TimeStampedModel):
             resources_queryset_for_user(
                 user,
                 self.pinned_resources.prefetch_related("root_base__pk"),
-                full=False,
             )
         )
         annotated_qs = resources_queryset_with_stats(
-            resources_queryset_for_user(user, self.resources, full=False)
+            resources_queryset_for_user(user, self.resources)
         )
         qs = annotated_qs.union(pinned_resources_qs)
 
