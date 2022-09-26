@@ -40,7 +40,7 @@ class SearchView(
             raise ParseError("'data_type' needs to be in request body")
         if data_type == "resources":
             search_function = search_resources
-            if base := self.request.data.get("restrict_to_base_id"):
+            if base := self.request.data.get("restrict_to_base"):
                 search_kwargs["restrict_to_base_id"] = base
             if (live := self.request.data.get("live")) is not None:
                 search_kwargs["live"] = live

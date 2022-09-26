@@ -88,7 +88,7 @@ class Base(TimeStampedModel):
         verbose_name="Collections enregistrées",
         blank=True,
     )
-    description = models.CharField(max_length=560, null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
     contact = models.EmailField(null=True, blank=True)
     cover_image = models.ImageField(null=True, blank=True)
     profile_image = models.ForeignKey(
