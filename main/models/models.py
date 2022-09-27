@@ -88,7 +88,7 @@ class Base(TimeStampedModel):
         verbose_name="Collections enregistrées",
         blank=True,
     )
-    description = models.CharField(max_length=560, null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
     contact = models.EmailField(null=True, blank=True)
     cover_image = models.ImageField(null=True, blank=True)
     profile_image = models.ForeignKey(
@@ -119,11 +119,10 @@ class Base(TimeStampedModel):
             resources_queryset_for_user(
                 user,
                 self.pinned_resources.prefetch_related("root_base__pk"),
-                full=False,
             )
         )
         annotated_qs = resources_queryset_with_stats(
-            resources_queryset_for_user(user, self.resources, full=False)
+            resources_queryset_for_user(user, self.resources)
         )
         qs = annotated_qs.union(pinned_resources_qs)
 
