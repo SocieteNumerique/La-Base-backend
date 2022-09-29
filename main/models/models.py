@@ -90,9 +90,18 @@ class Base(TimeStampedModel):
     )
     description = models.TextField(null=True, blank=True)
     contact = models.EmailField(null=True, blank=True)
-    cover_image = models.ImageField(null=True, blank=True)
     profile_image = models.ForeignKey(
-        ResizableImage, null=True, blank=True, on_delete=models.CASCADE
+        ResizableImage,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="profile_base",
+    )
+    cover_image = models.ForeignKey(
+        ResizableImage,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
     )
     state = models.CharField(
         default="private", choices=RESOURCE_STATE_CHOICES, max_length=10

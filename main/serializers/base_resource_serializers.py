@@ -355,6 +355,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
             "owner",
             "can_write",
             "can_add_resources",
+            "cover_image",
             "is_certified",
             "participant_type_tags",
             "territory_tags",
@@ -381,6 +382,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
     participant_type_tags = serializers.SerializerMethodField()
     territory_tags = serializers.SerializerMethodField()
     profile_image = ResizableImageBase64Serializer(required=False, allow_null=True)
+    cover_image = ResizableImageBase64Serializer(required=False, allow_null=True)
 
     def create(self, validated_data):
         user = self.context["request"].user
@@ -391,6 +393,13 @@ class BaseBaseSerializer(serializers.ModelSerializer):
             image = create_or_update_resizable_image(validated_data, "profile_image")
             instance = super().create(validated_data)
             instance.profile_image = image
+            instance.save()
+        except SkipField:
+            pass
+        try:
+            image = create_or_update_resizable_image(validated_data, "cover_image")
+            instance = super().create(validated_data)
+            instance.cover_image = image
             instance.save()
         except SkipField:
             instance = super().create(validated_data)
@@ -405,6 +414,14 @@ class BaseBaseSerializer(serializers.ModelSerializer):
                 validated_data, "profile_image", instance
             )
             instance.profile_image = image
+            instance.save()
+        except SkipField:
+            pass
+        try:
+            image = create_or_update_resizable_image(
+                validated_data, "cover_image", instance
+            )
+            instance.cover_image = image
             instance.save()
         except SkipField:
             pass
