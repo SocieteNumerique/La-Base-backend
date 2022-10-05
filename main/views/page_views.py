@@ -16,5 +16,5 @@ class PageView(
 
     def get_queryset(self):
         if self.action == "list":
-            return Page.objects.filter(show_in_menu=True)
+            return Page.objects.filter(show_in_menu=True).order_by(*Page._meta.ordering)
         return Page.objects.all()

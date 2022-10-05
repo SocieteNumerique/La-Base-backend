@@ -5,17 +5,29 @@ from main.models.utils import TimeStampedModel
 
 
 class Page(TimeStampedModel):
-    title = models.CharField(max_length=50, verbose_name="titre")
+    class Meta:
+        ordering = ("order",)
+
+    content = QuillField()
+    description = models.CharField(verbose_name="description (SEO)", max_length=180)
     icon = models.CharField(
         max_length=50,
         verbose_name="icone",
         help_text="nom de l'icone remix icon, type ri-search-line",
+        blank=True,
+        default="",
     )
+    order = models.IntegerField(verbose_name="ordre dans le menu")
     show_in_menu = models.BooleanField(
         verbose_name="faire apparaitre la page dans le menu", default=False
     )
-    description = models.CharField(verbose_name="description (SEO)", max_length=180)
-    content = QuillField()
+    slug = models.CharField(
+        verbose_name="slug",
+        help_text="nom de la page dans l'URL",
+        max_length=100,
+        primary_key=True,
+    )
+    title = models.CharField(max_length=50, verbose_name="titre")
 
     def __str__(self):
         return self.title

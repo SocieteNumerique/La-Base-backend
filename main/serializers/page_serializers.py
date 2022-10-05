@@ -6,13 +6,13 @@ from main.models import Page
 class BasePageSerializer(serializers.ModelSerializer):
     class Meta:
         fields = [
-            "title",
-            "id",
             "icon",
-            "html_content",
-            "show_in_menu",
             "is_short",
             "html_content",
+            "order",
+            "show_in_menu",
+            "slug",
+            "title",
         ]
         abstract = True
         model = Page
