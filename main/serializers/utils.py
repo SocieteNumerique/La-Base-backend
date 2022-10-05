@@ -192,55 +192,18 @@ class ResizableImageBase64Serializer(serializers.ModelSerializer):
     class Meta:
         model = ResizableImage
         fields = "__all__"
-        read_only_fields = [
-            "scale_x",
-            "scale_y",
-            "relative_position_x",
-            "relative_position_y",
-        ]
 
     image = Base64FileField()
 
-    @staticmethod
-    def apply_coordinates(instance, coordinates=None):
-        if coordinates is None:
-            instance.scale_x = None
-            instance.scale_y = None
-            instance.relative_position_x = None
-            instance.relative_position_y = None
-        else:
-            instance.scale_x = instance.image.width / coordinates["width"]
-            instance.scale_y = instance.image.height / coordinates["height"]
-            instance.relative_position_x = coordinates["left"] / coordinates["width"]
-            instance.relative_position_y = coordinates["top"] / coordinates["height"]
-
-    def to_internal_value(self, data):
-        res = super().to_internal_value(data)
-        if "coordinates" in data:
-            res["coordinates"] = data["coordinates"]
-        return res
-
     def create(self, validated_data):
-        coordinates = (
-            validated_data.pop("coordinates")
-            if "coordinates" in validated_data
-            else None
-        )
         instance = super().create(validated_data)
-        self.apply_coordinates(instance, coordinates)
+        instance.create_crop()
         instance.save()
         return instance
 
     def update(self, instance, validated_data):
-        coordinates = (
-            validated_data.pop("coordinates")
-            if "coordinates" in validated_data
-            else None
-        )
-        has_image_changed = "image" in validated_data
         super().update(instance, validated_data)
-        if coordinates or has_image_changed:
-            self.apply_coordinates(instance, coordinates)
+        instance.create_crop()
         instance.save()
         return instance
 
