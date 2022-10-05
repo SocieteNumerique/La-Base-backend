@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "versatileimagefield",
     "hijack",
     "hijack.contrib.admin",
     "telescoop_auth",
