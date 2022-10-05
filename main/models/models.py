@@ -310,7 +310,6 @@ class Resource(TimeStampedModel):
     )  # only if not in base, first
     zip_code = models.IntegerField(null=True, blank=True)
     url = models.URLField(null=True, blank=True)
-    thumbnail = models.ImageField(null=True, blank=True)
     internal_producers = models.ManyToManyField(
         User, blank=True, related_name="internal_producers"
     )
