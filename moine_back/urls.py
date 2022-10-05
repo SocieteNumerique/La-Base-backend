@@ -28,6 +28,7 @@ from main.views import (
     tag_views,
     search_view,
     user_views,
+    page_views,
 )
 from main.views.visit_counts import increment_visit_count
 from moine_back.settings import IS_LOCAL_DEV
@@ -35,13 +36,14 @@ from moine_back.settings import IS_LOCAL_DEV
 router = routers.DefaultRouter()
 router.register(r"bases", base_views.BaseView, basename="base")
 router.register(r"collections", collection_views.CollectionView, basename="collection")
-router.register(r"tags", tag_views.TagView, basename="tag")
-router.register(r"tag_categories", tag_views.TagCategoryView, basename="tag_category")
-router.register(r"resources", resource_views.ResourceView, basename="resource")
 router.register(r"contents", resource_views.ContentView, basename="content")
 router.register(r"index", index_views.IndexView, basename="index")
+router.register(r"pages", page_views.PageView, basename="page")
+router.register(r"resources", resource_views.ResourceView, basename="resource")
 router.register(r"search", search_view.SearchView, basename="search")
 router.register(r"sections", resource_views.SectionView, basename="section")
+router.register(r"tag_categories", tag_views.TagCategoryView, basename="tag_category")
+router.register(r"tags", tag_views.TagView, basename="tag")
 router.register(r"users", user_views.UserView, basename="user")
 
 urlpatterns = [
