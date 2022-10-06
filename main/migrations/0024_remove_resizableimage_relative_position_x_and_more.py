@@ -90,7 +90,7 @@ def from_cropped_image(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('main', '0021_alter_base_cover_image_alter_base_profile_image'),
+        ('main', '0023_page'),
     ]
 
     operations = [
@@ -147,29 +147,5 @@ class Migration(migrations.Migration):
         migrations.RemoveField(
             model_name='resource',
             name='thumbnail',
-        ),
-        migrations.AlterField(
-            model_name='base',
-            name='cover_image',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
-                                    to='main.resizableimage'),
-        ),
-        migrations.AlterField(
-            model_name='base',
-            name='profile_image',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
-                                    related_name='profile_base', to='main.resizableimage'),
-        ),
-        migrations.AlterField(
-            model_name='collection',
-            name='profile_image',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
-                                    to='main.resizableimage'),
-        ),
-        migrations.AlterField(
-            model_name='resource',
-            name='profile_image',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
-                                    to='main.resizableimage'),
-        ),
+        )
     ]
