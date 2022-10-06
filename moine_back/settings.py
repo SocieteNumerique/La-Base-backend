@@ -253,3 +253,25 @@ BACKUP_BUCKET = config.getstr("db_backup.bucket")
 # pagination
 BASE_PAGE_SIZE = 12
 RESOURCE_PAGE_SIZE = 12
+
+# Quill
+QUILL_CONFIGS = {
+    "default": {
+        "theme": "snow",
+        "modules": {
+            "syntax": True,
+            "toolbar": [
+                [
+                    {"header": []},
+                    "bold",
+                    "italic",
+                    "underline",
+                    "strike",
+                    {"color": []},
+                ],
+                ["code-block", "link"],
+                ["clean"],
+            ],
+        },
+    }
+}
