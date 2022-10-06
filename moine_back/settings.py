@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "main",
     "rest_framework",
     "telescoop_backup",
+    "django_quill",
 ]
 if IS_LOCAL_DEV:
     INSTALLED_APPS.append("debug_toolbar")
