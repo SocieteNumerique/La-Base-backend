@@ -9,8 +9,13 @@ from django.db import OperationalError
 from django.db.models import Q
 from django.db.models.fields.files import FieldFile
 from rest_framework import serializers
-from rest_framework.fields import SkipField
+from rest_framework.fields import SkipField, ImageField
 from rest_framework.serializers import ModelSerializer
+from versatileimagefield.utils import (
+    build_versatileimagefield_url_set,
+    get_rendition_key_set,
+    validate_versatileimagefield_sizekey_list,
+)
 
 from main.models import TagCategory, Tag
 from main.models.models import LicenseText
@@ -51,11 +56,8 @@ class Base64FileField(serializers.FileField):
     # those other properties, file data is sent to back and should not be interpreted
     # the file should be used only if there is base_64 property
     def validate_empty_values(self, data):
-        try:
-            if "base_64" not in data and self.context.get("request").method != "GET":
-                raise SkipField()
-        except TypeError:
-            pass
+        if "base_64" not in data and self.context.get("request").method != "GET":
+            raise SkipField()
         return super().validate_empty_values(data)
 
     def to_internal_value(self, data):
@@ -78,8 +80,6 @@ class Base64FileField(serializers.FileField):
             res = ContentFile(decoded_file, name=complete_file_name)
 
             return super().to_internal_value(res)
-        if "link" in data and isinstance(data["link"], str):
-            return super().to_internal_value(data["link"])
         self.fail("neither 'base64' nor 'link' found in data")
 
     def to_representation(self, instance: FieldFile):
@@ -95,6 +95,36 @@ class Base64FileField(serializers.FileField):
             "link": full_link,
             "mime_type": mimetypes.guess_type(instance.name)[0],
         }
+
+
+class Base64VersatileImageField(ImageField, Base64FileField):
+    def __init__(self, single_size=False, **kwargs):
+        ImageField.__init__(self, **kwargs)
+        self.single_size = single_size
+
+    def to_representation(self, instance):
+        if not instance.name:
+            return None
+        name_without_uuid = re.match("^[^_]*_?(.*)$", instance.name).group(1)
+        res = {
+            "name": name_without_uuid,
+            "mime_type": mimetypes.guess_type(instance.name)[0],
+        }
+        if self.single_size:
+            res["link"] = list(
+                build_versatileimagefield_url_set(
+                    instance, self.parent.cropping_size, self.context["request"]
+                ).values()
+            )[0]
+        else:
+            res["links"] = build_versatileimagefield_url_set(
+                instance, self.parent.sizes, self.context["request"]
+            )
+        #     TODO detect wrong types and exclude them
+        return res
+
+    def to_internal_value(self, data):
+        return Base64FileField.to_internal_value(self, data)
 
 
 class LicenseTextSerializer(serializers.ModelSerializer):
@@ -193,7 +223,18 @@ class ResizableImageBase64Serializer(serializers.ModelSerializer):
         model = ResizableImage
         fields = "__all__"
 
-    image = Base64FileField()
+    def __init__(self, sizes="", cropping_size="cropping_preview", **kwargs):
+        super().__init__(**kwargs)
+        if isinstance(sizes, str):
+            sizes = get_rendition_key_set(sizes)
+        self.sizes = validate_versatileimagefield_sizekey_list(sizes)
+
+        if isinstance(cropping_size, str):
+            cropping_size = get_rendition_key_set(cropping_size)
+        self.cropping_size = validate_versatileimagefield_sizekey_list(cropping_size)
+
+    cropped_image = Base64VersatileImageField(read_only=True)
+    image = Base64VersatileImageField(single_size=True)
 
     def create(self, validated_data):
         instance = super().create(validated_data)

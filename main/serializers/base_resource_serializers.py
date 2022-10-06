@@ -381,7 +381,9 @@ class BaseBaseSerializer(serializers.ModelSerializer):
     )
     participant_type_tags = serializers.SerializerMethodField()
     territory_tags = serializers.SerializerMethodField()
-    profile_image = ResizableImageBase64Serializer(required=False, allow_null=True)
+    profile_image = ResizableImageBase64Serializer(
+        required=False, allow_null=True, sizes="base_profile"
+    )
     cover_image = ResizableImageBase64Serializer(required=False, allow_null=True)
 
     def create(self, validated_data):

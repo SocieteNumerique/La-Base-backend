@@ -254,3 +254,14 @@ BACKUP_BUCKET = config.getstr("db_backup.bucket")
 # pagination
 BASE_PAGE_SIZE = 12
 RESOURCE_PAGE_SIZE = 12
+
+VERSATILEIMAGEFIELD_RENDITION_KEY_SETS = {
+    "base_profile": [
+        ("full_size", "url"),
+        ("option", "thumbnail__30x30"),
+        ("miniature", "thumbnail__100x100"),
+        ("index", "crop__144x144"),
+    ],
+    "cropping_preview": [("medium", "to-width__100x100")],
+    "": [("medium", "to-width__100x100")],
+}
