@@ -271,6 +271,15 @@ VERSATILEIMAGEFIELD_RENDITION_KEY_SETS = {
         ("full_size", "url"),
         ("miniature", "crop__322x252"),
     ],
+    "collection": [
+        ("full_size", "url"),
+        ("miniature", "crop__318x193"),
+    ],
     "cropping_preview": [("medium", "to-width__100x100")],
     "": [("full_size", "url")],
+}
+VERSATILEIMAGEFIELD_SETTINGS = {
+    # The amount of time, in seconds, that references to created images
+    # should be stored in the cache. Defaults to `2592000` (30 days)
+    "cache_length": 30,
 }
