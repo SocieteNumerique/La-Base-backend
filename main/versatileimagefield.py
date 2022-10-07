@@ -13,8 +13,8 @@ class ToWidthImage(SizedImage):
         """
         image_file = BytesIO()
         calc_height = round(image.height * width / image.width)
-        image.resize((width, calc_height))
-        image.save(image_file, **save_kwargs)
+        res = image.resize((width, calc_height))
+        res.save(image_file, **save_kwargs)
         return image_file
 
 
@@ -27,8 +27,8 @@ class ToHeightImage(SizedImage):
         """
         image_file = BytesIO()
         calc_width = image.width * height / image.height
-        image.resize((width, calc_width))
-        image.save(image_file, **save_kwargs)
+        res = image.resize((width, calc_width))
+        res.save(image_file, **save_kwargs)
         return image_file
 
 

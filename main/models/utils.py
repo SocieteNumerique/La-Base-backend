@@ -4,7 +4,6 @@ from mimetypes import guess_type
 from os.path import splitext
 
 from PIL import Image
-from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import models
 from versatileimagefield.fields import VersatileImageField
@@ -68,17 +67,3 @@ class ResizableImage(models.Model):
             ),
             save=False,
         )
-
-
-def resize_image(image):
-    if not image:
-        return
-    memfile = BytesIO()
-    img = Image.open(image)
-    if img.height > 150 or img.width > 150:
-        output_size = (150, 150)
-        img.thumbnail(output_size, Image.ANTIALIAS)
-        img.save(memfile, img.format)
-        default_storage.save(image.name, memfile)
-        memfile.close()
-        img.close()
