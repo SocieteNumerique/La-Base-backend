@@ -262,6 +262,11 @@ VERSATILEIMAGEFIELD_RENDITION_KEY_SETS = {
         ("miniature", "crop__100x100"),
         ("index", "crop__144x144"),
     ],
+    "base_cover": [
+        ("full_size", "url"),
+        ("miniature", "crop__382x116"),
+        ("index", "crop__1200x250"),
+    ],
     "cropping_preview": [("medium", "to-width__100x100")],
     "": [("medium", "to-width__100x100")],
 }

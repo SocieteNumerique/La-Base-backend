@@ -384,7 +384,9 @@ class BaseBaseSerializer(serializers.ModelSerializer):
     profile_image = ResizableImageBase64Serializer(
         required=False, allow_null=True, sizes="base_profile"
     )
-    cover_image = ResizableImageBase64Serializer(required=False, allow_null=True)
+    cover_image = ResizableImageBase64Serializer(
+        required=False, allow_null=True, sizes="base_cover"
+    )
 
     def create(self, validated_data):
         user = self.context["request"].user
