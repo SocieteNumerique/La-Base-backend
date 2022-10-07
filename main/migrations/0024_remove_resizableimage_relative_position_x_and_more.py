@@ -11,10 +11,16 @@ import functools
 import main.models.utils
 import versatileimagefield.fields
 
+class DeleteImage(Exception):
+    pass
+
 
 # noinspection DuplicatedCode
 def create_crop(resizable):
-    img = Image.open(resizable.image.file.file)
+    try:
+        img = Image.open(resizable.image.file.file)
+    except (ValueError,UnidentifiedImageError):
+        raise DeleteImage
     
     # left, upper, right, and lower
     pil_box = (
@@ -55,18 +61,15 @@ def to_cropped_image(apps, schema_editor):
 
         try:
             create_crop(resizable)
-        except ValueError:
-            errors.append(resizable.pk)
+        except DeleteImage:
+            resizable.delete()
             continue
-        except UnidentifiedImageError:
-            errors.append(resizable.pk)
-            resizable.cropped_image = resizable.image
         instances_to_update.append(resizable)
 
     ResizableImage.objects.using(db_alias).bulk_update(
         instances_to_update,
         ["relative_left", "relative_top", "relative_width",
-         "relative_height", "cropped_image"]
+         "relative_height", "cropped_image", "image"]
     )
     print(errors)
 
