@@ -93,7 +93,9 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
     can_write = serializers.SerializerMethodField()
     content_stats = serializers.SerializerMethodField(read_only=True)
     contributors = NestedUserSerializer(many=True, required=False, allow_null=True)
-    profile_image = ResizableImageBase64Serializer(required=False, allow_null=True)
+    profile_image = ResizableImageBase64Serializer(
+        required=False, allow_null=True, sizes="resource_profile"
+    )
     creator = UserSerializerForSearch(required=False, allow_null=True, read_only=True)
     creator_bases = PrimaryKeyBaseField(required=False, allow_null=True, many=True)
     external_producers = ExternalProducerSerializer(many=True, required=False)
