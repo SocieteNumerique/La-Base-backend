@@ -90,14 +90,14 @@ class Base(TimeStampedModel):
     )
     description = models.TextField(null=True, blank=True)
     contact = models.EmailField(null=True, blank=True)
-    profile_image = models.ForeignKey(
+    profile_image = models.OneToOneField(
         ResizableImage,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
         related_name="profile_base",
     )
-    cover_image = models.ForeignKey(
+    cover_image = models.OneToOneField(
         ResizableImage,
         null=True,
         blank=True,
@@ -156,7 +156,7 @@ class Collection(TimeStampedModel):
     resources = models.ManyToManyField(
         "Resource", blank=True, related_name="collections"
     )
-    profile_image = models.ForeignKey(
+    profile_image = models.OneToOneField(
         ResizableImage, null=True, blank=True, on_delete=models.SET_NULL
     )
 
@@ -279,7 +279,7 @@ class Resource(TimeStampedModel):
     state = models.CharField(
         default="draft", choices=RESOURCE_STATE_CHOICES, max_length=10
     )
-    profile_image = models.ForeignKey(
+    profile_image = models.OneToOneField(
         ResizableImage, null=True, blank=True, on_delete=models.SET_NULL
     )
     resource_created_on = models.CharField(max_length=50, null=True, blank=True)
@@ -339,7 +339,7 @@ class Resource(TimeStampedModel):
     has_global_license = models.BooleanField(
         verbose_name="Les contenus ont globalement la même licence", default=False
     )
-    license_text = models.ForeignKey(
+    license_text = models.OneToOneField(
         "LicenseText",
         verbose_name="Détail de licence propriétaire",
         on_delete=models.SET_NULL,
