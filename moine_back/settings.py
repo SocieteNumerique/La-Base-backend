@@ -271,7 +271,7 @@ VERSATILEIMAGEFIELD_RENDITION_KEY_SETS = {
         ("full_size", "url"),
         ("miniature", "crop__322x252"),
     ],
-    "collection": [
+    "collection_profile": [
         ("full_size", "url"),
         ("miniature", "crop__318x193"),
     ],

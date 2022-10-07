@@ -155,26 +155,22 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='base',
             name='cover_image',
-            field=models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
-                                       to='main.resizableimage'),
+            field=models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='base_cover', to='main.resizableimage'),
         ),
         migrations.AlterField(
             model_name='base',
             name='profile_image',
-            field=models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
-                                       related_name='profile_base', to='main.resizableimage'),
+            field=models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='base_profile', to='main.resizableimage'),
         ),
         migrations.AlterField(
             model_name='collection',
             name='profile_image',
-            field=models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
-                                       to='main.resizableimage'),
+            field=models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='collection_profile', to='main.resizableimage'),
         ),
         migrations.AlterField(
             model_name='resource',
             name='profile_image',
-            field=models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
-                                       to='main.resizableimage'),
+            field=models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='resource_profile', to='main.resizableimage'),
         ),
         migrations.AlterField(
             model_name='contentblock',

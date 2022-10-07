@@ -95,13 +95,14 @@ class Base(TimeStampedModel):
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
-        related_name="profile_base",
+        related_name="base_profile",
     )
     cover_image = models.OneToOneField(
         ResizableImage,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
+        related_name="base_cover",
     )
     state = models.CharField(
         default="private", choices=RESOURCE_STATE_CHOICES, max_length=10
@@ -157,7 +158,11 @@ class Collection(TimeStampedModel):
         "Resource", blank=True, related_name="collections"
     )
     profile_image = models.OneToOneField(
-        ResizableImage, null=True, blank=True, on_delete=models.SET_NULL
+        ResizableImage,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="collection_profile",
     )
 
     def __str__(self):
@@ -280,7 +285,11 @@ class Resource(TimeStampedModel):
         default="draft", choices=RESOURCE_STATE_CHOICES, max_length=10
     )
     profile_image = models.OneToOneField(
-        ResizableImage, null=True, blank=True, on_delete=models.SET_NULL
+        ResizableImage,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="resource_profile",
     )
     resource_created_on = models.CharField(max_length=50, null=True, blank=True)
     creator = models.ForeignKey(

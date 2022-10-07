@@ -304,7 +304,7 @@ class BaseCollectionSerializer(serializers.ModelSerializer):
         queryset=Base.objects.all(), many=True, required=False
     )
     profile_image = ResizableImageBase64Serializer(
-        required=False, allow_null=True, sizes="collection"
+        required=False, allow_null=True, sizes="collection_profile"
     )
 
     def get_resources(self, obj: Collection):
