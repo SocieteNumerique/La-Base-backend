@@ -278,3 +278,10 @@ VERSATILEIMAGEFIELD_RENDITION_KEY_SETS = {
     "cropping_preview": [("medium", "to-width__100x100")],
     "": [("full_size", "url")],
 }
+
+ONE_TO_ONE_FIELD_REVERSE_DELETE = [
+    ("Resource", "profile_image"),
+    ("Base", "profile_image"),
+    ("Collection", "profile_image"),
+    ("Base", "cover_image"),
+]

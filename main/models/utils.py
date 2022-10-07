@@ -3,10 +3,14 @@ from io import BytesIO
 from mimetypes import guess_type
 from os.path import splitext
 
+import rollbar
 from PIL import Image
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import models
 from versatileimagefield.fields import VersatileImageField
+from versatileimagefield.image_warmer import VersatileImageFieldWarmer
+
+from moine_back.settings import VERSATILEIMAGEFIELD_RENDITION_KEY_SETS
 
 
 class TimeStampedModel(models.Model):
@@ -67,3 +71,24 @@ class ResizableImage(models.Model):
             ),
             save=False,
         )
+
+    @property
+    def rendition_key(self):
+        return next(
+            key_set_name
+            for key_set_name in VERSATILEIMAGEFIELD_RENDITION_KEY_SETS.keys()
+            if hasattr(self, key_set_name) and getattr(self, key_set_name)
+        )
+
+    def warm_cropping(self):
+        warmer = VersatileImageFieldWarmer(
+            instance_or_queryset=self,
+            rendition_key_set=self.rendition_key,
+            image_attr="cropped_image",
+        )
+        _, failed_to_create = warmer.warm()
+        if failed_to_create > 0:
+            rollbar.report_message(
+                f"{failed_to_create} image crops failed for ResizableImage n° {self.pk}",
+                "warning",
+            )
