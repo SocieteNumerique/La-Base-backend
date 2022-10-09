@@ -391,7 +391,7 @@ class ExternalProducer(TimeStampedModel):
         verbose_name_plural = "Producteurs sans compte sur la plateforme"
 
     name = models.CharField(max_length=100)
-    email_contact = models.EmailField()
+    email_contact = models.EmailField(null=True, blank=True)
     validated = models.BooleanField(default=False)
     resource = models.ForeignKey(
         Resource, models.CASCADE, related_name="external_producers"
