@@ -74,11 +74,14 @@ class ResizableImage(models.Model):
 
     @property
     def rendition_key(self):
-        return next(
-            key_set_name
-            for key_set_name in VERSATILEIMAGEFIELD_RENDITION_KEY_SETS.keys()
-            if hasattr(self, key_set_name) and getattr(self, key_set_name)
-        )
+        try:
+            return next(
+                key_set_name
+                for key_set_name in VERSATILEIMAGEFIELD_RENDITION_KEY_SETS.keys()
+                if hasattr(self, key_set_name) and getattr(self, key_set_name)
+            )
+        except StopIteration:
+            return ""
 
     def warm_cropping(self):
         warmer = VersatileImageFieldWarmer(
