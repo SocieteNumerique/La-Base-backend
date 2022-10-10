@@ -87,8 +87,8 @@ class ResizableImage(models.Model):
             image_attr="cropped_image",
         )
         _, failed_to_create = warmer.warm()
-        if failed_to_create > 0:
+        if len(failed_to_create) > 0:
             rollbar.report_message(
-                f"{failed_to_create} image crops failed for ResizableImage n° {self.pk}",
+                f"{len(failed_to_create)} image crops failed for ResizableImage n° {self.pk}",
                 "warning",
             )

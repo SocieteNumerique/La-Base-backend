@@ -93,7 +93,7 @@ def from_cropped_image(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('main', '0023_page'),
+        ('main', '0024_alter_externalproducer_email_contact'),
     ]
 
     operations = [
