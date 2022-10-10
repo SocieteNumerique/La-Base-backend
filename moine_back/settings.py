@@ -279,6 +279,8 @@ VERSATILEIMAGEFIELD_RENDITION_KEY_SETS = {
     "": [("full_size", "url")],
 }
 
+VERSATILEIMAGEFIELD_SETTINGS = {"create_images_on_demand": False}
+
 ONE_TO_ONE_FIELD_REVERSE_DELETE = [
     ("Resource", "profile_image"),
     ("Base", "profile_image"),
