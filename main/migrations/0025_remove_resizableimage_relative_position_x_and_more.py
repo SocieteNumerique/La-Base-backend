@@ -40,7 +40,7 @@ def create_crop(resizable):
             image_file,
             None,
             resizable.image.name,
-            guess_type(resizable.image.name),
+            guess_type(resizable.image.name)[0],
             cropped_img.size,
             None
         ),

@@ -65,7 +65,7 @@ class ResizableImage(models.Model):
                 image_file,
                 None,
                 self.image.name,
-                guess_type(self.image.name),
+                guess_type(self.image.name)[0],
                 cropped_img.size,
                 None,
             ),
