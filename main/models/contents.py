@@ -51,7 +51,7 @@ class ContentBlock(TimeStampedModel):
         max_length=10,
         default="unknown",
     )
-    license_text = models.ForeignKey(
+    license_text = models.OneToOneField(
         "main.LicenseText",
         verbose_name="Détail de licence propriétaire",
         on_delete=models.SET_NULL,

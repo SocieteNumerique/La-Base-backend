@@ -39,7 +39,7 @@ def paginated_resources_from_base(base: Base, user: User, page: int, context=Non
     if context is None:
         context = {}
     qs = base.resources_for_user(user)
-    return paginated_resources_from_qs(qs, page)
+    return paginated_resources_from_qs(qs, page, context)
 
 
 def get_paginated_resources_from_collection(
