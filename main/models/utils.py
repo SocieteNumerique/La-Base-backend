@@ -71,6 +71,7 @@ class ResizableImage(models.Model):
             ),
             save=False,
         )
+        self.cropped_image.delete_all_created_images()
 
     @property
     def rendition_key(self):
