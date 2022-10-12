@@ -89,9 +89,16 @@ class ResizableImage(models.Model):
             rendition_key_set=self.rendition_key,
             image_attr="cropped_image",
         )
+        warmer_full = VersatileImageFieldWarmer(
+            instance_or_queryset=self,
+            rendition_key_set="cropping_preview",
+            image_attr="image",
+        )
         _, failed_to_create = warmer.warm()
-        if len(failed_to_create) > 0:
+        _, failed_to_create_full = warmer_full.warm()
+        nb_failures = len(failed_to_create_full) + len(failed_to_create)
+        if nb_failures > 0:
             rollbar.report_message(
-                f"{len(failed_to_create)} image crops failed for ResizableImage n° {self.pk}",
+                f"{nb_failures} image crops failed for ResizableImage n° {self.pk}",
                 "warning",
             )
