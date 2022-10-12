@@ -93,7 +93,9 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
     can_write = serializers.SerializerMethodField()
     content_stats = serializers.SerializerMethodField(read_only=True)
     contributors = NestedUserSerializer(many=True, required=False, allow_null=True)
-    profile_image = ResizableImageBase64Serializer(required=False, allow_null=True)
+    profile_image = ResizableImageBase64Serializer(
+        required=False, allow_null=True, sizes="resource_profile"
+    )
     creator = UserSerializerForSearch(required=False, allow_null=True, read_only=True)
     creator_bases = PrimaryKeyBaseField(required=False, allow_null=True, many=True)
     external_producers = ExternalProducerSerializer(many=True, required=False)
@@ -301,7 +303,9 @@ class BaseCollectionSerializer(serializers.ModelSerializer):
     pinned_in_bases = serializers.PrimaryKeyRelatedField(
         queryset=Base.objects.all(), many=True, required=False
     )
-    profile_image = ResizableImageBase64Serializer(required=False, allow_null=True)
+    profile_image = ResizableImageBase64Serializer(
+        required=False, allow_null=True, sizes="collection_profile"
+    )
 
     def get_resources(self, obj: Collection):
         qs = resources_queryset_with_stats(
@@ -381,8 +385,12 @@ class BaseBaseSerializer(serializers.ModelSerializer):
     )
     participant_type_tags = serializers.SerializerMethodField()
     territory_tags = serializers.SerializerMethodField()
-    profile_image = ResizableImageBase64Serializer(required=False, allow_null=True)
-    cover_image = ResizableImageBase64Serializer(required=False, allow_null=True)
+    profile_image = ResizableImageBase64Serializer(
+        required=False, allow_null=True, sizes="base_profile"
+    )
+    cover_image = ResizableImageBase64Serializer(
+        required=False, allow_null=True, sizes="base_cover"
+    )
 
     def create(self, validated_data):
         user = self.context["request"].user

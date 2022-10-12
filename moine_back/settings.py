@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "versatileimagefield",
     "hijack",
     "hijack.contrib.admin",
     "telescoop_auth",
@@ -253,3 +254,36 @@ BACKUP_BUCKET = config.getstr("db_backup.bucket")
 # pagination
 BASE_PAGE_SIZE = 12
 RESOURCE_PAGE_SIZE = 12
+
+VERSATILEIMAGEFIELD_RENDITION_KEY_SETS = {
+    "base_profile": [
+        ("full_size", "url"),
+        ("option", "crop__30x30"),
+        ("miniature", "crop__100x100"),
+        ("index", "crop__144x144"),
+    ],
+    "base_cover": [
+        ("full_size", "url"),
+        ("miniature", "crop__382x116"),
+        ("index", "crop__1200x250"),
+    ],
+    "resource_profile": [
+        ("full_size", "url"),
+        ("miniature", "crop__322x252"),
+    ],
+    "collection_profile": [
+        ("full_size", "url"),
+        ("miniature", "crop__318x193"),
+    ],
+    "cropping_preview": [("medium", "to-width__100x100")],
+    "": [("full_size", "url")],
+}
+
+VERSATILEIMAGEFIELD_SETTINGS = {"create_images_on_demand": False}
+
+ONE_TO_ONE_FIELD_REVERSE_DELETE = [
+    ("Resource", "profile_image"),
+    ("Base", "profile_image"),
+    ("Collection", "profile_image"),
+    ("Base", "cover_image"),
+]
