@@ -499,6 +499,7 @@ class FullBaseSerializer(BaseBaseSerializer):
         abstract = False
         fields = BaseBaseSerializer.Meta.fields + [
             "contact",
+            "contact_state",
             "description",
             "resources",
             "resource_choices",
