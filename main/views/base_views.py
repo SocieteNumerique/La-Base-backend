@@ -12,6 +12,7 @@ from main.query_changes.stats_annotations import bases_queryset_with_stats
 from main.serializers.base_resource_serializers import (
     FullBaseSerializer,
     ShortBaseSerializer,
+    FullNoContactBaseSerializer,
 )
 from main.serializers.index_serializers import IndexAdminSerializer
 from main.serializers.pagination import paginated_resources_from_base
@@ -52,8 +53,14 @@ class BaseView(
         serializer.instance = instance
 
     def get_serializer_class(self):
-        if self.kwargs.get("pk") or self.request.method == "POST":
+        if self.request.method == "POST":
             return FullBaseSerializer
+        if self.kwargs.get("pk"):
+            instance = self.get_object()
+            should_be_contact = instance.contact_state == "public" or instance.can_write
+            return (
+                FullBaseSerializer if should_be_contact else FullNoContactBaseSerializer
+            )
         return ShortBaseSerializer
 
     @action(detail=True, methods=["get"])

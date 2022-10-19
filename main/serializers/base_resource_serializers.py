@@ -494,11 +494,11 @@ class ShortBaseSerializer(BaseBaseSerializer):
     is_short = serializers.ReadOnlyField(default=True)
 
 
-class FullBaseSerializer(BaseBaseSerializer):
+class FullNoContactBaseSerializer(BaseBaseSerializer):
     class Meta(BaseBaseSerializer.Meta):
         abstract = False
         fields = BaseBaseSerializer.Meta.fields + [
-            "contact",
+            "contact_state",
             "description",
             "resources",
             "resource_choices",
@@ -510,4 +510,12 @@ class FullBaseSerializer(BaseBaseSerializer):
             "state",
             "tags",
             "admins",
+        ]
+
+
+class FullBaseSerializer(FullNoContactBaseSerializer):
+    class Meta(FullNoContactBaseSerializer.Meta):
+        abstract = False
+        fields = FullNoContactBaseSerializer.Meta.fields + [
+            "contact",
         ]
