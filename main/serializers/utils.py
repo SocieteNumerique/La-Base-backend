@@ -9,6 +9,7 @@ from django.db import OperationalError
 from django.db.models import Q
 from django.db.models.fields.files import FieldFile
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from rest_framework.fields import SkipField, ImageField
 from rest_framework.serializers import ModelSerializer
 from versatileimagefield.utils import (
@@ -73,7 +74,7 @@ class Base64FileField(serializers.FileField):
             try:
                 decoded_file = base64.b64decode(file_base64)
             except TypeError:
-                self.fail("invalid_file")
+                raise ValidationError("invalid_file")
 
             file_name_uid = str(uuid.uuid4())[:12]
             complete_file_name = f"{file_name_uid}_{data['name']}"
