@@ -198,3 +198,23 @@ class TestResourceView(TestCase):
     @authenticate
     def test_update_base_admins(self):
         self.update_user_list("authorized_users")
+
+    def checkPinCount(self, url, expected_pin_count, expected_public_pin_count):
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["stats"]["pinCount"], expected_pin_count)
+        self.assertEqual(data["stats"]["publicPinCount"], expected_public_pin_count)
+
+    def test_pin_stats(self):
+        resource = ResourceFactory.create(state="public")
+        private_base = BaseFactory.create(state="private")
+        public_base = BaseFactory.create(state="public")
+        url = reverse("resource-detail", args=[resource.pk])
+        self.checkPinCount(url, 0, 0)
+        private_base.pinned_resources.add(resource)
+        self.checkPinCount(url, 1, 0)
+        public_base.pinned_resources.add(resource)
+        self.checkPinCount(url, 2, 1)
+        private_base.pinned_resources.remove(resource)
+        self.checkPinCount(url, 1, 1)
