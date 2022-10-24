@@ -78,7 +78,7 @@ def from_cropped_image(apps, schema_editor):
 def create_crop(resizable):
     try:
         img = Image.open(resizable.image.file.file)
-    except (ValueError,UnidentifiedImageError):
+    except (ValueError, UnidentifiedImageError, FileNotFoundError):
         raise DeleteImage
 
     # left, upper, right, and lower
