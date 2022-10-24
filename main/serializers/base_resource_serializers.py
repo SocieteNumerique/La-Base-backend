@@ -109,6 +109,7 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
     license_text = LicenseTextSerializer(required=False, allow_null=True)
     license_tags = serializers.SerializerMethodField()
     access_price_tags = serializers.SerializerMethodField()
+    pinned_in_public_bases = serializers.SerializerMethodField()
 
     @staticmethod
     def get_can_write(obj: Resource):
@@ -118,7 +119,8 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
     def get_stats(obj: Resource):
         res = {
             "visit_count": getattr(obj, "visit_count", 0),
-            "pinned_count": getattr(obj, "pinned_count", 0),
+            "pin_count": getattr(obj, "pin_count", 0),
+            "public_pin_count": getattr(obj, "public_pin_count", 0),
         }
         return res
 
@@ -146,6 +148,12 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
     @staticmethod
     def get_access_price_tags(obj: Resource):
         return get_specific_tags(obj, ["needs_account", "price"])
+
+    @staticmethod
+    def get_pinned_in_public_bases(obj: Resource):
+        return VeryShortResourceSerializer(
+            getattr(obj, "pinned_in_public_bases", []), many=True
+        ).data
 
     def create(self, validated_data):
         try:
@@ -225,6 +233,7 @@ class ShortResourceSerializer(BaseResourceSerializer):
             "can_write",
             "creator",
             "profile_image",
+            "pinned_in_public_bases",
         ]
         abstract = False
 
