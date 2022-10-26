@@ -9,6 +9,8 @@ def re_save_links(apps, _):
     n_deleted = 0
     n_resaved = 0
     for link in tqdm(LinkContent.objects.all()):
+        # enable with_preview on all links
+        link.with_preview = True
         if not link.link:
             link.delete()
             n_deleted += 1
@@ -43,6 +45,11 @@ class Migration(migrations.Migration):
             model_name='linkcontent',
             name='target_title',
             field=models.CharField(blank=True, max_length=80, null=True),
+        ),
+        migrations.AlterField(
+            model_name='linkcontent',
+            name='with_preview',
+            field=models.BooleanField(default=True),
         ),
         migrations.RunPython(re_save_links, do_nothing)
     ]
