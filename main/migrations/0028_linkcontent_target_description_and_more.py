@@ -18,7 +18,7 @@ def re_save_links(apps, _):
     print(f"done re-saving links, deleted {n_deleted} empty links, re-saved {n_resaved}")
 
 
-def do_nothing(_, _2):
+def do_nothing(*_):
     pass
 
 
