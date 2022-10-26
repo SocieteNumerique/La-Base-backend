@@ -1,4 +1,5 @@
 from django.db import models
+from requests import HTTPError, ConnectionError
 
 from main.models.models import Resource, Tag
 from main.models.utils import TimeStampedModel
@@ -77,6 +78,28 @@ class LinkContent(ContentBlock):
 
     link = models.URLField(blank=True, null=True)
     with_preview = models.BooleanField(default=False)
+    target_image = models.URLField(null=True, blank=True)
+    target_description = models.CharField(max_length=180, null=True, blank=True)
+    target_title = models.CharField(max_length=80, null=True, blank=True)
+
+    def save(self, **kwargs):
+        if not self.title:
+            from linkpreview import link_preview
+
+            try:
+                preview = link_preview(self.link)
+            except (HTTPError, ConnectionError):
+                pass
+            else:
+                # there was no exception
+                self.target_image = (
+                    preview.absolute_image and preview.absolute_image[:200]
+                )
+                self.target_description = (
+                    preview.description and preview.description[:180]
+                )
+                self.target_title = preview.force_title and preview.force_title[:80]
+        super().save(**kwargs)
 
 
 class TextContent(ContentBlock):

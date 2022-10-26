@@ -127,7 +127,13 @@ class BaseContentSerializer(serializers.ModelSerializer):
 
 class LinkContentSerializer(BaseContentSerializer):
     class Meta(BaseContentSerializer.Meta):
-        fields = BaseContentSerializer.Meta.fields + ["link", "with_preview"]
+        fields = BaseContentSerializer.Meta.fields + [
+            "link",
+            "with_preview",
+            "target_image",
+            "target_description",
+            "target_title",
+        ]
         model = LinkContent
 
     @staticmethod

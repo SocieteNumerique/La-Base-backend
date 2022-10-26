@@ -13,6 +13,7 @@ from .contents import (  # noqa: F401
     LinkedResourceContent,
     TextContent,
     FileContent,
+    LinkContent,
 )
 from .user import User, UserGroup  # noqa: F401
 
