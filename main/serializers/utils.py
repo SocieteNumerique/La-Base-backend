@@ -9,6 +9,7 @@ from django.db import OperationalError
 from django.db.models import Q
 from django.db.models.fields.files import FieldFile
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from rest_framework.fields import SkipField, ImageField
 from rest_framework.serializers import ModelSerializer
 from versatileimagefield.utils import (
@@ -56,9 +57,12 @@ class Base64FileField(serializers.FileField):
     # those other properties, file data is sent to back and should not be interpreted
     # the file should be used only if there is base_64 property
     def validate_empty_values(self, data):
+        already_ok, _ = super().validate_empty_values(data)
+        if already_ok:
+            return already_ok, data
         if "base_64" not in data and self.context.get("request").method != "GET":
             raise SkipField()
-        return super().validate_empty_values(data)
+        return already_ok, data
 
     def to_internal_value(self, data):
         if data is None:
@@ -73,7 +77,7 @@ class Base64FileField(serializers.FileField):
             try:
                 decoded_file = base64.b64decode(file_base64)
             except TypeError:
-                self.fail("invalid_file")
+                raise ValidationError("invalid_file")
 
             file_name_uid = str(uuid.uuid4())[:12]
             complete_file_name = f"{file_name_uid}_{data['name']}"
@@ -157,6 +161,7 @@ def set_nested_license_data(validated_data, instance):  # noqa: C901
     def remove_license_text():
         if instance.license_text_id is not None:
             instance.license_text.delete()
+            instance.license_text = None
             validated_data["license_text"] = None
 
     def remove_license_text_name():

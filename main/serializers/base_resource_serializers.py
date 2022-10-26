@@ -398,19 +398,22 @@ class BaseBaseSerializer(serializers.ModelSerializer):
             raise ValidationError("Anonymous cannot create a base")
         validated_data["owner"] = user
         try:
-            image = create_or_update_resizable_image(validated_data, "profile_image")
-            instance = super().create(validated_data)
-            instance.profile_image = image
-            instance.save()
+            profile_image = create_or_update_resizable_image(
+                validated_data, "profile_image"
+            )
         except SkipField:
-            pass
+            profile_image = None
         try:
-            image = create_or_update_resizable_image(validated_data, "cover_image")
-            instance = super().create(validated_data)
-            instance.cover_image = image
-            instance.save()
+            cover_image = create_or_update_resizable_image(
+                validated_data, "cover_image"
+            )
         except SkipField:
-            instance = super().create(validated_data)
+            cover_image = None
+
+        instance = super().create(validated_data)
+        instance.profile_image = profile_image
+        instance.cover_image = cover_image
+        instance.save()
         return instance
 
     def update(self, instance: Base, validated_data):
