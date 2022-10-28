@@ -93,7 +93,9 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
     can_write = serializers.SerializerMethodField()
     content_stats = serializers.SerializerMethodField(read_only=True)
     contributors = NestedUserSerializer(many=True, required=False, allow_null=True)
-    profile_image = ResizableImageBase64Serializer(required=False, allow_null=True)
+    profile_image = ResizableImageBase64Serializer(
+        required=False, allow_null=True, sizes="resource_profile"
+    )
     creator = UserSerializerForSearch(required=False, allow_null=True, read_only=True)
     creator_bases = PrimaryKeyBaseField(required=False, allow_null=True, many=True)
     external_producers = ExternalProducerSerializer(many=True, required=False)
@@ -301,7 +303,9 @@ class BaseCollectionSerializer(serializers.ModelSerializer):
     pinned_in_bases = serializers.PrimaryKeyRelatedField(
         queryset=Base.objects.all(), many=True, required=False
     )
-    profile_image = ResizableImageBase64Serializer(required=False, allow_null=True)
+    profile_image = ResizableImageBase64Serializer(
+        required=False, allow_null=True, sizes="collection_profile"
+    )
 
     def get_resources(self, obj: Collection):
         qs = resources_queryset_with_stats(
@@ -381,8 +385,12 @@ class BaseBaseSerializer(serializers.ModelSerializer):
     )
     participant_type_tags = serializers.SerializerMethodField()
     territory_tags = serializers.SerializerMethodField()
-    profile_image = ResizableImageBase64Serializer(required=False, allow_null=True)
-    cover_image = ResizableImageBase64Serializer(required=False, allow_null=True)
+    profile_image = ResizableImageBase64Serializer(
+        required=False, allow_null=True, sizes="base_profile"
+    )
+    cover_image = ResizableImageBase64Serializer(
+        required=False, allow_null=True, sizes="base_cover"
+    )
 
     def create(self, validated_data):
         user = self.context["request"].user
@@ -390,19 +398,22 @@ class BaseBaseSerializer(serializers.ModelSerializer):
             raise ValidationError("Anonymous cannot create a base")
         validated_data["owner"] = user
         try:
-            image = create_or_update_resizable_image(validated_data, "profile_image")
-            instance = super().create(validated_data)
-            instance.profile_image = image
-            instance.save()
+            profile_image = create_or_update_resizable_image(
+                validated_data, "profile_image"
+            )
         except SkipField:
-            pass
+            profile_image = None
         try:
-            image = create_or_update_resizable_image(validated_data, "cover_image")
-            instance = super().create(validated_data)
-            instance.cover_image = image
-            instance.save()
+            cover_image = create_or_update_resizable_image(
+                validated_data, "cover_image"
+            )
         except SkipField:
-            instance = super().create(validated_data)
+            cover_image = None
+
+        instance = super().create(validated_data)
+        instance.profile_image = profile_image
+        instance.cover_image = cover_image
+        instance.save()
         return instance
 
     def update(self, instance: Base, validated_data):
@@ -486,11 +497,11 @@ class ShortBaseSerializer(BaseBaseSerializer):
     is_short = serializers.ReadOnlyField(default=True)
 
 
-class FullBaseSerializer(BaseBaseSerializer):
+class FullNoContactBaseSerializer(BaseBaseSerializer):
     class Meta(BaseBaseSerializer.Meta):
         abstract = False
         fields = BaseBaseSerializer.Meta.fields + [
-            "contact",
+            "contact_state",
             "description",
             "resources",
             "resource_choices",
@@ -502,4 +513,12 @@ class FullBaseSerializer(BaseBaseSerializer):
             "state",
             "tags",
             "admins",
+        ]
+
+
+class FullBaseSerializer(FullNoContactBaseSerializer):
+    class Meta(FullNoContactBaseSerializer.Meta):
+        abstract = False
+        fields = FullNoContactBaseSerializer.Meta.fields + [
+            "contact",
         ]

@@ -90,18 +90,19 @@ class Base(TimeStampedModel):
     )
     description = models.TextField(null=True, blank=True)
     contact = models.EmailField(null=True, blank=True)
-    profile_image = models.ForeignKey(
+    profile_image = models.OneToOneField(
         ResizableImage,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
-        related_name="profile_base",
+        related_name="base_profile",
     )
-    cover_image = models.ForeignKey(
+    cover_image = models.OneToOneField(
         ResizableImage,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
+        related_name="base_cover",
     )
     state = models.CharField(
         default="private", choices=RESOURCE_STATE_CHOICES, max_length=10
@@ -156,8 +157,12 @@ class Collection(TimeStampedModel):
     resources = models.ManyToManyField(
         "Resource", blank=True, related_name="collections"
     )
-    profile_image = models.ForeignKey(
-        ResizableImage, null=True, blank=True, on_delete=models.SET_NULL
+    profile_image = models.OneToOneField(
+        ResizableImage,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="collection_profile",
     )
 
     def __str__(self):
@@ -279,8 +284,12 @@ class Resource(TimeStampedModel):
     state = models.CharField(
         default="draft", choices=RESOURCE_STATE_CHOICES, max_length=10
     )
-    profile_image = models.ForeignKey(
-        ResizableImage, null=True, blank=True, on_delete=models.SET_NULL
+    profile_image = models.OneToOneField(
+        ResizableImage,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="resource_profile",
     )
     resource_created_on = models.CharField(max_length=50, null=True, blank=True)
     creator = models.ForeignKey(
@@ -310,7 +319,6 @@ class Resource(TimeStampedModel):
     )  # only if not in base, first
     zip_code = models.IntegerField(null=True, blank=True)
     url = models.URLField(null=True, blank=True)
-    thumbnail = models.ImageField(null=True, blank=True)
     internal_producers = models.ManyToManyField(
         User, blank=True, related_name="internal_producers"
     )
@@ -340,7 +348,7 @@ class Resource(TimeStampedModel):
     has_global_license = models.BooleanField(
         verbose_name="Les contenus ont globalement la même licence", default=False
     )
-    license_text = models.ForeignKey(
+    license_text = models.OneToOneField(
         "LicenseText",
         verbose_name="Détail de licence propriétaire",
         on_delete=models.SET_NULL,

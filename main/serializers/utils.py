@@ -9,8 +9,14 @@ from django.db import OperationalError
 from django.db.models import Q
 from django.db.models.fields.files import FieldFile
 from rest_framework import serializers
-from rest_framework.fields import SkipField
+from rest_framework.exceptions import ValidationError
+from rest_framework.fields import SkipField, ImageField
 from rest_framework.serializers import ModelSerializer
+from versatileimagefield.utils import (
+    build_versatileimagefield_url_set,
+    get_rendition_key_set,
+    validate_versatileimagefield_sizekey_list,
+)
 
 from main.models import TagCategory, Tag
 from main.models.models import LicenseText
@@ -51,12 +57,12 @@ class Base64FileField(serializers.FileField):
     # those other properties, file data is sent to back and should not be interpreted
     # the file should be used only if there is base_64 property
     def validate_empty_values(self, data):
-        try:
-            if "base_64" not in data and self.context.get("request").method != "GET":
-                raise SkipField()
-        except TypeError:
-            pass
-        return super().validate_empty_values(data)
+        already_ok, _ = super().validate_empty_values(data)
+        if already_ok:
+            return already_ok, data
+        if "base_64" not in data and self.context.get("request").method != "GET":
+            raise SkipField()
+        return already_ok, data
 
     def to_internal_value(self, data):
         if data is None:
@@ -71,15 +77,13 @@ class Base64FileField(serializers.FileField):
             try:
                 decoded_file = base64.b64decode(file_base64)
             except TypeError:
-                self.fail("invalid_file")
+                raise ValidationError("invalid_file")
 
             file_name_uid = str(uuid.uuid4())[:12]
             complete_file_name = f"{file_name_uid}_{data['name']}"
             res = ContentFile(decoded_file, name=complete_file_name)
 
             return super().to_internal_value(res)
-        if "link" in data and isinstance(data["link"], str):
-            return super().to_internal_value(data["link"])
         self.fail("neither 'base64' nor 'link' found in data")
 
     def to_representation(self, instance: FieldFile):
@@ -95,6 +99,36 @@ class Base64FileField(serializers.FileField):
             "link": full_link,
             "mime_type": mimetypes.guess_type(instance.name)[0],
         }
+
+
+class Base64VersatileImageField(ImageField, Base64FileField):
+    def __init__(self, single_size=False, **kwargs):
+        ImageField.__init__(self, **kwargs)
+        self.single_size = single_size
+
+    def to_representation(self, instance):
+        if not instance.name:
+            return None
+        name_without_uuid = re.match("^[^_]*_?(.*)$", instance.name).group(1)
+        res = {
+            "name": name_without_uuid,
+            "mime_type": mimetypes.guess_type(instance.name)[0],
+        }
+        if self.single_size:
+            res["link"] = list(
+                build_versatileimagefield_url_set(
+                    instance, self.parent.cropping_size, self.context["request"]
+                ).values()
+            )[0]
+        else:
+            res["links"] = build_versatileimagefield_url_set(
+                instance, self.parent.sizes, self.context["request"]
+            )
+        #     TODO detect wrong types and exclude them
+        return res
+
+    def to_internal_value(self, data):
+        return Base64FileField.to_internal_value(self, data)
 
 
 class LicenseTextSerializer(serializers.ModelSerializer):
@@ -127,6 +161,7 @@ def set_nested_license_data(validated_data, instance):  # noqa: C901
     def remove_license_text():
         if instance.license_text_id is not None:
             instance.license_text.delete()
+            instance.license_text = None
             validated_data["license_text"] = None
 
     def remove_license_text_name():
@@ -192,55 +227,29 @@ class ResizableImageBase64Serializer(serializers.ModelSerializer):
     class Meta:
         model = ResizableImage
         fields = "__all__"
-        read_only_fields = [
-            "scale_x",
-            "scale_y",
-            "relative_position_x",
-            "relative_position_y",
-        ]
 
-    image = Base64FileField()
+    def __init__(self, sizes="", cropping_size="cropping_preview", **kwargs):
+        super().__init__(**kwargs)
+        if isinstance(sizes, str):
+            sizes = get_rendition_key_set(sizes)
+        self.sizes = validate_versatileimagefield_sizekey_list(sizes)
 
-    @staticmethod
-    def apply_coordinates(instance, coordinates=None):
-        if coordinates is None:
-            instance.scale_x = None
-            instance.scale_y = None
-            instance.relative_position_x = None
-            instance.relative_position_y = None
-        else:
-            instance.scale_x = instance.image.width / coordinates["width"]
-            instance.scale_y = instance.image.height / coordinates["height"]
-            instance.relative_position_x = coordinates["left"] / coordinates["width"]
-            instance.relative_position_y = coordinates["top"] / coordinates["height"]
+        if isinstance(cropping_size, str):
+            cropping_size = get_rendition_key_set(cropping_size)
+        self.cropping_size = validate_versatileimagefield_sizekey_list(cropping_size)
 
-    def to_internal_value(self, data):
-        res = super().to_internal_value(data)
-        if "coordinates" in data:
-            res["coordinates"] = data["coordinates"]
-        return res
+    cropped_image = Base64VersatileImageField(read_only=True)
+    image = Base64VersatileImageField(single_size=True)
 
     def create(self, validated_data):
-        coordinates = (
-            validated_data.pop("coordinates")
-            if "coordinates" in validated_data
-            else None
-        )
         instance = super().create(validated_data)
-        self.apply_coordinates(instance, coordinates)
+        instance.create_crop()
         instance.save()
         return instance
 
     def update(self, instance, validated_data):
-        coordinates = (
-            validated_data.pop("coordinates")
-            if "coordinates" in validated_data
-            else None
-        )
-        has_image_changed = "image" in validated_data
         super().update(instance, validated_data)
-        if coordinates or has_image_changed:
-            self.apply_coordinates(instance, coordinates)
+        instance.create_crop()
         instance.save()
         return instance
 
