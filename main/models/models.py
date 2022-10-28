@@ -310,7 +310,7 @@ class Resource(TimeStampedModel):
         blank=True,
     )
     producer_state = models.CharField(
-        max_length=10, choices=RESOURCE_PRODUCER_STATES, default="me"
+        max_length=10, choices=RESOURCE_PRODUCER_STATES, null=True, blank=True
     )
     is_linked_to_a_territory = models.BooleanField(null=True, blank=True)
     access_requires_user_account = models.BooleanField(null=True, blank=True)
@@ -400,6 +400,7 @@ class ExternalProducer(TimeStampedModel):
 
     name = models.CharField(max_length=100)
     email_contact = models.EmailField(null=True, blank=True)
+    website_url = models.CharField(max_length=150, null=True, blank=True)
     validated = models.BooleanField(default=False)
     resource = models.ForeignKey(
         Resource, models.CASCADE, related_name="external_producers"
