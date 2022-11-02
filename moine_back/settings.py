@@ -265,7 +265,7 @@ VERSATILEIMAGEFIELD_RENDITION_KEY_SETS = {
     ],
     "base_cover": [
         ("full_size", "url"),
-        ("miniature", "crop__382x116"),
+        ("miniature", "crop__382x80"),
         ("index", "crop__1200x250"),
         ("preview", "to-width__100x100"),
     ],
