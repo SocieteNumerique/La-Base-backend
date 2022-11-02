@@ -6,6 +6,7 @@ from .resource_admin import ResourceAdmin  # noqa: F401
 from .tag_admin import TagAdmin  # noqa: F401
 from .tag_category_admin import TagCategoryAdmin  # noqa: F401
 from .page_admin import PageAdmin  # noqa: F401
+from .intro_admin import Intro  # noqa: F401
 
 from main.models.user import User
 from telescoop_auth.models import User as TelesCoopUser

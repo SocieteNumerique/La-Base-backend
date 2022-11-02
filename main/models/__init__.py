@@ -22,3 +22,5 @@ from .utils import ResizableImage  # noqa: F401
 from .visit_counts import BaseVisit, ResourceVisit  # noqa: F401
 
 from .page import Page  # noqa: F401
+
+from .intro import Intro  # noqa: F401

@@ -6,6 +6,7 @@ from freezegun import freeze_time
 
 from main.factories import ResourceFactory, BaseFactory
 from main.models import ResourceVisit
+from main.tests.test_utils import authenticate
 
 
 class TestVisitCounts(TestCase):
@@ -50,3 +51,36 @@ class TestVisitCounts(TestCase):
         # second view does not create another visit
         self.client.get(url)
         self.assertEqual(base.instance_visit_count, 1)
+
+    @authenticate
+    def test_no_visits_for_superusers(self):
+        authenticate.user.is_superuser = True
+        authenticate.user.save()
+        resource = ResourceFactory.create()
+        self.assertEqual(resource.instance_visit_count, 0)
+        url = reverse(
+            "increment-visit-count",
+            kwargs={"object_type": "resource", "pk": resource.pk},
+        )
+        self.client.get(url)
+        self.assertEqual(resource.instance_visit_count, 0)
+
+    @authenticate
+    def test_no_visits_for_own_base_and_own_resources(self):
+        base = BaseFactory.create(owner=authenticate.user)
+        self.assertEqual(base.instance_visit_count, 0)
+        url = reverse(
+            "increment-visit-count",
+            kwargs={"object_type": "base", "pk": base.pk},
+        )
+        self.client.get(url)
+        self.assertEqual(base.instance_visit_count, 0)
+
+        resource = ResourceFactory.create(root_base=base)
+        self.assertEqual(resource.instance_visit_count, 0)
+        url = reverse(
+            "increment-visit-count",
+            kwargs={"object_type": "resource", "pk": resource.pk},
+        )
+        self.client.get(url)
+        self.assertEqual(base.instance_visit_count, 0)

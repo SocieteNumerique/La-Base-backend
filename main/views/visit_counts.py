@@ -29,7 +29,21 @@ def increment_visit_count(request, object_type, pk):
     if not (ip := get_client_ip(request)):
         return Response()
 
-    if not model.objects.filter(pk=pk).exists():
+    try:
+        instance = model.objects.get(pk=pk)
+    except model.DoesNotExist:
+        # ignore visits of non-existing objects
+        return Response()
+
+    # ignore visits of superusers
+    if request.user.is_superuser:
+        return Response()
+
+    # ignore visits of base owner
+    if object_type == "base" and instance.owner == request.user:
+        return Response()
+    # ignore visits of resources when user is the base owner
+    if object_type == "resource" and instance.root_base.owner == request.user:
         return Response()
 
     ip_hash = hash_ip(ip)
