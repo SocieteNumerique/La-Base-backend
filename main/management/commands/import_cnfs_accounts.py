@@ -226,6 +226,8 @@ def import_cnfs_organizations(limit_to_emails=None, max_n_accounts=None):
 
             print(f"utilisateur {email} - ajouté - user id {user.pk}")
 
+        print(f"Done, added {n_accounts_created} accounts")
+
 
 class Command(BaseCommand):
     help = "Import CnFS accounts"
