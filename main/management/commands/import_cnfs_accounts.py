@@ -141,6 +141,7 @@ def import_accounts(limit_to_emails=None, max_n_accounts=None):
                 first_name=line["Prénom"],
                 last_name=line["Nom"],
                 cnfs_id=cnfs_id,
+                is_active=True,
             )
             n_accounts_created += 1
             user = User.objects.create_user(**user_data)
@@ -233,4 +234,4 @@ class Command(BaseCommand):
         pass
 
     def handle(self, *args, **options):
-        import_accounts(max_n_accounts=1)
+        import_accounts(max_n_accounts=None)
