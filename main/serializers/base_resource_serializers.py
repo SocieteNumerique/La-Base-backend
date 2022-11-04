@@ -170,7 +170,8 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
             )
             instance.profile_image = image
             instance.save()
-            instance.profile_image.warm_cropping()
+            if instance.profile_image:
+                instance.profile_image.warm_cropping()
         except SkipField:
             pass
         instance = super().update(instance, validated_data)
