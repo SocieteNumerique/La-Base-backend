@@ -1,5 +1,5 @@
 from django.apps import AppConfig
-from django.db.models.signals import post_delete, post_save, pre_delete
+from django.db.models.signals import post_delete, pre_delete
 
 from moine_back.settings import (
     ONE_TO_ONE_FIELD_REVERSE_DELETE,
@@ -20,10 +20,6 @@ class MainConfig(AppConfig):
                 sender=self.get_model(model_name),
             )
 
-        # image crop warmup
-        post_save.connect(
-            signals.generate_crop, sender=self.get_model("ResizableImage")
-        )
         pre_delete.connect(
             signals.delete_images, sender=self.get_model("ResizableImage")
         )
