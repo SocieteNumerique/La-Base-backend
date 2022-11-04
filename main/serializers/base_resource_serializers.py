@@ -151,6 +151,7 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
             instance = super().create(validated_data)
             instance.profile_image = image
             instance.save()
+            instance.profile_image.warm_cropping()
         except SkipField:
             instance = super().create(validated_data)
         request = self.context.get("request")
@@ -169,6 +170,7 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
             )
             instance.profile_image = image
             instance.save()
+            instance.profile_image.warm_cropping()
         except SkipField:
             pass
         instance = super().update(instance, validated_data)
@@ -316,6 +318,18 @@ class BaseCollectionSerializer(serializers.ModelSerializer):
         )
         return ShortResourceSerializer(qs, many=True, context=self.context).data
 
+    def create(self, validated_data):
+        instance = super().create(validated_data)
+        if instance.profile_image:
+            instance.profile_image.warm_cropping()
+        return instance
+
+    def update(self, instance, validated_data):
+        instance = super().update(instance, validated_data)
+        if instance.profile_image:
+            instance.profile_image.warm_cropping()
+        return instance
+
 
 class ReadCollectionSerializer(BaseCollectionSerializer):
     pass
@@ -414,6 +428,10 @@ class BaseBaseSerializer(serializers.ModelSerializer):
         instance.profile_image = profile_image
         instance.cover_image = cover_image
         instance.save()
+        if instance.cover_image:
+            instance.cover_image.warm_cropping()
+        if instance.profile_image:
+            instance.profile_image.warm_cropping()
         return instance
 
     def update(self, instance: Base, validated_data):
@@ -436,6 +454,10 @@ class BaseBaseSerializer(serializers.ModelSerializer):
             instance.save()
         except SkipField:
             pass
+        if instance.cover_image:
+            instance.cover_image.warm_cropping()
+        if instance.profile_image:
+            instance.profile_image.warm_cropping()
         return super().update(instance, validated_data)
 
     @staticmethod

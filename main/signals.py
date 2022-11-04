@@ -13,11 +13,6 @@ def gen_delete_one_to_one_parent(attr_name: str):
     return delete_one_to_one_parent
 
 
-# image crop warmup
-def generate_crop(sender, instance, **kwargs):
-    instance.warm_cropping()
-
-
 def delete_images(sender, instance, **kwargs):
     instance.image.delete_all_created_images()
     instance.image.delete(save=False)
