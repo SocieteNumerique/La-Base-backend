@@ -6,11 +6,14 @@ from main.models import Intro
 class IntroSerializer(serializers.ModelSerializer):
     class Meta:
         fields = [
+            "id",
             "title",
             "html_content",
             "order",
             "slug",
             "page",
+            "image",
+            "position",
         ]
         model = Intro
 
