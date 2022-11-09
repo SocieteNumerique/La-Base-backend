@@ -9,4 +9,4 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         for slug in TEXT_BLOCKS:
-            TextBlock.objects.get_or_create(slug=slug, defaults={"content": ""})
+            TextBlock.objects.get_or_create(slug=slug)

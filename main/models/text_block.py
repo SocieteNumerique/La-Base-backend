@@ -8,7 +8,7 @@ class TextBlock(models.Model):
         verbose_name = "bloc de texte"
         verbose_name_plural = "blocs de texte"
 
-    content = QuillField(verbose_name="contenu")
+    content = QuillField(verbose_name="contenu", null=True, blank=True)
     slug = models.CharField(
         verbose_name="identifiant",
         max_length=50,
