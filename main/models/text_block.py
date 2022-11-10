@@ -10,10 +10,11 @@ class TextBlock(models.Model):
 
     content = QuillField(verbose_name="contenu", null=True, blank=True)
     slug = models.CharField(
+        primary_key=True,
         verbose_name="identifiant",
         max_length=50,
         help_text=mark_safe(
-            "<b>Ne pas faire de bêtise avec ce champ !</b> En général, ce champ n'a pas besoin d'être modifié."
+            "<b>Ne pas faire de bêtise avec ce champ !</b> En général, il n'a pas besoin d'être modifié."
         ),
     )
 
