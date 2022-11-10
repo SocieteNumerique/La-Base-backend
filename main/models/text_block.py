@@ -2,8 +2,10 @@ from django.db import models
 from django.utils.safestring import mark_safe
 from django_quill.fields import QuillField
 
+from main.models.utils import TimeStampedModel
 
-class TextBlock(models.Model):
+
+class TextBlock(TimeStampedModel):
     class Meta:
         verbose_name = "bloc de texte"
         verbose_name_plural = "blocs de texte"
