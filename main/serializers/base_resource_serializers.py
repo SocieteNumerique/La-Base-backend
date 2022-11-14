@@ -380,6 +380,12 @@ class BaseBaseSerializer(serializers.ModelSerializer):
             "territory_tags",
             "profile_image",
             "visit_count",
+            "website",
+            "national_cartography_website",
+            "social_media_facebook",
+            "social_media_twitter",
+            "social_media_mastodon",
+            "social_media_linkedin",
         ]
 
     owner = UserSerializerForSearch(required=False, read_only=True)

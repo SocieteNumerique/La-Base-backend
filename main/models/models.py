@@ -116,6 +116,12 @@ class Base(TimeStampedModel):
         null=True,
         blank=True,
     )
+    website = models.URLField(null=True, blank=True)
+    national_cartography_website = models.URLField(null=True, blank=True)
+    social_media_facebook = models.URLField(null=True, blank=True)
+    social_media_twitter = models.URLField(null=True, blank=True)
+    social_media_mastodon = models.URLField(null=True, blank=True)
+    social_media_linkedin = models.URLField(null=True, blank=True)
 
     def __str__(self):
         return self.title
