@@ -32,6 +32,7 @@ from main.views import (
     intro_views,
     text_block_views,
 )
+from main.views.seen_page_intros_views import mark_intros_seen_for_page
 from main.views.visit_counts import increment_visit_count
 from moine_back.settings import IS_LOCAL_DEV
 
@@ -81,6 +82,11 @@ urlpatterns = [
         "api/visit/<str:object_type>/<int:pk>",
         increment_visit_count,
         name="increment-visit-count",
+    ),
+    path(
+        "api/seen-page/<str:page>",
+        mark_intros_seen_for_page,
+        name="mark-intros-seen-for-page",
     ),
     path("api/", include(router.urls)),
     path("backup/", include("telescoop_backup.urls")),
