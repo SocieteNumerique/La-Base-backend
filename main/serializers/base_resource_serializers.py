@@ -379,7 +379,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
             "participant_type_tags",
             "territory_tags",
             "profile_image",
-            "visit_count",
+            "stats",
             "website",
             "national_cartography_website",
             "social_media_facebook",
@@ -398,7 +398,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
     resources = serializers.SerializerMethodField()
     resource_choices = serializers.SerializerMethodField()
     can_write = serializers.SerializerMethodField()
-    visit_count = serializers.SerializerMethodField()
+    stats = serializers.SerializerMethodField()
     can_add_resources = serializers.SerializerMethodField()
     collections = serializers.SerializerMethodField()
     contributor_tags = serializers.PrimaryKeyRelatedField(
@@ -472,8 +472,12 @@ class BaseBaseSerializer(serializers.ModelSerializer):
         return getattr(obj, "can_write", False)
 
     @staticmethod
-    def get_visit_count(obj: Base):
-        return getattr(obj, "visit_count", 0)
+    def get_stats(obj: Base):
+        res = {
+            "visit_count": getattr(obj, "visit_count", 0),
+            "resource_count": obj.resources.count() + obj.pinned_resources.count(),
+        }
+        return res
 
     @staticmethod
     def get_can_add_resources(obj: Base):
