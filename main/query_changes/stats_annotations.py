@@ -17,6 +17,7 @@ def resources_queryset_with_stats(init_queryset=Resource.objects):
             ),
         )
         .annotate(visit_count=Count("visits", distinct=True))
+        .annotate(pinned_count=Count("pinned_in_bases", distinct=True))
     )
 
 
@@ -29,5 +30,7 @@ def bases_queryset_with_stats(init_queryset=Resource.objects):
         to_attr="participant_types",
     )
     return init_queryset.prefetch_related(prefetch_tags).annotate(
-        visit_count=Count("visits", distinct=True)
+        visit_count=Count("visits", distinct=True),
+        own_resource_count=Count("resources", distinct=True),
+        pinned_resource_count=Count("pinned_resources", distinct=True),
     )

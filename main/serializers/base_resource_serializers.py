@@ -116,8 +116,10 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
 
     @staticmethod
     def get_stats(obj: Resource):
-        # TODO actually compute pinned
-        res = {"visit_count": getattr(obj, "visit_count", 0), "pinned": None}
+        res = {
+            "visit_count": getattr(obj, "visit_count", 0),
+            "pinned_count": getattr(obj, "pinned_count", 0),
+        }
         return res
 
     @staticmethod
@@ -475,7 +477,8 @@ class BaseBaseSerializer(serializers.ModelSerializer):
     def get_stats(obj: Base):
         res = {
             "visit_count": getattr(obj, "visit_count", 0),
-            "resource_count": obj.resources.count() + obj.pinned_resources.count(),
+            "resource_count": getattr(obj, "visit_count", 0)
+            + getattr(obj, "visit_count", 0),
         }
         return res
 

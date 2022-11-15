@@ -18,7 +18,14 @@ class StandardResultsSetPagination(PageNumberPagination):
     max_page_size = 100
 
 
-ALLOWED_ORDER_BY = ["-modified", "-created", "-visit_count"]
+ALLOWED_ORDER_BY = [
+    "modified",
+    "created",
+    "visit_count",
+    "pinned_count",
+]
+for allowed in ALLOWED_ORDER_BY.copy():
+    ALLOWED_ORDER_BY.append("-" + allowed)
 DEFAULT_ORDER_BY = "-modified"
 
 
