@@ -178,7 +178,7 @@ class Collection(TimeStampedModel):
 class TagCategory(TimeStampedModel):
     class Meta:
         unique_together = ("name", "base", "relates_to", "slug")
-        ordering = ("slug",)
+        ordering = ("order",)
         verbose_name = "Catégorie de tags"
         verbose_name_plural = "Catégories de tags"
 
@@ -188,6 +188,7 @@ class TagCategory(TimeStampedModel):
         max_length=40,
         help_text="Convention : familleDeLaCatégorie + _ + ordreÀDeuxChiffresDansLaFamille + slugDeLaCatégorie, ex indexation_03format",
     )
+    order = models.FloatField(default=0)
     description = models.CharField(
         verbose_name="description", null=True, max_length=100, blank=True
     )

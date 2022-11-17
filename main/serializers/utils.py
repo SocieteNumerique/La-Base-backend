@@ -290,7 +290,7 @@ LICENSE_NEEDS_TEXT_TAG_ID_SET = set()
 
 
 def reset_specific_categories():
-    if "migrate" in sys.argv or "backup_db" in sys.argv:
+    if "migrate" in sys.argv or "backup_db" in sys.argv or "makemigrations" in sys.argv:
         return
     # before the first time migrations are being done,
     # reset_specific_categories will not work
