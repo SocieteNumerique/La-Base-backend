@@ -46,6 +46,7 @@ class SearchView(
 
         text = self.request.data.get("text", "")
         tag_operator = self.request.data.get("tag_operator", "OR")
+        resource_base_filter = self.request.data.get("resource_base_filter", "")
         order_by = self.request.data.get("order_by", "-modified")
         if order_by not in ALLOWED_ORDER_BY:
             order_by = DEFAULT_ORDER_BY
@@ -62,6 +63,8 @@ class SearchView(
 
         if data_type == "resources":
             search_function = search_resources
+            search_kwargs["resource_base_filter"] = resource_base_filter
+
             if base := self.request.data.get("restrict_to_base"):
                 search_kwargs["restrict_to_base_id"] = base
             if (live := self.request.data.get("live")) is not None:

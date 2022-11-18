@@ -54,6 +54,7 @@ def search_resources(
     order_by="-modified",
     restrict_to_base_id=None,
     live=None,
+    resource_base_filter="",
 ):
     if tags is None:
         tags = []
@@ -61,6 +62,11 @@ def search_resources(
         resources_queryset_for_user(user, restrict_to_base_id=restrict_to_base_id)
     )
     qs = filter_queryset(qs, text, RESOURCES_SEARCH_FIELDS, tag_operator, tags)
+    if restrict_to_base_id:
+        if resource_base_filter == "create":
+            qs = qs.filter(root_base_id=restrict_to_base_id)
+        elif resource_base_filter == "save":
+            qs = qs.exclude(root_base_id=restrict_to_base_id)
     if live is not None:
         if live:
             qs = qs.filter(~Q(state="draft"))
