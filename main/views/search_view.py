@@ -62,6 +62,8 @@ class SearchView(
 
         if data_type == "resources":
             search_function = search_resources
+            search_kwargs["resource_base_filter"] = self.request.data.get("resource_base_filter", "")
+
             if base := self.request.data.get("restrict_to_base"):
                 search_kwargs["restrict_to_base_id"] = base
             if (live := self.request.data.get("live")) is not None:
