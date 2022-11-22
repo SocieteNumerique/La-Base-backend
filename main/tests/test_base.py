@@ -46,6 +46,17 @@ class TestBaseView(TestCase):
         self.assertEqual(res.status_code, 201)
         self.assertEqual(res.json()["contributorTags"], [tag.pk])
 
+    @authenticate
+    def test_add_base_with_html_script_tag_in_description(self):
+        url = reverse("base-list")
+        res = self.client.post(
+            url,
+            {"title": "My base", "description": "<script>test</script>"},
+            content_type="application/json",
+        )
+        self.assertEqual(res.status_code, 201)
+        self.assertEqual(res.json()["description"], "&lt;script&gt;test&lt;/script&gt;")
+
     def specific_tag_category_is_sent(self, slug, property_name):
         base = BaseFactory(owner=authenticate.user)
         tc = TagCategoryFactory(slug=slug, relates_to="Base")

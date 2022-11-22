@@ -3,6 +3,7 @@ from copy import copy
 from rest_framework import serializers
 from rest_framework.fields import CharField
 
+from main.constants import HTMLTags
 from main.models.contents import (
     LinkContent,
     LinkedResourceContent,
@@ -42,22 +43,22 @@ CONTENT_READ_ONLY_FIELDS = ["id", "created", "modified"]
 POSSIBLE_CONTENT_TYPES = ["text", "link", "linkedResource", "file"]
 
 ALLOWED_TAGS = [
-    "a",
-    "abbr",
-    "acronym",
-    "b",
-    "blockquote",
-    "code",
-    "em",
-    "i",
-    "li",
-    "ol",
-    "strong",
-    "ul",
-    "h4",
-    "h5",
-    "h6",
-    "p",
+    HTMLTags.A.value,
+    HTMLTags.ABBR.value,
+    HTMLTags.ACRONYM.value,
+    HTMLTags.B.value,
+    HTMLTags.BLOCKQUOTE.value,
+    HTMLTags.CODE.value,
+    HTMLTags.EM.value,
+    HTMLTags.Italic.value,
+    HTMLTags.LI.value,
+    HTMLTags.OL.value,
+    HTMLTags.STRONG.value,
+    HTMLTags.UL.value,
+    HTMLTags.H4.value,
+    HTMLTags.H5.value,
+    HTMLTags.H6.value,
+    HTMLTags.P.value,
 ]
 
 
