@@ -112,9 +112,18 @@ class RichText(models.TextField):
         self.allowed_tags = kwargs.pop("allowed_tags", ALLOWED_TAGS)
         super().__init__(*args, db_collation=db_collation, **kwargs)
 
+    def clean_value(self, value):
+        return bleach.clean(value, tags=self.allowed_tags)
+
+    # Update model on save method
     def pre_save(self, model_instance, add):
         value = getattr(model_instance, self.attname)
         if value:
-            value = bleach.clean(value, tags=self.allowed_tags)
-            setattr(model_instance, self.attname, value)
+            setattr(model_instance, self.attname, self.clean_value(value))
         return value
+
+    # Update db and allow to clean on update method
+    def get_prep_value(self, value):
+        if value:
+            value = self.clean_value(value)
+        return super(RichText, self).get_prep_value(value)

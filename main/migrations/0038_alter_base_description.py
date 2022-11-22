@@ -6,9 +6,7 @@ import main.models.utils
 
 def migrateDescription(apps, _):
     Base = apps.get_model("main", "Base")
-    for base in Base.objects.all():
-        base.description = base.description
-        base.save()
+    Base.objects.bulk_update(Base.objects.all(), ["description"])
 
 
 class Migration(migrations.Migration):
