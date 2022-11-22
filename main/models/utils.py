@@ -3,6 +3,7 @@ from io import BytesIO
 from mimetypes import guess_type
 from os.path import splitext
 
+import bleach
 import rollbar
 from PIL import Image
 from django.core.files.uploadedfile import InMemoryUploadedFile
@@ -10,6 +11,7 @@ from django.db import models
 from versatileimagefield.fields import VersatileImageField
 from versatileimagefield.image_warmer import VersatileImageFieldWarmer
 
+from main.constants import ALLOWED_TAGS
 from moine_back.settings import VERSATILEIMAGEFIELD_RENDITION_KEY_SETS
 
 
@@ -103,3 +105,16 @@ class ResizableImage(models.Model):
                 f"{nb_failures} image crops failed for ResizableImage n° {self.pk}",
                 "warning",
             )
+
+
+class RichText(models.TextField):
+    def __init__(self, *args, db_collation=None, **kwargs):
+        self.allowed_tags = kwargs.pop("allowed_tags", ALLOWED_TAGS)
+        super().__init__(*args, db_collation=db_collation, **kwargs)
+
+    def pre_save(self, model_instance, add):
+        value = getattr(model_instance, self.attname)
+        if value:
+            value = bleach.clean(value, tags=self.allowed_tags)
+            setattr(model_instance, self.attname, value)
+        return value
