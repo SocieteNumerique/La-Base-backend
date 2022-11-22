@@ -6,7 +6,8 @@ from main.constants import ALLOWED_TAGS_WITHOUT_HEADING
 from main.models.user import User, UserGroup
 from main.models.utils import (
     TimeStampedModel,
-    ResizableImage, RichText,
+    ResizableImage,
+    RichText,
 )
 from main.query_changes.utils import query_my_related_tags
 
@@ -89,7 +90,9 @@ class Base(TimeStampedModel):
         verbose_name="Collections enregistrées",
         blank=True,
     )
-    description = RichText(null=True, blank=True, allowed_tags=ALLOWED_TAGS_WITHOUT_HEADING)
+    description = RichText(
+        null=True, blank=True, allowed_tags=ALLOWED_TAGS_WITHOUT_HEADING
+    )
     contact = models.EmailField(null=True, blank=True)
     profile_image = models.OneToOneField(
         ResizableImage,

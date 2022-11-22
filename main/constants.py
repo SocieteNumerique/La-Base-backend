@@ -10,7 +10,7 @@ class HTMLTags(Enum):
     BLOCKQUOTE = "blockquote"
     CODE = "code"
     EM = "em"
-    I = "i"
+    Italic = "i"
     LI = "li"
     OL = "ol"
     STRONG = "strong"
@@ -25,5 +25,6 @@ class HTMLTags(Enum):
 
 
 ALLOWED_TAGS = [HTMLTag.value for HTMLTag in HTMLTags]
-ALLOWED_TAGS_WITHOUT_HEADING = [HTMLTag.value for HTMLTag in HTMLTags if not re.match(r'^h\d$', HTMLTag.value)]
-
+ALLOWED_TAGS_WITHOUT_HEADING = [
+    HTMLTag.value for HTMLTag in HTMLTags if not re.match(r"^h\d$", HTMLTag.value)
+]

@@ -43,22 +43,22 @@ CONTENT_READ_ONLY_FIELDS = ["id", "created", "modified"]
 POSSIBLE_CONTENT_TYPES = ["text", "link", "linkedResource", "file"]
 
 ALLOWED_TAGS = [
-    HTMLTags.A,
-    HTMLTags.ABBR,
-    HTMLTags.ACRONYM,
-    HTMLTags.B,
-    HTMLTags.BLOCKQUOTE,
-    HTMLTags.CODE,
-    HTMLTags.EM,
-    HTMLTags.I,
-    HTMLTags.LI,
-    HTMLTags.OL,
-    HTMLTags.STRONG,
-    HTMLTags.UL,
-    HTMLTags.H4,
-    HTMLTags.H5,
-    HTMLTags.H6,
-    HTMLTags.P,
+    HTMLTags.A.value,
+    HTMLTags.ABBR.value,
+    HTMLTags.ACRONYM.value,
+    HTMLTags.B.value,
+    HTMLTags.BLOCKQUOTE.value,
+    HTMLTags.CODE.value,
+    HTMLTags.EM.value,
+    HTMLTags.Italic.value,
+    HTMLTags.LI.value,
+    HTMLTags.OL.value,
+    HTMLTags.STRONG.value,
+    HTMLTags.UL.value,
+    HTMLTags.H4.value,
+    HTMLTags.H5.value,
+    HTMLTags.H6.value,
+    HTMLTags.P.value,
 ]
 
 
