@@ -75,6 +75,7 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
         abstract = True
         read_only_fields = [
             "creator",
+            "modified",
             "is_labeled",
             "stats",
             "content_stats",
@@ -212,6 +213,7 @@ class ShortResourceSerializer(BaseResourceSerializer):
     class Meta(BaseResourceSerializer.Meta):
         fields = [
             "id",
+            "modified",
             "title",
             "is_short",
             "description",
