@@ -273,7 +273,7 @@ SPECIFIC_CATEGORY_SLUGS = {
     "free_license": "license_02free",
     "needs_account": "license_04access",
     "price": "license_00price",
-    "participant": "general_00participantType",
+    "participant": "externalProducer_00occupation",
 }
 
 SPECIFIC_CATEGORY_IDS = {
