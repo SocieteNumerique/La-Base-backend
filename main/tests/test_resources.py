@@ -256,7 +256,10 @@ class TestResourceView(TestCase):
     @authenticate
     def test_resource_duplicate_answers(self):
         base1 = BaseFactory.create(owner=authenticate.user)
-        resource1 = ResourceFactory.create(root_base=base1)
+        resource_already_ignored = ResourceFactory.create(root_base=base1)
+        resource1 = ResourceFactory.create(
+            root_base=base1, ignored_duplicates=[resource_already_ignored]
+        )
         resource2 = ResourceFactory.create(root_base=base1)
         resource3 = ResourceFactory.create(root_base=base1)
         resource4 = ResourceFactory.create(root_base=base1)
@@ -275,5 +278,8 @@ class TestResourceView(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         json_response = response.json()
-        self.assertEqual(json_response["ignoredDuplicates"], ignored_duplicates)
-        self.assertEqual(json_response["confirmedDuplicates"], confirmed_duplicates)
+        self.assertListEqual(
+            json_response["ignoredDuplicates"],
+            [resource_already_ignored.pk, *ignored_duplicates],
+        )
+        self.assertListEqual(json_response["confirmedDuplicates"], confirmed_duplicates)

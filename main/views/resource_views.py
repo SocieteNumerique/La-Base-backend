@@ -135,9 +135,9 @@ class ResourceView(
     @action(detail=True, methods=["PATCH"])
     def duplicate_answers(self, request, pk):
         resource = self.get_object()
-        serializer = DuplicateAnswerResourceSerializer(resource, data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+        resource.ignored_duplicates.add(*request.data.get("ignored_duplicates"))
+        resource.confirmed_duplicates.add(*request.data.get("confirmed_duplicates"))
+        serializer = DuplicateAnswerResourceSerializer(resource)
 
         return Response(serializer.data)
 
