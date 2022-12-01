@@ -235,7 +235,6 @@ class ShortResourceSerializer(BaseResourceSerializer):
             "can_write",
             "creator",
             "profile_image",
-            "pinned_in_public_bases",
         ]
         abstract = False
 
