@@ -117,12 +117,12 @@ class Base64VersatileImageField(ImageField, Base64FileField):
         if self.single_size:
             res["link"] = list(
                 build_versatileimagefield_url_set(
-                    instance, self.parent.cropping_size, self.context["request"]
+                    instance, self.parent.cropping_size, self.context.get("request")
                 ).values()
             )[0]
         else:
             res["links"] = build_versatileimagefield_url_set(
-                instance, self.parent.sizes, self.context["request"]
+                instance, self.parent.sizes, self.context.get("request")
             )
         #     TODO detect wrong types and exclude them
         return res
@@ -273,7 +273,7 @@ SPECIFIC_CATEGORY_SLUGS = {
     "free_license": "license_02free",
     "needs_account": "license_04access",
     "price": "license_00price",
-    "participant": "general_00participantType",
+    "participant": "externalProducer_00occupation",
 }
 
 SPECIFIC_CATEGORY_IDS = {
