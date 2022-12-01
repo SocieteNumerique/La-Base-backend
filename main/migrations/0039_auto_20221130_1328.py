@@ -11,7 +11,7 @@ def move_participant_type_to_producer_occupation(apps, _):
     except TagCategory.DoesNotExist:
         # if the categories don't exist, there are no tags to transfer, nothing to do
         return
-    m2m_fields = [field for field in Tag._meta.fields if field.many_to_many]
+    m2m_fields = [field for field in Tag._meta.get_fields() if field.many_to_many]
     for tag in participant_type.tags.all():
         try:
             other_tag = producer_occupation.tags.get(name=tag.name)
