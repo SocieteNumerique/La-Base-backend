@@ -5,7 +5,12 @@ from main.models.models import Base, Resource
 
 
 def bases_queryset_for_user(user: User, init_queryset=Base.objects, full=True):
-    init_queryset = init_queryset.select_related("owner").prefetch_related("tags")
+    init_queryset = (
+        init_queryset.select_related("owner")
+        .prefetch_related("tags")
+        .prefetch_related("profile_image")
+        .prefetch_related("cover_image")
+    )
     if user.is_superuser:
         return init_queryset.annotate(
             can_write=Value(True), can_add_resources=Value(True)
@@ -81,6 +86,8 @@ def resources_queryset_for_user(
             .prefetch_related("root_base__contributor_tags")
             .prefetch_related("pinned_in_bases")
             .prefetch_related("tags")
+            .prefetch_related("profile_image")
+            .prefetch_related("creator")
         )
 
     if user.is_superuser:

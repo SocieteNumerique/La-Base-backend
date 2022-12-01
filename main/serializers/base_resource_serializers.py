@@ -479,8 +479,8 @@ class BaseBaseSerializer(serializers.ModelSerializer):
     def get_stats(obj: Base):
         res = {
             "visit_count": getattr(obj, "visit_count", 0),
-            "resource_count": getattr(obj, "visit_count", 0)
-            + getattr(obj, "visit_count", 0),
+            "resource_count": getattr(obj, "own_resource_count", 0)
+            + getattr(obj, "pinned_resources_count", 0),
         }
         return res
 

@@ -40,3 +40,4 @@ local_settings.conf
 collected_static
 *.csv
 *.csv#
+*.sql
