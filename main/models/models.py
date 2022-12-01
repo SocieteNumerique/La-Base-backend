@@ -127,6 +127,11 @@ class Base(TimeStampedModel):
     social_media_mastodon = models.URLField(null=True, blank=True)
     social_media_linkedin = models.URLField(null=True, blank=True)
 
+    # statistics
+    pinned_resources_count = models.PositiveSmallIntegerField(default=0)
+    visit_count = models.PositiveSmallIntegerField(default=0)
+    own_resource_count = models.PositiveSmallIntegerField(default=0)
+
     def __str__(self):
         return self.title
 
@@ -153,6 +158,12 @@ class Base(TimeStampedModel):
         return self.visits.count()
 
     instance_visit_count.fget.short_description = "Nombre de vues"
+
+    def update_stats(self):
+        self.pinned_resources_count = self.pinned_resources.count()
+        self.visit_count = self.visits.count()
+        self.own_resource_count = self.resources.count()
+        self.save()
 
 
 class Collection(TimeStampedModel):

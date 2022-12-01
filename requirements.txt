@@ -3,7 +3,7 @@ boto3==1.23.10
 Django>=4.0,<4.1
 django-anymail==8.6
 django-cors-headers==3.11.0
-django-debug-toolbar==3.2.4
+django-debug-toolbar==3.7.0
 django-hijack==3.1.4
 django-multiselectfield==0.1.12
 django-quill-editor==0.1.40
