@@ -291,3 +291,5 @@ ONE_TO_ONE_FIELD_REVERSE_DELETE = [
     ("Collection", "profile_image"),
     ("Base", "cover_image"),
 ]
+
+IS_POSTGRESQL_DB = "postgresql" in DATABASES["default"]["ENGINE"]
