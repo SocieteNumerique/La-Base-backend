@@ -135,7 +135,7 @@ class Base(TimeStampedModel):
     def __str__(self):
         return self.title
 
-    def resources_for_user(self, user: User):
+    def resources_for_user(self, user: User, include_drafts=True):
         """Resources pinned on base or rooted on base accessible for user."""
         from main.query_changes.permissions import resources_queryset_for_user
         from main.query_changes.stats_annotations import resources_queryset_with_stats
@@ -144,6 +144,7 @@ class Base(TimeStampedModel):
             resources_queryset_for_user(
                 user,
                 self.pinned_resources.prefetch_related("root_base__pk"),
+                include_drafts=include_drafts,
             )
         )
         annotated_qs = resources_queryset_with_stats(
