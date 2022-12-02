@@ -92,7 +92,7 @@ def resources_queryset_for_user(
         )
 
     if not include_drafts:
-        init_queryset = init_queryset.filter(~Q(state="draft"))
+        init_queryset = init_queryset.exclude(state="draft")
 
     if user.is_superuser:
         return init_queryset.annotate(can_write=Value(True))
