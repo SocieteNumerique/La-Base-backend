@@ -69,6 +69,7 @@ def resources_queryset_for_user(
     user: User,
     init_queryset=Resource.objects,
     restrict_to_base_id=None,
+    include_drafts=True,
 ):
     if restrict_to_base_id:
         base = Base.objects.get(pk=restrict_to_base_id)
@@ -89,6 +90,9 @@ def resources_queryset_for_user(
             .prefetch_related("profile_image")
             .prefetch_related("creator")
         )
+
+    if not include_drafts:
+        init_queryset = init_queryset.exclude(state="draft")
 
     if user.is_superuser:
         return init_queryset.annotate(can_write=Value(True))

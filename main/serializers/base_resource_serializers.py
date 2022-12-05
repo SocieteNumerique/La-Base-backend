@@ -498,7 +498,9 @@ class BaseBaseSerializer(serializers.ModelSerializer):
 
     def get_resources(self, obj: Base):
         user = self.context["request"].user
-        return paginated_resources_from_base(obj, user, 1, context=self.context)
+        return paginated_resources_from_base(
+            obj, user, 1, context=self.context, include_drafts=False
+        )
 
     def get_resource_choices(self, obj: Base):
         user = self.context["request"].user
