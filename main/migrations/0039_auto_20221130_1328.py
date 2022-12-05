@@ -34,11 +34,7 @@ def move_participant_type_to_producer_occupation(apps, _):
 
 
 def reverse(*_):
-    TagCategory.objects.create(
-        name="Type d'acteur",
-        slug="general_00participantType",
-        description="Choisir le type d'acteur. Les agents peuvent être de droit public ou privé.",
-    )
+    pass
 
 
 
