@@ -82,6 +82,22 @@ class ResourceFactory(DjangoModelFactory):
     root_base = factory.SubFactory(BaseFactory)
     description = factory.Faker("text", max_nb_chars=60)
 
+    @factory.post_generation
+    def ignored_duplicates(self, create, extracted, **kwargs):
+        if not create:
+            return
+
+        if extracted:
+            self.ignored_duplicates.add(*extracted)
+
+    @factory.post_generation
+    def confirmed_duplicates(self, create, extracted, **kwargs):
+        if not create:
+            return
+
+        if extracted:
+            self.confirmed_duplicates.add(*extracted)
+
 
 class CollectionFactory(DjangoModelFactory):
     class Meta:

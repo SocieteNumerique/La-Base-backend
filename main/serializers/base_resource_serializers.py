@@ -85,6 +85,8 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
             "can_write",
             "label_state",
             "label_details",
+            "ignored_duplicates",
+            "confirmed_duplicates",
         ]
 
     authorized_users = NestedUserSerializer(many=True, required=False, allow_null=True)
@@ -253,6 +255,8 @@ class FullResourceSerializer(BaseResourceSerializer):
             "access_price_tags",
             "can_write",
             "pinned_in_bases",
+            "ignored_duplicates",
+            "confirmed_duplicates",
         ]
         abstract = False
 
@@ -284,6 +288,12 @@ class FullResourceSerializer(BaseResourceSerializer):
     @staticmethod
     def get_contents(obj):
         pass
+
+
+class MarkDuplicatesResourceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Resource
+        fields = ["id", "ignored_duplicates", "confirmed_duplicates"]
 
 
 class PrimaryKeyResourcesForCollectionField(serializers.PrimaryKeyRelatedField):

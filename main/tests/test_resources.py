@@ -218,3 +218,68 @@ class TestResourceView(TestCase):
         self.checkPinCount(url, 2, 1)
         private_base.pinned_resources.remove(resource)
         self.checkPinCount(url, 1, 1)
+
+    @authenticate
+    def test_resource_duplicate(self):
+        similar_title = "test"
+        base1 = BaseFactory.create(owner=authenticate.user)
+        resource_ignored_duplicates = ResourceFactory.create(
+            root_base=base1, title=similar_title
+        )
+        resource_confirmed_duplicates = ResourceFactory.create(
+            root_base=base1, title=similar_title
+        )
+        resource_to_find = ResourceFactory.create(root_base=base1, title=similar_title)
+        ResourceFactory.create(
+            root_base=base1, title="Title too different to be similar"
+        )
+        resource_to_test = ResourceFactory.create(
+            root_base=base1,
+            title=similar_title,
+            ignored_duplicates=[resource_ignored_duplicates],
+            confirmed_duplicates=[resource_confirmed_duplicates],
+        )
+
+        url = reverse("resource-duplicates", args=[resource_to_test.pk])
+
+        response = self.client.get(
+            url,
+            {
+                "title": resource_to_test.title,
+                "confirmedDuplicates": resource_to_test.description,
+            },
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), [resource_to_find.pk])
+
+    @authenticate
+    def test_resource_duplicate_answers(self):
+        base1 = BaseFactory.create(owner=authenticate.user)
+        resource_already_ignored = ResourceFactory.create(root_base=base1)
+        resource1 = ResourceFactory.create(
+            root_base=base1, ignored_duplicates=[resource_already_ignored]
+        )
+        resource2 = ResourceFactory.create(root_base=base1)
+        resource3 = ResourceFactory.create(root_base=base1)
+        resource4 = ResourceFactory.create(root_base=base1)
+        url = reverse("resource-mark-duplicates", args=[resource1.pk])
+
+        ignored_duplicates = [resource2.pk, resource3.pk]
+        confirmed_duplicates = [resource4.pk]
+
+        response = self.client.patch(
+            url,
+            {
+                "ignoredDuplicates": ignored_duplicates,
+                "confirmedDuplicates": confirmed_duplicates,
+            },
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        json_response = response.json()
+        self.assertListEqual(
+            json_response["ignoredDuplicates"],
+            [resource_already_ignored.pk, *ignored_duplicates],
+        )
+        self.assertListEqual(json_response["confirmedDuplicates"], confirmed_duplicates)
