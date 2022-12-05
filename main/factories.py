@@ -3,7 +3,7 @@ from typing import Optional
 from factory.django import DjangoModelFactory
 import factory
 
-from main.models import TextContent, ContentSection
+from main.models import TextContent, ContentSection, Intro
 from main.models.user import User
 from main.models.models import Collection, LicenseText
 
@@ -132,3 +132,13 @@ class TextContentFactory(DjangoModelFactory):
     is_draft = False
     section = factory.LazyAttribute(lambda o: SectionFactory(resource=o.resource))
     order = factory.Sequence(order)
+
+
+class IntroFactory(DjangoModelFactory):
+    class Meta:
+        model = Intro
+
+    title = factory.Faker("text", max_nb_chars=30)
+    slug = factory.Faker("text", max_nb_chars=30)
+    order = 0
+    page = factory.Faker("text", max_nb_chars=30)

@@ -18,6 +18,17 @@ class StandardResultsSetPagination(PageNumberPagination):
     max_page_size = 100
 
 
+ALLOWED_ORDER_BY = [
+    "modified",
+    "created",
+    "visit_count",
+    "pin_count",
+]
+for allowed in ALLOWED_ORDER_BY.copy():
+    ALLOWED_ORDER_BY.append("-" + allowed)
+DEFAULT_ORDER_BY = "-modified"
+
+
 class SearchView(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -28,18 +39,33 @@ class SearchView(
 
     def get_queryset(self):
         """Get search results for selected data type."""
-        text = self.request.data.get("text", "")
-        tag_operator = self.request.data.get("tag_operator", "OR")
-        tags = self.request.data.get("tags")
-
-        search_kwargs = {"text": text, "tag_operator": tag_operator, "tags": tags}
-
         try:
             data_type = self.request.data["data_type"]
         except KeyError:
             raise ParseError("'data_type' needs to be in request body")
+
+        text = self.request.data.get("text", "")
+        tag_operator = self.request.data.get("tag_operator", "OR")
+        order_by = self.request.data.get("order_by", "-modified")
+        if order_by not in ALLOWED_ORDER_BY:
+            order_by = DEFAULT_ORDER_BY
+        tags = self.request.data.get("tags")
+
+        search_kwargs = {
+            "text": text,
+            "tag_operator": tag_operator,
+            "tags": tags,
+        }
+
+        if data_type in ["resources", "bases"]:
+            search_kwargs["order_by"] = order_by
+
         if data_type == "resources":
             search_function = search_resources
+            search_kwargs["resource_base_filter"] = self.request.data.get(
+                "resource_base_filter", ""
+            )
+
             if base := self.request.data.get("restrict_to_base"):
                 search_kwargs["restrict_to_base_id"] = base
             if (live := self.request.data.get("live")) is not None:

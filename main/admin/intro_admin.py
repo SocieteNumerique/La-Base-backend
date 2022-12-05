@@ -5,4 +5,4 @@ from main.models import Intro
 
 @admin.register(Intro)
 class IntroAdmin(admin.ModelAdmin):
-    list_display = ("title", "slug", "page")
+    list_display = ("title", "slug", "page", "order")

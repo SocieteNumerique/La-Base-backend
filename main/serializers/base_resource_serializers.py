@@ -75,6 +75,7 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
         abstract = True
         read_only_fields = [
             "creator",
+            "modified",
             "is_labeled",
             "stats",
             "content_stats",
@@ -109,6 +110,7 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
     license_text = LicenseTextSerializer(required=False, allow_null=True)
     license_tags = serializers.SerializerMethodField()
     access_price_tags = serializers.SerializerMethodField()
+    pinned_in_public_bases = serializers.SerializerMethodField()
 
     @staticmethod
     def get_can_write(obj: Resource):
@@ -116,8 +118,11 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
 
     @staticmethod
     def get_stats(obj: Resource):
-        # TODO actually compute pinned
-        res = {"visit_count": getattr(obj, "visit_count", 0), "pinned": None}
+        res = {
+            "visit_count": getattr(obj, "visit_count", 0),
+            "pin_count": getattr(obj, "pin_count", 0),
+            "public_pin_count": getattr(obj, "public_pin_count", 0),
+        }
         return res
 
     @staticmethod
@@ -144,6 +149,12 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
     @staticmethod
     def get_access_price_tags(obj: Resource):
         return get_specific_tags(obj, ["needs_account", "price"])
+
+    @staticmethod
+    def get_pinned_in_public_bases(obj: Resource):
+        return VeryShortResourceSerializer(
+            getattr(obj, "pinned_in_public_bases", []), many=True
+        ).data
 
     def create(self, validated_data):
         try:
@@ -210,6 +221,7 @@ class ShortResourceSerializer(BaseResourceSerializer):
     class Meta(BaseResourceSerializer.Meta):
         fields = [
             "id",
+            "modified",
             "title",
             "is_short",
             "description",
@@ -379,7 +391,13 @@ class BaseBaseSerializer(serializers.ModelSerializer):
             "participant_type_tags",
             "territory_tags",
             "profile_image",
-            "visit_count",
+            "stats",
+            "website",
+            "national_cartography_website",
+            "social_media_facebook",
+            "social_media_twitter",
+            "social_media_mastodon",
+            "social_media_linkedin",
         ]
 
     owner = UserSerializerForSearch(required=False, read_only=True)
@@ -392,7 +410,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
     resources = serializers.SerializerMethodField()
     resource_choices = serializers.SerializerMethodField()
     can_write = serializers.SerializerMethodField()
-    visit_count = serializers.SerializerMethodField()
+    stats = serializers.SerializerMethodField()
     can_add_resources = serializers.SerializerMethodField()
     collections = serializers.SerializerMethodField()
     contributor_tags = serializers.PrimaryKeyRelatedField(
@@ -466,8 +484,13 @@ class BaseBaseSerializer(serializers.ModelSerializer):
         return getattr(obj, "can_write", False)
 
     @staticmethod
-    def get_visit_count(obj: Base):
-        return getattr(obj, "visit_count", 0)
+    def get_stats(obj: Base):
+        res = {
+            "visit_count": getattr(obj, "visit_count", 0),
+            "resource_count": getattr(obj, "own_resource_count", 0)
+            + getattr(obj, "pinned_resources_count", 0),
+        }
+        return res
 
     @staticmethod
     def get_can_add_resources(obj: Base):

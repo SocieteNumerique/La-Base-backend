@@ -2,10 +2,12 @@ from django.db import models
 from django.db.models import Count
 from multiselectfield import MultiSelectField
 
+from main.constants import ALLOWED_TAGS_WITHOUT_HEADING
 from main.models.user import User, UserGroup
 from main.models.utils import (
     TimeStampedModel,
     ResizableImage,
+    RichText,
 )
 from main.query_changes.utils import query_my_related_tags
 
@@ -88,7 +90,9 @@ class Base(TimeStampedModel):
         verbose_name="Collections enregistrées",
         blank=True,
     )
-    description = models.TextField(null=True, blank=True)
+    description = RichText(
+        null=True, blank=True, allowed_tags=ALLOWED_TAGS_WITHOUT_HEADING
+    )
     contact = models.EmailField(null=True, blank=True)
     profile_image = models.OneToOneField(
         ResizableImage,
@@ -116,6 +120,17 @@ class Base(TimeStampedModel):
         null=True,
         blank=True,
     )
+    website = models.URLField(null=True, blank=True)
+    national_cartography_website = models.URLField(null=True, blank=True)
+    social_media_facebook = models.URLField(null=True, blank=True)
+    social_media_twitter = models.URLField(null=True, blank=True)
+    social_media_mastodon = models.URLField(null=True, blank=True)
+    social_media_linkedin = models.URLField(null=True, blank=True)
+
+    # statistics
+    pinned_resources_count = models.PositiveSmallIntegerField(default=0)
+    visit_count = models.PositiveSmallIntegerField(default=0)
+    own_resource_count = models.PositiveSmallIntegerField(default=0)
 
     def __str__(self):
         return self.title
@@ -143,6 +158,12 @@ class Base(TimeStampedModel):
         return self.visits.count()
 
     instance_visit_count.fget.short_description = "Nombre de vues"
+
+    def update_stats(self):
+        self.pinned_resources_count = self.pinned_resources.count()
+        self.visit_count = self.visits.count()
+        self.own_resource_count = self.resources.count()
+        self.save()
 
 
 class Collection(TimeStampedModel):
@@ -172,7 +193,7 @@ class Collection(TimeStampedModel):
 class TagCategory(TimeStampedModel):
     class Meta:
         unique_together = ("name", "base", "relates_to", "slug")
-        ordering = ("slug",)
+        ordering = ("order",)
         verbose_name = "Catégorie de tags"
         verbose_name_plural = "Catégories de tags"
 
@@ -182,6 +203,7 @@ class TagCategory(TimeStampedModel):
         max_length=40,
         help_text="Convention : familleDeLaCatégorie + _ + ordreÀDeuxChiffresDansLaFamille + slugDeLaCatégorie, ex indexation_03format",
     )
+    order = models.FloatField(default=0)
     description = models.CharField(
         verbose_name="description", null=True, max_length=100, blank=True
     )

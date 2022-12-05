@@ -30,7 +30,9 @@ from main.views import (
     user_views,
     page_views,
     intro_views,
+    text_block_views,
 )
+from main.views.seen_page_intros_views import mark_intros_seen_for_page
 from main.views.visit_counts import increment_visit_count
 from moine_back.settings import IS_LOCAL_DEV
 
@@ -40,6 +42,7 @@ router.register(r"collections", collection_views.CollectionView, basename="colle
 router.register(r"contents", resource_views.ContentView, basename="content")
 router.register(r"index", index_views.IndexView, basename="index")
 router.register(r"intros", intro_views.IntroView, basename="intro")
+router.register(r"text_blocks", text_block_views.TextBlockView, basename="text_block")
 router.register(r"pages", page_views.PageView, basename="page")
 router.register(r"resources", resource_views.ResourceView, basename="resource")
 router.register(r"search", search_view.SearchView, basename="search")
@@ -79,6 +82,11 @@ urlpatterns = [
         "api/visit/<str:object_type>/<int:pk>",
         increment_visit_count,
         name="increment-visit-count",
+    ),
+    path(
+        "api/seen-page/<str:page>",
+        mark_intros_seen_for_page,
+        name="mark-intros-seen-for-page",
     ),
     path("api/", include(router.urls)),
     path("backup/", include("telescoop_backup.urls")),

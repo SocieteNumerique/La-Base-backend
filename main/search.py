@@ -34,12 +34,12 @@ def filter_queryset(qs, text, search_fields, tag_operator, tags):
     return qs
 
 
-def search_bases(user, text, tag_operator="OR", tags=None):
+def search_bases(user, text, tag_operator="OR", tags=None, order_by="-modified"):
     if tags is None:
         tags = []
     qs = bases_queryset_with_stats(bases_queryset_for_user(user, full=False))
     qs = filter_queryset(qs, text, BASES_SEARCH_FIELDS, tag_operator, tags)
-    qs = qs.order_by("-modified")
+    qs = qs.order_by(order_by)
     possible_tags = (
         Tag.objects.filter(bases__in=qs).values_list("pk", flat=True).distinct()
     )
@@ -47,7 +47,14 @@ def search_bases(user, text, tag_operator="OR", tags=None):
 
 
 def search_resources(
-    user, text, tag_operator="OR", tags=None, restrict_to_base_id=None, live=None
+    user,
+    text,
+    tag_operator="OR",
+    tags=None,
+    order_by="-modified",
+    restrict_to_base_id=None,
+    live=None,
+    resource_base_filter="",
 ):
     if tags is None:
         tags = []
@@ -55,12 +62,17 @@ def search_resources(
         resources_queryset_for_user(user, restrict_to_base_id=restrict_to_base_id)
     )
     qs = filter_queryset(qs, text, RESOURCES_SEARCH_FIELDS, tag_operator, tags)
+    if restrict_to_base_id:
+        if resource_base_filter == "create":
+            qs = qs.filter(root_base_id=restrict_to_base_id)
+        elif resource_base_filter == "save":
+            qs = qs.exclude(root_base_id=restrict_to_base_id)
     if live is not None:
         if live:
             qs = qs.filter(~Q(state="draft"))
         else:
             qs = qs.filter(Q(state="draft"))
-    qs = qs.order_by("-modified")
+    qs = qs.order_by(order_by)
     possible_tags = (
         Tag.objects.filter(resources__in=qs).values_list("pk", flat=True).distinct()
     )

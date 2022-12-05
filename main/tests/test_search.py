@@ -3,6 +3,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from main.factories import ResourceFactory, BaseFactory, TagFactory
+from main.models import Resource
 from main.search import search_resources, search_bases
 from main.tests.test_utils import authenticate
 from main.views.search_view import SearchView, StandardResultsSetPagination
@@ -158,6 +159,41 @@ class TestSearch(TestCase):
                 AnonymousUser(), "", restrict_to_base_id=resource.root_base.pk
             )["queryset"].count(),
             1,
+        )
+
+    def test_order_by(self):
+        r1: Resource = ResourceFactory.create(state="public")
+        r2: Resource = ResourceFactory.create(state="public")
+        self.assertEqual(
+            search_resources(AnonymousUser(), "", order_by="-modified")[
+                "queryset"
+            ].count(),
+            2,
+        )
+        # newest resource first
+        self.assertEqual(
+            search_resources(AnonymousUser(), "", order_by="-modified")["queryset"]
+            .first()
+            .title,
+            r2.title,
+        )
+
+        # after updating oldest resources, its the first result
+        r1.title = "new title"
+        r1.save()
+        self.assertEqual(
+            search_resources(AnonymousUser(), "", order_by="-modified")["queryset"]
+            .first()
+            .title,
+            "new title",
+        )
+
+        # when ordering by -created, last modification does not change the result
+        self.assertEqual(
+            search_resources(AnonymousUser(), "", order_by="-created")["queryset"]
+            .first()
+            .title,
+            r2.title,
         )
 
 
