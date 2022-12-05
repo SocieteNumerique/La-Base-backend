@@ -114,7 +114,7 @@ class ResourceView(
         return generic_pin_action(Resource, self, request, pk)
 
     @action(detail=True, methods=["GET"])
-    def duplicate(self, request, pk):
+    def duplicates(self, request, pk):
         resource_title = request.query_params.get("title", "")
         resource_description = request.query_params.get("description", "")
         instance = self.get_object()
@@ -133,7 +133,7 @@ class ResourceView(
         return Response(queryset_resources.values_list("id", flat=True))
 
     @action(detail=True, methods=["PATCH"])
-    def duplicate_answers(self, request, pk):
+    def mark_duplicates(self, request, pk):
         resource = self.get_object()
         resource.ignored_duplicates.add(*request.data.get("ignored_duplicates"))
         resource.confirmed_duplicates.add(*request.data.get("confirmed_duplicates"))

@@ -240,7 +240,7 @@ class TestResourceView(TestCase):
             confirmed_duplicates=[resource_confirmed_duplicates],
         )
 
-        url = reverse("resource-duplicate", args=[resource_to_test.pk])
+        url = reverse("resource-duplicates", args=[resource_to_test.pk])
 
         response = self.client.get(
             url,
@@ -263,7 +263,7 @@ class TestResourceView(TestCase):
         resource2 = ResourceFactory.create(root_base=base1)
         resource3 = ResourceFactory.create(root_base=base1)
         resource4 = ResourceFactory.create(root_base=base1)
-        url = reverse("resource-duplicate-answers", args=[resource1.pk])
+        url = reverse("resource-mark-duplicates", args=[resource1.pk])
 
         ignored_duplicates = [resource2.pk, resource3.pk]
         confirmed_duplicates = [resource4.pk]
