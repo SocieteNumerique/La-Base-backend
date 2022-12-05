@@ -290,7 +290,7 @@ class FullResourceSerializer(BaseResourceSerializer):
         pass
 
 
-class DuplicateAnswerResourceSerializer(serializers.ModelSerializer):
+class MarkDuplicatesResourceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Resource
         fields = ["id", "ignored_duplicates", "confirmed_duplicates"]

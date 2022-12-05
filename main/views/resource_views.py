@@ -15,7 +15,7 @@ from main.query_changes.stats_annotations import resources_queryset_with_stats
 from main.serializers.base_resource_serializers import (
     FullResourceSerializer,
     ShortResourceSerializer,
-    DuplicateAnswerResourceSerializer,
+    MarkDuplicatesResourceSerializer,
 )
 from main.serializers.content_serializers import (
     ReadContentSerializer,
@@ -137,7 +137,7 @@ class ResourceView(
         resource = self.get_object()
         resource.ignored_duplicates.add(*request.data.get("ignored_duplicates"))
         resource.confirmed_duplicates.add(*request.data.get("confirmed_duplicates"))
-        serializer = DuplicateAnswerResourceSerializer(resource)
+        serializer = MarkDuplicatesResourceSerializer(resource)
 
         return Response(serializer.data)
 
