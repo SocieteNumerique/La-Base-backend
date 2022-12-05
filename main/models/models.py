@@ -378,12 +378,8 @@ class Resource(TimeStampedModel):
         null=True,
         blank=True,
     )
-    ignored_duplicates = models.ManyToManyField(
-        "Resource", blank=True, related_name="ignored_duplicates_by_ressources"
-    )
-    confirmed_duplicates = models.ManyToManyField(
-        "Resource", blank=True, related_name="confirmed_duplicates_by_ressources"
-    )
+    ignored_duplicates = models.ManyToManyField("self", blank=True)
+    confirmed_duplicates = models.ManyToManyField("self", blank=True)
 
     def save(self, *args, **kwargs):
         """
