@@ -125,6 +125,8 @@ else:
         }
     }
 
+IS_POSTGRESQL_DB = "postgresql" in DATABASES["default"]["ENGINE"]
+
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
 
@@ -291,5 +293,3 @@ ONE_TO_ONE_FIELD_REVERSE_DELETE = [
     ("Collection", "profile_image"),
     ("Base", "cover_image"),
 ]
-
-IS_POSTGRESQL_DB = "postgresql" in DATABASES["default"]["ENGINE"]
