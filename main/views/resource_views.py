@@ -1,9 +1,11 @@
+from django.contrib.postgres.search import TrigramSimilarity
 from django.db.models import Q
 from django.http import HttpRequest
 from rest_framework import mixins, viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from main.models.models import Resource
 from main.models.contents import ContentBlock, ContentSection
@@ -84,8 +86,6 @@ class ResourceView(
     filter_backends = [ResourceHasWriteAccessFilter]
     permission_classes = [UserCanWriteOnBaseForPost]
 
-    duplicate_key_param = "__trigram_similar" if settings.IS_POSTGRESQL_DB else ""
-
     def get_queryset(self):
         return resources_queryset_with_stats(
             resources_queryset_for_user(self.request.user)
@@ -113,25 +113,6 @@ class ResourceView(
     def pin(self, request, pk=None):
         return generic_pin_action(Resource, self, request, pk)
 
-    @action(detail=True, methods=["GET"])
-    def duplicates(self, request, pk):
-        resource_title = request.query_params.get("title", "")
-        resource_description = request.query_params.get("description", "")
-        instance = self.get_object()
-        excluded_resource = [
-            pk,
-            *instance.ignored_duplicates.values_list("id", flat=True),
-            *instance.confirmed_duplicates.values_list("id", flat=True),
-        ]
-        queryset_resources = self.get_queryset()
-        queryset_resources = queryset_resources.exclude(
-            id__in=excluded_resource
-        ).filter(
-            Q(**{f"title{self.duplicate_key_param}": resource_title})
-            | Q(**{f"description{self.duplicate_key_param}": resource_description})
-        )
-        return Response(queryset_resources.values_list("id", flat=True))
-
     @action(detail=True, methods=["PATCH"])
     def mark_duplicates(self, request, pk):
         resource = self.get_object()
@@ -140,6 +121,43 @@ class ResourceView(
         serializer = MarkDuplicatesResourceSerializer(resource)
 
         return Response(serializer.data)
+
+
+class RessourceDuplicatesValidatorViews(APIView):
+    trigram_similarity_threshold = 0.3
+
+    def get_queryset(self):
+        return resources_queryset_with_stats(
+            resources_queryset_for_user(self.request.user)
+        )
+
+    def post(self, request, pk):
+        resource_title = request.data.get("title") or ""
+        resource_description = request.data.get("description") or ""
+        instance = self.get_queryset().get(id=pk)
+        excluded_resource = [
+            pk,
+            *instance.ignored_duplicates.values_list("id", flat=True),
+            *instance.confirmed_duplicates.values_list("id", flat=True),
+        ]
+        queryset_resources = self.get_queryset()
+
+        queryset_resources = queryset_resources.exclude(id__in=excluded_resource)
+        if settings.IS_POSTGRESQL_DB:
+            queryset_resources = queryset_resources.annotate(
+                title_similarity=TrigramSimilarity("title", resource_title),
+                description_similarity=TrigramSimilarity(
+                    "description", resource_description
+                ),
+            ).filter(
+                Q(title_similarity__gt=self.trigram_similarity_threshold)
+                | Q(description_similarity__gt=self.trigram_similarity_threshold)
+            )
+        else:
+            queryset_resources = queryset_resources.filter(
+                Q(title=resource_title) | Q(description=resource_description)
+            )
+        return Response(queryset_resources.values_list("id", flat=True))
 
 
 class ContentView(
