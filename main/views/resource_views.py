@@ -4,6 +4,7 @@ from rest_framework import mixins, viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from main.models.models import Resource
 from main.models.contents import ContentBlock, ContentSection
@@ -84,8 +85,6 @@ class ResourceView(
     filter_backends = [ResourceHasWriteAccessFilter]
     permission_classes = [UserCanWriteOnBaseForPost]
 
-    duplicate_key_param = "__trigram_similar" if settings.IS_POSTGRESQL_DB else ""
-
     def get_queryset(self):
         return resources_queryset_with_stats(
             resources_queryset_for_user(self.request.user)
@@ -113,15 +112,36 @@ class ResourceView(
     def pin(self, request, pk=None):
         return generic_pin_action(Resource, self, request, pk)
 
-    @action(detail=True, methods=["GET"])
-    def duplicates(self, request, pk):
-        resource_title = request.query_params.get("title", "")
-        resource_description = request.query_params.get("description", "")
-        instance = self.get_object()
+    @action(detail=True, methods=["PATCH"])
+    def mark_duplicates(self, request, pk):
+        resource = self.get_object()
+        resource.ignored_duplicates.add(*request.data.get("ignored_duplicates"))
+        resource.confirmed_duplicates.add(*request.data.get("confirmed_duplicates"))
+        serializer = MarkDuplicatesResourceSerializer(resource)
+
+        return Response(serializer.data)
+
+
+class RessourceDuplicatesValidatorViews(APIView):
+    duplicate_key_param = "__trigram_similar" if settings.IS_POSTGRESQL_DB else ""
+
+    def get_queryset(self):
+        return resources_queryset_with_stats(
+            resources_queryset_for_user(self.request.user)
+        )
+
+    def post(self, request, pk):
+        resource_title = request.data.get("title", "")
+        resource_description = request.data.get("description", "")
+        instance = self.get_queryset().get(id=pk)
+        ignored_duplicates = instance.ignored_duplicates.values_list("id", flat=True)
+        confirmed_duplicates = instance.confirmed_duplicates.values_list(
+            "id", flat=True
+        )
         excluded_resource = [
             pk,
-            *instance.ignored_duplicates.values_list("id", flat=True),
-            *instance.confirmed_duplicates.values_list("id", flat=True),
+            *ignored_duplicates,
+            *confirmed_duplicates,
         ]
         queryset_resources = self.get_queryset()
         queryset_resources = queryset_resources.exclude(
@@ -131,15 +151,6 @@ class ResourceView(
             | Q(**{f"description{self.duplicate_key_param}": resource_description})
         )
         return Response(queryset_resources.values_list("id", flat=True))
-
-    @action(detail=True, methods=["PATCH"])
-    def mark_duplicates(self, request, pk):
-        resource = self.get_object()
-        resource.ignored_duplicates.add(*request.data.get("ignored_duplicates"))
-        resource.confirmed_duplicates.add(*request.data.get("confirmed_duplicates"))
-        serializer = MarkDuplicatesResourceSerializer(resource)
-
-        return Response(serializer.data)
 
 
 class ContentView(

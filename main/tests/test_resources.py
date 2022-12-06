@@ -242,7 +242,7 @@ class TestResourceView(TestCase):
 
         url = reverse("resource-duplicates", args=[resource_to_test.pk])
 
-        response = self.client.get(
+        response = self.client.post(
             url,
             {
                 "title": resource_to_test.title,
