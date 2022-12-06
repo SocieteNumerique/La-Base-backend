@@ -246,7 +246,7 @@ class TestResourceView(TestCase):
             url,
             {
                 "title": resource_to_test.title,
-                "confirmedDuplicates": resource_to_test.description,
+                "description": resource_to_test.description,
             },
             content_type="application/json",
         )

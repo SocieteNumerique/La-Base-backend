@@ -131,8 +131,8 @@ class RessourceDuplicatesValidatorViews(APIView):
         )
 
     def post(self, request, pk):
-        resource_title = request.data.get("title", "") or ""
-        resource_description = request.data.get("description", "") or ""
+        resource_title = request.data.get("title") or ""
+        resource_description = request.data.get("description") or ""
         instance = self.get_queryset().get(id=pk)
         excluded_resource = [
             pk,
