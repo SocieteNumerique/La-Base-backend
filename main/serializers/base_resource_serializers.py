@@ -46,8 +46,16 @@ class PrimaryKeyOccupationTagField(serializers.PrimaryKeyRelatedField):
 class ExternalProducerSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExternalProducer
-        fields = "__all__"
+        fields = [
+            "id",
+            "name",
+            "email_contact",
+            "website_url",
+            "occupation",
+            "resource",
+        ]
 
+    id = serializers.ReadOnlyField()
     occupation = PrimaryKeyOccupationTagField()
 
 
