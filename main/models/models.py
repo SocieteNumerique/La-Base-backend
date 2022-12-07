@@ -160,10 +160,13 @@ class Base(TimeStampedModel):
     instance_visit_count.fget.short_description = "Nombre de vues"
 
     def update_stats(self):
-        self.pinned_resources_count = self.pinned_resources.count()
-        self.visit_count = self.visits.count()
-        self.own_resource_count = self.resources.count()
-        self.save()
+        update_kwargs = {
+            "pinned_resources_count": self.pinned_resources.count(),
+            "visit_count": self.visits.count(),
+            "own_resource_count": self.resources.count(),
+        }
+        # update without changing modified auto-field
+        Base.objects.filter(pk=self.pk).update(**update_kwargs)
 
 
 class Collection(TimeStampedModel):
