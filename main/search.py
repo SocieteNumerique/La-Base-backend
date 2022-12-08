@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 
@@ -11,11 +10,11 @@ from main.query_changes.stats_annotations import (
     resources_queryset_with_stats,
     bases_queryset_with_stats,
 )
+from moine_back.settings import IS_POSTGRESQL_DB
 
 BASES_SEARCH_FIELDS = ["title"]
 RESOURCES_SEARCH_FIELDS = ["title", "description"]
 USERS_SEARCH_FIELDS = ["first_name", "last_name", "email"]
-IS_POSTGRESQL_DB = "postgresql" in settings.DATABASES["default"]["ENGINE"]
 SEARCH_KEY_PARAM = "unaccent__icontains" if IS_POSTGRESQL_DB else "icontains"
 
 

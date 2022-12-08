@@ -93,6 +93,8 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
             "can_write",
             "label_state",
             "label_details",
+            "ignored_duplicates",
+            "confirmed_duplicates",
         ]
 
     authorized_users = NestedUserSerializer(many=True, required=False, allow_null=True)
@@ -261,6 +263,8 @@ class FullResourceSerializer(BaseResourceSerializer):
             "access_price_tags",
             "can_write",
             "pinned_in_bases",
+            "ignored_duplicates",
+            "confirmed_duplicates",
         ]
         abstract = False
 
@@ -292,6 +296,12 @@ class FullResourceSerializer(BaseResourceSerializer):
     @staticmethod
     def get_contents(obj):
         pass
+
+
+class MarkDuplicatesResourceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Resource
+        fields = ["id", "ignored_duplicates", "confirmed_duplicates"]
 
 
 class PrimaryKeyResourcesForCollectionField(serializers.PrimaryKeyRelatedField):
@@ -506,7 +516,9 @@ class BaseBaseSerializer(serializers.ModelSerializer):
 
     def get_resources(self, obj: Base):
         user = self.context["request"].user
-        return paginated_resources_from_base(obj, user, 1, context=self.context)
+        return paginated_resources_from_base(
+            obj, user, 1, context=self.context, include_drafts=False
+        )
 
     def get_resource_choices(self, obj: Base):
         user = self.context["request"].user

@@ -125,6 +125,8 @@ else:
         }
     }
 
+IS_POSTGRESQL_DB = "postgresql" in DATABASES["default"]["ENGINE"]
+
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
 

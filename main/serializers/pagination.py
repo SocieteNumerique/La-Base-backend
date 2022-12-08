@@ -35,10 +35,14 @@ def paginated_resources_from_qs(qs: QuerySet, page: int, context=None):
     )
 
 
-def paginated_resources_from_base(base: Base, user: User, page: int, context=None):
+def paginated_resources_from_base(
+    base: Base, user: User, page: int, context=None, include_drafts=True
+):
     if context is None:
         context = {}
-    qs = base.resources_for_user(user).order_by("-created")
+    qs = base.resources_for_user(user, include_drafts=include_drafts).order_by(
+        "-created"
+    )
     return paginated_resources_from_qs(qs, page, context)
 
 
