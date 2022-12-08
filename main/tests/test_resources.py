@@ -90,6 +90,46 @@ class TestResourceView(TestCase):
         self.assertEqual(response.json()["creatorBases"], [])
 
     @authenticate
+    def test_can_create_resource_with_external_producers(self):
+        base1 = BaseFactory.create(owner=authenticate.user)
+        url = reverse("resource-list")
+        response = self.client.post(
+            url,
+            {
+                "rootBase": base1.pk,
+                "title": "my title",
+                "externalProducers": [
+                    {"name": "Name", "emailContact": "bla@mail.com"},
+                    {"name": "Name2", "emailContact": "bla@mail.com"},
+                    {"name": "Name3", "emailContact": "bla@mail.com"},
+                ],
+            },
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(len(response.json()["externalProducers"]), 3)
+
+    @authenticate
+    def test_can_update_resource_multiple_external_producers(self):
+        base1 = BaseFactory.create(owner=authenticate.user)
+        resource = ResourceFactory.create(root_base=base1)
+        url = reverse("resource-detail", args=[resource.pk])
+        response = self.client.patch(
+            url,
+            {
+                "external_producers": [
+                    {"name": "Name"},
+                    {"name": "Name2"},
+                    {"name": "Name3"},
+                ],
+                "title": "new title",
+            },
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()["externalProducers"]), 3)
+
+    @authenticate
     def test_can_edit_external_producers(self):
         base1 = BaseFactory.create(owner=authenticate.user)
         resource = ResourceFactory.create(root_base=base1)
@@ -106,7 +146,6 @@ class TestResourceView(TestCase):
         producer = res_producers[0]
         self.assertEqual(producer["name"], new_data["name"])
         self.assertEqual(producer["emailContact"], new_data["emailContact"])
-        self.assertEqual(producer["resource"], resource.pk)
 
         # removing the producer
         response = self.client.patch(
@@ -132,7 +171,6 @@ class TestResourceView(TestCase):
         producer = res_producers[0]
         self.assertEqual(producer["name"], new_data2["name"])
         self.assertEqual(producer["emailContact"], new_data2["emailContact"])
-        self.assertEqual(producer["resource"], resource.pk)
         self.assertEqual(ExternalProducer.objects.count(), 1)
 
         # can add a producer with a tag
@@ -168,6 +206,28 @@ class TestResourceView(TestCase):
         self.assertEqual(response.status_code, 200)
         res_producers = response.json()["externalProducers"]
         self.assertEqual(len(res_producers), 1)
+        producer = res_producers[0]
+        self.assertEqual(producer["occupation"], tag2.pk)
+        self.assertEqual(producer["name"], new_data["name"])
+
+        # can have two external producers
+        second_producer = {
+            "name": "Next lever producer",
+            "emailContact": "bla@mail.com",
+            "occupation": tag2.pk,
+        }
+        response = self.client.patch(
+            url,
+            {"externalProducers": [new_data, second_producer]},
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        res_producers = response.json()["externalProducers"]
+        self.assertEqual(len(res_producers), 2)
+        self.assertSetEqual(
+            {producer["name"] for producer in res_producers},
+            {new_data["name"], second_producer["name"]},
+        )
         producer = res_producers[0]
         self.assertEqual(producer["occupation"], tag2.pk)
         self.assertEqual(producer["name"], new_data["name"])

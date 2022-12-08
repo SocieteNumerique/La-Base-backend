@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from main.models import Intro, SeenPageIntros
+from main.models import Intro, SeenIntroSlug
 
 
 class IntroSerializer(serializers.ModelSerializer):
@@ -11,7 +11,6 @@ class IntroSerializer(serializers.ModelSerializer):
             "id",
             "image",
             "order",
-            "page",
             "position",
             "seen",
             "slug",
@@ -30,4 +29,4 @@ class IntroSerializer(serializers.ModelSerializer):
             return False
         if user.is_anonymous:
             return False
-        return SeenPageIntros.objects.filter(page=obj.page, user=user).exists()
+        return SeenIntroSlug.objects.filter(slug=obj.slug, user=user).exists()

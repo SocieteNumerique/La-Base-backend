@@ -25,6 +25,6 @@ from .page import Page  # noqa: F401
 
 from .intro import Intro  # noqa: F401
 
-from .seen_page_intros import SeenPageIntros  # noqa: F401
+from .seen_page_intros import SeenIntroSlug  # noqa: F401
 
 from .text_block import TextBlock  # noqa: F401

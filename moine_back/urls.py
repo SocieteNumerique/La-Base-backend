@@ -33,7 +33,7 @@ from main.views import (
     text_block_views,
 )
 from main.views.resource_views import RessourceDuplicatesValidatorViews
-from main.views.seen_page_intros_views import mark_intros_seen_for_page
+from main.views.seen_page_intros_views import mark_intros_seen_for_slugs
 from main.views.visit_counts import increment_visit_count
 from moine_back.settings import IS_LOCAL_DEV
 
@@ -85,9 +85,9 @@ urlpatterns = [
         name="increment-visit-count",
     ),
     path(
-        "api/seen-page/<str:page>",
-        mark_intros_seen_for_page,
-        name="mark-intros-seen-for-page",
+        "api/seen-slugs/<str:slugs>",
+        mark_intros_seen_for_slugs,
+        name="mark-intros-seen-for-slugs",
     ),
     path(
         "api/resources/<int:pk>/duplicates",
