@@ -32,6 +32,7 @@ from main.views import (
     intro_views,
     text_block_views,
     user_search_views,
+    section_views,
 )
 from main.views.report_view import ReportView
 from main.views.resource_views import RessourceDuplicatesValidatorViews
@@ -50,6 +51,9 @@ router.register(r"pages", page_views.PageView, basename="page")
 router.register(r"resources", resource_views.ResourceView, basename="resource")
 router.register(r"search", search_view.SearchView, basename="search")
 router.register(r"sections", resource_views.SectionView, basename="section")
+router.register(
+    r"base-sections", section_views.BaseSectionView, basename="base-section"
+)
 router.register(r"tag_categories", tag_views.TagCategoryView, basename="tag_category")
 router.register(r"tags", tag_views.TagView, basename="tag")
 router.register(r"users", user_views.UserView, basename="user")
