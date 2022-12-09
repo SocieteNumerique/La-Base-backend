@@ -1,4 +1,3 @@
-from django.db.models import Q
 from rest_framework import mixins, viewsets
 
 from main.models import Intro
@@ -9,7 +8,5 @@ class IntroView(
     mixins.ListModelMixin,
     viewsets.GenericViewSet,
 ):
-    queryset = Intro.objects.filter(~Q(page__startswith="draft")).filter(
-        ~Q(slug__startswith="draft")
-    )
+    queryset = Intro.objects.exclude(slug__startswith="draft")
     serializer_class = IntroSerializer
