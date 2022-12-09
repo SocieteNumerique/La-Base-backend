@@ -307,23 +307,6 @@ class FullResourceSerializer(BaseResourceSerializer):
                 if producer.pk not in new_producer_ids:
                     producer.delete()
 
-        # if "external_producers" in validated_data:
-        #     ext_producers = validated_data.pop("external_producers")
-        #     new_producers = []
-        #     for producer in ext_producers:
-        #         email_contact = producer.pop("email_contact")
-        #         producer["resource"] = instance
-        #         new_producer, _ = ExternalProducer.objects.update_or_create(
-        #             email_contact=email_contact,
-        #             defaults=producer,
-        #         )
-        #         new_producers.append(new_producer)
-        #
-        #     new_producers_ids = {producer.pk for producer in new_producers}
-        #     # remove old producers
-        #     for producer in instance.external_producers.all():
-        #         if producer.pk not in new_producers_ids:
-        #             producer.delete()
         return super().update(instance, validated_data)
 
     @staticmethod
