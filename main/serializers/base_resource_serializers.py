@@ -46,9 +46,16 @@ class PrimaryKeyOccupationTagField(serializers.PrimaryKeyRelatedField):
 class ExternalProducerSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExternalProducer
-        fields = "__all__"
+        fields = [
+            "id",
+            "name",
+            "email_contact",
+            "website_url",
+            "occupation",
+        ]
 
-    occupation = PrimaryKeyOccupationTagField()
+    # id = serializers.ReadOnlyField()
+    occupation = PrimaryKeyOccupationTagField(required=False)
 
 
 class PrimaryKeyBaseField(serializers.PrimaryKeyRelatedField):
@@ -159,6 +166,9 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
         ).data
 
     def create(self, validated_data):
+        external_producers_data = []
+        if "external_producers" in validated_data:
+            external_producers_data = validated_data.pop("external_producers")
         try:
             image = create_or_update_resizable_image(validated_data, "profile_image")
             instance = super().create(validated_data)
@@ -172,9 +182,12 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
             instance.creator = request.user
             instance.save()
         instance.can_write = True
+        for external_producer_data in external_producers_data:
+            ExternalProducer.objects.create(resource=instance, **external_producer_data)
         return instance
 
     def update(self, instance: Resource, validated_data):
+        # update of external_producers is handled in FullResourceSerializer.update
         set_nested_user_fields(instance, validated_data, "authorized_users")
         set_nested_license_data(validated_data, instance)
         try:
@@ -267,22 +280,33 @@ class FullResourceSerializer(BaseResourceSerializer):
         Handle external producers
         """
         if "external_producers" in validated_data:
-            ext_producers = validated_data.pop("external_producers")
-            new_producers = []
-            for producer in ext_producers:
-                email_contact = producer.pop("email_contact")
-                producer["resource"] = instance
-                new_producer, _ = ExternalProducer.objects.update_or_create(
-                    email_contact=email_contact,
-                    defaults=producer,
-                )
-                new_producers.append(new_producer)
+            external_producers_data = validated_data.pop("external_producers")
 
-            new_producers_ids = {producer.pk for producer in new_producers}
+            new_producer_ids = set()
+            for external_producer_data in external_producers_data:
+                if producer_id := external_producer_data.pop("id", None):
+                    # update producer
+                    try:
+                        external_producer = instance.external_producers.get(
+                            pk=producer_id
+                        )
+                    except ExternalProducer.DoesNotExist:
+                        pass
+                    else:
+                        for k, v in external_producer_data.items():
+                            setattr(external_producer, k, v)
+                        new_producer_ids.add(producer_id)
+                else:
+                    producer = ExternalProducer.objects.create(
+                        resource=instance, **external_producer_data
+                    )
+                    new_producer_ids.add(producer.pk)
+
             # remove old producers
             for producer in instance.external_producers.all():
-                if producer.pk not in new_producers_ids:
+                if producer.pk not in new_producer_ids:
                     producer.delete()
+
         return super().update(instance, validated_data)
 
     @staticmethod
