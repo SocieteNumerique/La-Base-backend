@@ -65,6 +65,22 @@ class PrimaryKeyBaseField(serializers.PrimaryKeyRelatedField):
         return Base.objects.all()
 
 
+class BaseSectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Section
+        read_only_fields = ["position"]
+        fields = [
+            "id",
+            "type",
+            "title",
+            "description",
+            "position",
+            "base",
+            "resources",
+            "collections",
+        ]
+
+
 class BaseIsInstancePinnedSerializer(serializers.ModelSerializer):
     class Meta:
         model = Base
@@ -427,9 +443,6 @@ class BaseBaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Base
         abstract = True
-        read_only_fields = [
-            "sections",
-        ]
         fields = [
             "id",
             "title",
@@ -602,6 +615,9 @@ class ShortBaseSerializer(BaseBaseSerializer):
 
 
 class FullNoContactBaseSerializer(BaseBaseSerializer):
+
+    sections = BaseSectionSerializer(many=True, read_only=True)
+
     class Meta(BaseBaseSerializer.Meta):
         abstract = False
         fields = BaseBaseSerializer.Meta.fields + [
@@ -618,6 +634,7 @@ class FullNoContactBaseSerializer(BaseBaseSerializer):
             "state",
             "tags",
             "admins",
+            "sections",
         ]
 
 
@@ -626,21 +643,4 @@ class FullBaseSerializer(FullNoContactBaseSerializer):
         abstract = False
         fields = FullNoContactBaseSerializer.Meta.fields + [
             "contact",
-            "sections",
-        ]
-
-
-class BaseSectionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Section
-        read_only_fields = ["position"]
-        fields = [
-            "id",
-            "type",
-            "title",
-            "description",
-            "position",
-            "base",
-            "resources",
-            "collections",
         ]
