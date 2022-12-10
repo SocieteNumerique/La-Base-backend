@@ -22,8 +22,6 @@ class BaseSectionHasWriteAccessFilter(filters.BaseFilterBackend):
 
 
 class BaseSectionView(
-    mixins.RetrieveModelMixin,
-    mixins.ListModelMixin,
     mixins.DestroyModelMixin,
     mixins.CreateModelMixin,
     mixins.UpdateModelMixin,
