@@ -238,6 +238,7 @@ else:
     }
     EMAIL_BACKEND = "anymail.backends.mailgun.EmailBackend"
     SERVER_EMAIL = "no-reply@telescoop.fr"
+SEND_REPORTS_TO = ["labase@anct.gouv.fr"]
 
 # domain
 if IS_LOCAL_DEV:
