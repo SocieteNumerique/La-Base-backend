@@ -28,3 +28,5 @@ from .intro import Intro  # noqa: F401
 from .seen_page_intros import SeenIntroSlug  # noqa: F401
 
 from .text_block import TextBlock  # noqa: F401
+
+from .user_search import UserSearch  # noqa: F401
