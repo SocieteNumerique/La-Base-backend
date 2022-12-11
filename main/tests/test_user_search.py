@@ -16,7 +16,9 @@ class TestUserSearch(TestCase):
 
         # can create UserSearch
         query = "dataType=bases&tags=&page=0"
-        res = self.client.post(list_url, {"query": query})
+        res = self.client.post(
+            list_url, {"query": query, "data_type": "resources", "name": "new search"}
+        )
         self.assertEqual(res.status_code, 201)
         self.assertEqual(res.json()["query"], query)
         pk = res.json()["id"]
@@ -29,7 +31,9 @@ class TestUserSearch(TestCase):
 
         # can edit UserSearch
         res = self.client.patch(
-            object_url(pk), {"query": "new_query"}, content_type="application/json"
+            object_url(pk),
+            {"query": "new_query", "data_type": "bases", "name": "another search"},
+            content_type="application/json",
         )
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json()["query"], "new_query")

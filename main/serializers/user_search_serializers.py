@@ -8,6 +8,8 @@ class UserSearchSerializer(serializers.ModelSerializer):
         model = UserSearch
         fields = [
             "id",
+            "data_type",
+            "name",
             "query",
         ]
 

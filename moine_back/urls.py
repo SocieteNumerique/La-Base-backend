@@ -53,7 +53,7 @@ router.register(r"tag_categories", tag_views.TagCategoryView, basename="tag_cate
 router.register(r"tags", tag_views.TagView, basename="tag")
 router.register(r"users", user_views.UserView, basename="user")
 router.register(
-    r"user_search", user_search_views.UserSearchView, basename="user_search"
+    r"user_searches", user_search_views.UserSearchView, basename="user_search"
 )
 
 urlpatterns = [
