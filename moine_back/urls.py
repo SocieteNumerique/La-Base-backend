@@ -32,6 +32,7 @@ from main.views import (
     intro_views,
     text_block_views,
 )
+from main.views.report_view import ReportView
 from main.views.resource_views import RessourceDuplicatesValidatorViews
 from main.views.seen_page_intros_views import mark_intros_seen_for_slugs
 from main.views.visit_counts import increment_visit_count
@@ -93,6 +94,11 @@ urlpatterns = [
         "api/resources/<int:pk>/duplicates",
         RessourceDuplicatesValidatorViews.as_view(),
         name="resource-duplicates",
+    ),
+    path(
+        "api/report",
+        ReportView.as_view(),
+        name="report",
     ),
     path("api/", include(router.urls)),
     path("backup/", include("telescoop_backup.urls")),
