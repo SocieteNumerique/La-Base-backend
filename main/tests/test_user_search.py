@@ -15,9 +15,11 @@ class TestUserSearch(TestCase):
             return reverse("user_search-detail", args=[pk_])
 
         # can create UserSearch
-        query = "dataType=bases&tags=&page=0"
+        query = {"tags": [1, 2], "text": ""}
         res = self.client.post(
-            list_url, {"query": query, "data_type": "resources", "name": "new search"}
+            list_url,
+            {"query": query, "data_type": "resources", "name": "new search"},
+            content_type="application/json",
         )
         self.assertEqual(res.status_code, 201)
         self.assertEqual(res.json()["query"], query)
@@ -32,11 +34,15 @@ class TestUserSearch(TestCase):
         # can edit UserSearch
         res = self.client.patch(
             object_url(pk),
-            {"query": "new_query", "data_type": "bases", "name": "another search"},
+            {
+                "query": {"text": "some text"},
+                "data_type": "bases",
+                "name": "another search",
+            },
             content_type="application/json",
         )
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json()["query"], "new_query")
+        self.assertEqual(res.json()["query"], {"text": "some text"})
 
         # not accessible by another user
         other_user = UserFactory.create()

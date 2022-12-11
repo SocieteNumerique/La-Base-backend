@@ -13,6 +13,8 @@ class UserSearchSerializer(serializers.ModelSerializer):
             "query",
         ]
 
+    query = serializers.JSONField()
+
     def create(self, validated_data):
         user = (request := self.context.get("request", None)) and request.user
         if not user:
