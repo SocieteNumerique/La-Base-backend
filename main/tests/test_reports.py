@@ -10,7 +10,7 @@ from main.models import Base, Resource
 from main.tests.test_utils import authenticate
 
 
-class TestVisitCounts(TestCase):
+class TestReports(TestCase):
     def send_report(self, obj: Union[Base, Resource]):
         url = reverse("report")
         self.motive = "Le contenu est osbolète"
