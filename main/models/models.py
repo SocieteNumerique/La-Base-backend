@@ -429,7 +429,7 @@ class Resource(TimeStampedModel):
     instance_visit_count.fget.short_description = "Nombre de vues"
 
 
-class Section(TimeStampedModel):
+class BaseSection(TimeStampedModel):
     title = models.CharField(max_length=100, verbose_name="titre")
     description = models.CharField(max_length=240, verbose_name="description")
     type = models.CharField(

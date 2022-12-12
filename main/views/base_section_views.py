@@ -3,7 +3,7 @@ from rest_framework import mixins, viewsets, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from main.models.models import Section
+from main.models.models import BaseSection
 from main.query_changes.permissions import bases_queryset_for_user
 from main.serializers.base_resource_serializers import BaseSectionSerializer
 
@@ -31,7 +31,7 @@ class BaseSectionView(
     serializer_class = BaseSectionSerializer
 
     def get_queryset(self):
-        return Section.objects.filter(
+        return BaseSection.objects.filter(
             base__in=bases_queryset_for_user(self.request.user)
         )
 

@@ -5,7 +5,7 @@ import factory
 
 from main.models import TextContent, ContentSection, Intro
 from main.models.user import User
-from main.models.models import Collection, LicenseText, Section
+from main.models.models import Collection, LicenseText, BaseSection
 
 from main.models.models import Tag, TagCategory, Base, Resource
 from main.models.user import UserGroup
@@ -162,7 +162,7 @@ class IntroFactory(DjangoModelFactory):
 
 class BaseSectionFactory(DjangoModelFactory):
     class Meta:
-        model = Section
+        model = BaseSection
 
     title = factory.Faker("text", max_nb_chars=30)
     description = factory.Faker("text", max_nb_chars=30)

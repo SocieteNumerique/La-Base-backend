@@ -9,7 +9,7 @@ from main.models.models import (
     ExternalProducer,
     Tag,
     Collection,
-    Section,
+    BaseSection,
 )
 from main.query_changes.permissions import resources_queryset_for_user
 from main.query_changes.stats_annotations import resources_queryset_with_stats
@@ -67,7 +67,7 @@ class PrimaryKeyBaseField(serializers.PrimaryKeyRelatedField):
 
 class BaseSectionSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Section
+        model = BaseSection
         read_only_fields = ["position"]
         fields = [
             "id",
@@ -352,7 +352,7 @@ class PrimaryKeyResourcesForCollectionField(serializers.PrimaryKeyRelatedField):
         ).distinct()
 
 
-class VeryShortBaseCollectionSerializer(serializers.ModelSerializer):
+class VeryShortCollectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Collection
         fields = [
@@ -581,7 +581,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def get_collection_choices(obj: Base):
-        return VeryShortBaseCollectionSerializer(obj.collections, many=True).data
+        return VeryShortCollectionSerializer(obj.collections, many=True).data
 
     @staticmethod
     def get_participant_type_tags(obj: Base):
