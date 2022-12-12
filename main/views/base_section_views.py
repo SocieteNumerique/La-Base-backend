@@ -42,15 +42,14 @@ class BaseSectionView(
     def sort(self, request):
         base = request.data["base"]
         section_ids = request.data["sections"]
-        sections = self.get_queryset().filter(base=base, id__in=section_ids)
+        sections = self.get_queryset().filter(base=base)
 
-        for index, section_id in enumerate(section_ids):
-            section = next(
-                section_instance
-                for section_instance in sections
-                if section_instance.id == section_id
-            )
-            section.position = index
-            section.save()
+        for section in sections:
+            try:
+                section_index = section_ids.index(section.id)
+                section.position = section_index
+                section.save()
+            except ValueError:
+                pass
 
-        return Response(section_ids)
+        return Response(BaseSectionSerializer(sections.all(), many=True).data)

@@ -92,19 +92,26 @@ class TestResourceView(TestCase):
         base_section_2 = BaseSectionFactory.create(
             base=base, resources=[resource.pk], position=1
         )
+        base_section_3 = BaseSectionFactory.create(
+            base=base, resources=[resource.pk], position=2
+        )
+        deleted_base_id = 110011001
 
         url = reverse("base-section-sort")
         res = self.client.patch(
             url,
             {
                 "base": base.pk,
-                "sections": [base_section_2.pk, base_section_1.pk],
+                "sections": [base_section_2.pk, base_section_1.pk, deleted_base_id],
             },
             content_type="application/json",
         )
         self.assertEqual(res.status_code, 200)
-        self.assertListEqual(res.json(), [base_section_2.pk, base_section_1.pk])
-        base_section_1.refresh_from_db()
-        base_section_2.refresh_from_db()
-        self.assertEqual(base_section_2.position, 0)
-        self.assertEqual(base_section_1.position, 1)
+        json_response = res.json()
+        self.assertEqual(len(json_response), 3)
+        self.assertEqual(json_response[0]["id"], base_section_2.pk)
+        self.assertEqual(json_response[0]["position"], 0)
+        self.assertEqual(json_response[1]["id"], base_section_1.pk)
+        self.assertEqual(json_response[1]["position"], 1)
+        self.assertEqual(json_response[2]["id"], base_section_3.pk)
+        self.assertEqual(json_response[2]["position"], 2)
