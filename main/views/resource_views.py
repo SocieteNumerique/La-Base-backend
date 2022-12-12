@@ -124,7 +124,7 @@ class ResourceView(
 
 
 class RessourceDuplicatesValidatorViews(APIView):
-    trigram_similarity_threshold = 0.3
+    trigram_similarity_threshold = 0.5
 
     def get_queryset(self):
         return resources_queryset_with_stats(
