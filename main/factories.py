@@ -157,7 +157,6 @@ class IntroFactory(DjangoModelFactory):
     title = factory.Faker("text", max_nb_chars=30)
     slug = factory.Faker("text", max_nb_chars=30)
     order = 0
-    page = factory.Faker("text", max_nb_chars=30)
 
 
 class BaseSectionFactory(DjangoModelFactory):
