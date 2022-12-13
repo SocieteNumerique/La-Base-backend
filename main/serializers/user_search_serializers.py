@@ -20,5 +20,5 @@ class UserSearchSerializer(serializers.ModelSerializer):
         if not user:
             raise ValueError("User must be logged in")
 
-        validated_data["user"] = self.context["request"].user
+        validated_data["user"] = user
         return super().create(validated_data)
