@@ -416,6 +416,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
         abstract = True
         fields = [
             "id",
+            "bookmarked",
             "title",
             "owner",
             "can_write",
@@ -445,6 +446,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
     resource_choices = serializers.SerializerMethodField()
     can_write = serializers.SerializerMethodField()
     stats = serializers.SerializerMethodField()
+    bookmarked = serializers.SerializerMethodField()
     can_add_resources = serializers.SerializerMethodField()
     collections = serializers.SerializerMethodField()
     contributor_tags = serializers.PrimaryKeyRelatedField(
@@ -569,6 +571,10 @@ class BaseBaseSerializer(serializers.ModelSerializer):
             ]
         else:
             return []
+
+    def get_bookmarked(self, obj: Base):
+        user = self.context["request"].user
+        return obj.bookmarks.filter(user=user, base=obj).exists()
 
 
 class ShortBaseSerializer(BaseBaseSerializer):

@@ -4,6 +4,7 @@ from rest_framework import mixins, viewsets, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from main.models import BaseBookmark
 from main.models.models import TagCategory, Base
 from main.query_changes.permissions import (
     bases_queryset_for_user,
@@ -85,6 +86,24 @@ class BaseView(
                 instance, request.user, request.query_params.get("page")
             )
         )
+
+    @action(detail=True, methods=["get"])
+    def bookmark(self, request, pk=None):
+        _, created = BaseBookmark.objects.get_or_create(
+            base_id=pk,
+            user=request.user,
+        )
+        status_code = 201 if created else 200
+        return Response(status=status_code)
+
+    @action(detail=True, methods=["get"])
+    def remove_bookmark(self, request, pk=None):
+        deleted, _ = BaseBookmark.objects.filter(
+            base_id=pk,
+            user=request.user,
+        ).delete()
+        status_code = 204 if deleted else 200
+        return Response(status=status_code)
 
 
 def generic_pin_action(model, self, request, pk=None):
