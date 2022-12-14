@@ -31,6 +31,7 @@ from main.views import (
     page_views,
     intro_views,
     text_block_views,
+    user_search_views,
 )
 from main.views.report_view import ReportView
 from main.views.resource_views import RessourceDuplicatesValidatorViews
@@ -52,6 +53,9 @@ router.register(r"sections", resource_views.SectionView, basename="section")
 router.register(r"tag_categories", tag_views.TagCategoryView, basename="tag_category")
 router.register(r"tags", tag_views.TagView, basename="tag")
 router.register(r"users", user_views.UserView, basename="user")
+router.register(
+    r"user_searches", user_search_views.UserSearchView, basename="user_search"
+)
 
 urlpatterns = [
     path("admin/", admin.site.urls),
