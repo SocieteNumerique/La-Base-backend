@@ -1,6 +1,6 @@
 from django.db import models
 
-from main.models import Base, User
+from main.models.models import Base, User
 from main.models.utils import TimeStampedModel
 
 

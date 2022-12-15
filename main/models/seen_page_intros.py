@@ -1,6 +1,6 @@
 from django.db import models
 
-from main.models import User
+from main.models.models import User
 
 
 class SeenIntroSlug(models.Model):

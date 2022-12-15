@@ -9,6 +9,7 @@ from main.models.models import (
     ExternalProducer,
     Tag,
     Collection,
+    BaseSection,
 )
 from main.query_changes.permissions import resources_queryset_for_user
 from main.query_changes.stats_annotations import resources_queryset_with_stats
@@ -62,6 +63,22 @@ class PrimaryKeyBaseField(serializers.PrimaryKeyRelatedField):
     def get_queryset(self):
         # request = self.context.get('request', None)
         return Base.objects.all()
+
+
+class BaseSectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BaseSection
+        read_only_fields = ["position"]
+        fields = [
+            "id",
+            "type",
+            "title",
+            "description",
+            "position",
+            "base",
+            "resources",
+            "collections",
+        ]
 
 
 class BaseIsInstancePinnedSerializer(serializers.ModelSerializer):
@@ -335,6 +352,18 @@ class PrimaryKeyResourcesForCollectionField(serializers.PrimaryKeyRelatedField):
         ).distinct()
 
 
+class VeryShortCollectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Collection
+        fields = [
+            "id",
+            "name",
+            "is_short",
+        ]
+
+    is_short = serializers.ReadOnlyField(default=True)
+
+
 class BaseCollectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Collection
@@ -433,6 +462,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
             "social_media_twitter",
             "social_media_mastodon",
             "social_media_linkedin",
+            "show_latest_additions",
         ]
 
     owner = UserSerializerForSearch(required=False, read_only=True)
@@ -444,6 +474,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
     contributors = NestedUserSerializer(many=True, required=False, allow_null=True)
     resources = serializers.SerializerMethodField()
     resource_choices = serializers.SerializerMethodField()
+    collection_choices = serializers.SerializerMethodField()
     can_write = serializers.SerializerMethodField()
     stats = serializers.SerializerMethodField()
     bookmarked = serializers.SerializerMethodField()
@@ -551,6 +582,10 @@ class BaseBaseSerializer(serializers.ModelSerializer):
         ).data
 
     @staticmethod
+    def get_collection_choices(obj: Base):
+        return VeryShortCollectionSerializer(obj.collections, many=True).data
+
+    @staticmethod
     def get_participant_type_tags(obj: Base):
         if SPECIFIC_CATEGORY_IDS["external_producer"]:
             return [
@@ -588,6 +623,9 @@ class ShortBaseSerializer(BaseBaseSerializer):
 
 
 class FullNoContactBaseSerializer(BaseBaseSerializer):
+
+    sections = BaseSectionSerializer(many=True, read_only=True)
+
     class Meta(BaseBaseSerializer.Meta):
         abstract = False
         fields = BaseBaseSerializer.Meta.fields + [
@@ -596,6 +634,7 @@ class FullNoContactBaseSerializer(BaseBaseSerializer):
             "resources",
             "resource_choices",
             "collections",
+            "collection_choices",
             "contributors",
             "contributor_tags",
             "authorized_users",
@@ -603,6 +642,7 @@ class FullNoContactBaseSerializer(BaseBaseSerializer):
             "state",
             "tags",
             "admins",
+            "sections",
         ]
 
 
