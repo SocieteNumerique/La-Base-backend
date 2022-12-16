@@ -611,7 +611,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
         user = self.context["request"].user
         if user.is_anonymous:
             return False
-        return obj.bookmarks.filter(user=user, base=obj).exists()
+        return obj.bookmarks.filter(user=user).exists()
 
 
 class ShortBaseSerializer(BaseBaseSerializer):
