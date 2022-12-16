@@ -43,4 +43,4 @@ def bases_queryset_with_stats(init_queryset=Base.objects):
         ),
         to_attr="participant_types",
     )
-    return init_queryset.prefetch_related(prefetch_tags)
+    return init_queryset.prefetch_related(prefetch_tags).prefetch_related("bookmarks")
