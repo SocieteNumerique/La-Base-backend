@@ -352,7 +352,7 @@ class PrimaryKeyResourcesForCollectionField(serializers.PrimaryKeyRelatedField):
         ).distinct()
 
 
-class VeryShortCollectionSerializer(serializers.ModelSerializer):
+class ShortCollectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Collection
         fields = ["id", "name", "is_short", "resources"]
@@ -570,7 +570,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def get_collection_choices(obj: Base):
-        return VeryShortCollectionSerializer(obj.collections, many=True).data
+        return ShortCollectionSerializer(obj.collections, many=True).data
 
     def get_collections(self, obj: Base):
         pinned_collections_qs = obj.pinned_collections.prefetch_related("base__pk")
