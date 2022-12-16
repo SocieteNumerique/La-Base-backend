@@ -106,6 +106,14 @@ class CollectionFactory(DjangoModelFactory):
     name = factory.Faker("text", max_nb_chars=25)
     base = factory.SubFactory(BaseFactory)
 
+    @factory.post_generation
+    def resources(self, create, extracted, **kwargs):
+        if not create:
+            return
+
+        if extracted:
+            self.resources.add(*extracted)
+
 
 class UserGroupFactory(DjangoModelFactory):
     class Meta:

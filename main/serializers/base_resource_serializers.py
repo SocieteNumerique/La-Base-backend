@@ -352,14 +352,10 @@ class PrimaryKeyResourcesForCollectionField(serializers.PrimaryKeyRelatedField):
         ).distinct()
 
 
-class VeryShortCollectionSerializer(serializers.ModelSerializer):
+class ShortCollectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Collection
-        fields = [
-            "id",
-            "name",
-            "is_short",
-        ]
+        fields = ["id", "name", "is_short", "resources"]
 
     is_short = serializers.ReadOnlyField(default=True)
 
@@ -463,6 +459,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
             "social_media_mastodon",
             "social_media_linkedin",
             "show_latest_additions",
+            "collection_choices",
         ]
 
     owner = UserSerializerForSearch(required=False, read_only=True)
@@ -474,12 +471,12 @@ class BaseBaseSerializer(serializers.ModelSerializer):
     contributors = NestedUserSerializer(many=True, required=False, allow_null=True)
     resources = serializers.SerializerMethodField()
     resource_choices = serializers.SerializerMethodField()
-    collection_choices = serializers.SerializerMethodField()
     can_write = serializers.SerializerMethodField()
     stats = serializers.SerializerMethodField()
     bookmarked = serializers.SerializerMethodField()
     can_add_resources = serializers.SerializerMethodField()
     collections = serializers.SerializerMethodField()
+    collection_choices = serializers.SerializerMethodField()
     contributor_tags = serializers.PrimaryKeyRelatedField(
         many=True, queryset=Tag.objects.all(), required=False, allow_null=True
     )
@@ -573,6 +570,10 @@ class BaseBaseSerializer(serializers.ModelSerializer):
         user = self.context["request"].user
         return VeryShortResourceSerializer(obj.resources_for_user(user), many=True).data
 
+    @staticmethod
+    def get_collection_choices(obj: Base):
+        return ShortCollectionSerializer(obj.collections, many=True).data
+
     def get_collections(self, obj: Base):
         pinned_collections_qs = obj.pinned_collections.prefetch_related("base__pk")
         return ReadCollectionSerializer(
@@ -580,10 +581,6 @@ class BaseBaseSerializer(serializers.ModelSerializer):
             many=True,
             context=self.context,
         ).data
-
-    @staticmethod
-    def get_collection_choices(obj: Base):
-        return VeryShortCollectionSerializer(obj.collections, many=True).data
 
     @staticmethod
     def get_participant_type_tags(obj: Base):
@@ -634,7 +631,6 @@ class FullNoContactBaseSerializer(BaseBaseSerializer):
             "resources",
             "resource_choices",
             "collections",
-            "collection_choices",
             "contributors",
             "contributor_tags",
             "authorized_users",

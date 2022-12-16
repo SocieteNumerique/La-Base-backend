@@ -10,6 +10,7 @@ def bases_queryset_for_user(user: User, init_queryset=Base.objects, full=True):
         .prefetch_related("tags")
         .prefetch_related("profile_image")
         .prefetch_related("cover_image")
+        .prefetch_related("collections__resources")
     )
     if user.is_superuser:
         return init_queryset.annotate(
