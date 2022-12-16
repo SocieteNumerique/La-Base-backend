@@ -114,8 +114,7 @@ class TestResourceView(TestCase):
         collection = Collection.objects.create(base=base, name="collection")
         resource = ResourceFactory.create(root_base=base)
 
-        collection.resources.add(resource)
-        url = reverse("collection-resources", args=[base.pk])
+        url = reverse("collection-resources", args=[collection.pk])
         res = self.client.patch(
             url,
             {"resourceId": resource.id, "action": "add"},
@@ -134,8 +133,7 @@ class TestResourceView(TestCase):
         resource = ResourceFactory.create(root_base=base)
         collection = CollectionFactory.create(base=base, resources=[resource.pk])
 
-        collection.resources.add(resource)
-        url = reverse("collection-resources", args=[base.pk])
+        url = reverse("collection-resources", args=[collection.pk])
         res = self.client.patch(
             url,
             {"resourceId": resource.id, "action": "remove"},
