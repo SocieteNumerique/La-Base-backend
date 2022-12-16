@@ -1,8 +1,12 @@
 from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
+from rest_framework.response import Response
 
 from main.models.models import Collection
-from main.query_changes.permissions import bases_queryset_for_user
+from main.query_changes.permissions import (
+    bases_queryset_for_user,
+    resources_queryset_for_user,
+)
 from main.serializers.base_resource_serializers import (
     ReadCollectionSerializer,
     UpdateCollectionSerializer,
@@ -26,6 +30,19 @@ class CollectionView(
         return Collection.objects.filter(
             base__in=bases_queryset_for_user(self.request.user)
         )
+
+    @action(detail=True, methods=["PATCH"])
+    def resources(self, request, pk=None):
+        instance = self.get_object()
+        resource = resources_queryset_for_user(request.user).get(
+            id=request.data["resource_id"]
+        )
+        if request.data["action"] == "add":
+            instance.resources.add(resource)
+        else:
+            instance.resources.remove(resource)
+
+        return Response(self.get_serializer_class()(instance).data)
 
     @action(detail=True, methods=["PATCH"])
     def pin(self, request, pk=None):
