@@ -1,4 +1,6 @@
-from django.db.models import Q, When, Case, Value
+from django.db.models import Q, When, Case, Value, Exists, OuterRef
+
+from main.models import BaseBookmark
 from main.models.user import User
 
 from main.models.models import Base, Resource
@@ -12,14 +14,18 @@ def bases_queryset_for_user(user: User, init_queryset=Base.objects, full=True):
         .prefetch_related("cover_image")
         .prefetch_related("collections__resources")
     )
-    if user.is_superuser:
-        return init_queryset.annotate(
-            can_write=Value(True), can_add_resources=Value(True)
-        )
-
     if user.is_anonymous:
         return init_queryset.filter(state="public").annotate(
             can_write=Value(False), can_add_resources=Value(False)
+        )
+
+    init_queryset = init_queryset.annotate(
+        bookmarked=Exists(BaseBookmark.objects.filter(base=OuterRef("pk"), user=user))
+    )
+
+    if user.is_superuser:
+        return init_queryset.annotate(
+            can_write=Value(True), can_add_resources=Value(True)
         )
 
     user_tags = user.tags.all()
