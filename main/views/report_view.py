@@ -16,6 +16,8 @@ class ReportView(APIView):
         else:
             show_user = request.user.email
 
+        show_instance_type = "Base" if instance_type == "Base" else "Fiche"
+
         current_site = get_current_site(request)
         domain = current_site.domain
         resource_url = (
@@ -23,9 +25,9 @@ class ReportView(APIView):
         )
 
         send_mail(
-            f"[La Base - Signalement] - {instance_type} {id_} - {motive}",
-            f"Envoyé par {show_user}\n\nLien vers la {instance_type}: {resource_url}"
-            f"\n\nMessage de l'utilisateur :\n\n{description}",
+            f"[La Base - Signalement] - {show_instance_type} {id_} - {motive}",
+            f"Envoyé par {show_user}\n\nLien vers la {show_instance_type}:"
+            f"{resource_url}\n\nMessage de l'utilisateur :\n\n{description}",
             settings.DEFAULT_FROM_EMAIL,
             settings.SEND_REPORTS_TO,
         )
