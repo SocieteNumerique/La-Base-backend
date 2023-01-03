@@ -550,6 +550,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
     @staticmethod
     def get_stats(obj: Base):
         res = {
+            "bookmarked_count": getattr(obj, "bookmarked_count", 0),
             "visit_count": getattr(obj, "visit_count", 0),
             "resource_count": getattr(obj, "own_resource_count", 0)
             + getattr(obj, "pinned_resources_count", 0),

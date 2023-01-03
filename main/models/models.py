@@ -136,6 +136,7 @@ class Base(TimeStampedModel):
     pinned_resources_count = models.PositiveSmallIntegerField(default=0)
     visit_count = models.PositiveSmallIntegerField(default=0)
     own_resource_count = models.PositiveSmallIntegerField(default=0)
+    bookmarked_count = models.PositiveSmallIntegerField(default=0)
     show_latest_additions = models.BooleanField(
         default=True, verbose_name="Afficher les derniers ajouts"
     )
@@ -173,6 +174,7 @@ class Base(TimeStampedModel):
             "pinned_resources_count": self.pinned_resources.count(),
             "visit_count": self.visits.count(),
             "own_resource_count": self.resources.count(),
+            "bookmarked_count": self.bookmarks.count(),
         }
         # update without changing modified auto-field
         Base.objects.filter(pk=self.pk).update(**update_kwargs)
