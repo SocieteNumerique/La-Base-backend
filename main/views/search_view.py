@@ -23,6 +23,7 @@ ALLOWED_ORDER_BY = [
     "created",
     "visit_count",
     "pin_count",
+    "bookmarked_count",
 ]
 for allowed in ALLOWED_ORDER_BY.copy():
     ALLOWED_ORDER_BY.append("-" + allowed)
