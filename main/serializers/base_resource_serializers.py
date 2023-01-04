@@ -458,7 +458,6 @@ class BaseBaseSerializer(serializers.ModelSerializer):
             "social_media_twitter",
             "social_media_mastodon",
             "social_media_linkedin",
-            "show_latest_additions",
             "collection_choices",
         ]
 
@@ -621,7 +620,32 @@ class ShortBaseSerializer(BaseBaseSerializer):
 
 class FullNoContactBaseSerializer(BaseBaseSerializer):
 
+    latest_additions = serializers.SerializerMethodField()
     sections = BaseSectionSerializer(many=True, read_only=True)
+    section_resources = serializers.SerializerMethodField()
+
+    def get_latest_additions(self, obj: Base):
+        user = self.context.get("request").user
+        return FullResourceSerializer(
+            resources_queryset_for_user(
+                user,
+                obj.resources,
+                include_drafts=False,
+            ).order_by("-created")[:3],
+            many=True,
+        ).data
+
+    def get_section_resources(self, obj: Base):
+        user = self.context.get("request").user
+        resource_queryset = Resource.objects.filter(resource_sections__base_id=obj.id)
+        return FullResourceSerializer(
+            resources_queryset_for_user(
+                user,
+                init_queryset=resource_queryset,
+                include_drafts=False,
+            ),
+            many=True,
+        ).data
 
     class Meta(BaseBaseSerializer.Meta):
         abstract = False
@@ -638,7 +662,10 @@ class FullNoContactBaseSerializer(BaseBaseSerializer):
             "state",
             "tags",
             "admins",
+            "show_latest_additions",
+            "latest_additions",
             "sections",
+            "section_resources",
         ]
 
 
