@@ -431,7 +431,9 @@ class Resource(TimeStampedModel):
 
 class BaseSection(TimeStampedModel):
     title = models.CharField(max_length=100, verbose_name="titre")
-    description = models.CharField(max_length=240, verbose_name="description")
+    description = models.CharField(
+        max_length=240, verbose_name="description", null=True, blank=True
+    )
     type = models.CharField(
         max_length=32,
         verbose_name="type",
