@@ -42,6 +42,7 @@ class CreditsView(APIView):
         domain = current_site.domain
         resource_url = f"http://{domain}/ressource/{id_}/edition"
         resource_title = f"http://{domain}/ressource/{id_}/"
+        recipient = resource.root_base.owner.email
 
         name = f"{request.user.first_name} {request.user.last_name}"
 
@@ -55,7 +56,7 @@ class CreditsView(APIView):
                 message=message,
             ),
             settings.DEFAULT_FROM_EMAIL,
-            settings.SEND_REPORTS_TO,
+            [recipient],
         )
 
         return HttpResponse()
