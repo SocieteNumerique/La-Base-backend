@@ -1,5 +1,4 @@
 from django.conf import settings
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import send_mail
 from django.http import HttpResponse
@@ -7,9 +6,8 @@ from django.urls import reverse
 from rest_framework.exceptions import ValidationError
 from rest_framework.views import APIView
 
-from main.models import Resource, User, Base
+from main.models import Resource, Base
 from main.query_changes.permissions import resources_queryset_for_user
-
 
 SUGGESTION_BODY = """Bonjour,
 
@@ -115,16 +113,14 @@ class ContributeView(APIView):
         return HttpResponse()
 
 
-NOT_OWNER_MESSAGE = "Vous n'êtes pas le propriétaire de cette fiche. Pour faire le transfer, vous devez cliquer sur le lien en étant connecté en tant que {resource_owner_email}"
+NOT_OWNER_MESSAGE = "Erreur : Vous n'êtes pas le propriétaire de cette fiche. Pour faire le transfer, vous devez cliquer sur le lien en étant connecté en tant que {resource_owner_email}"
 TARGET_BASE_DOES_NOT_EXIST = (
-    "La Base cible n'existe pas ou plus. Vous pouvez ignorer cette demande."
+    "Erreur : La Base cible n'existe pas ou plus. Vous pouvez ignorer cette demande."
 )
 SUCCESS_MESSAGE = "Le changement de propriétaire de la fiche ressource {resource_title} bien été effectué."
 
 
 class TransferView(APIView):
-    token_generator = PasswordResetTokenGenerator()
-
     def get(self, request, resource_id, target_base: int):
         try:
             resource = Resource.objects.get(pk=resource_id)
@@ -148,6 +144,3 @@ class TransferView(APIView):
         return HttpResponse(
             SUCCESS_MESSAGE.format(resource_title=resource.title), status=200
         )
-
-    def get_resource(self, user: User, resource_id: int):
-        return resources_queryset_for_user(user).get(pk=resource_id)
