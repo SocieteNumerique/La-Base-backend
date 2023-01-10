@@ -113,7 +113,7 @@ class ContributeView(APIView):
         return HttpResponse()
 
 
-NOT_OWNER_MESSAGE = "Erreur : Vous n'êtes pas le propriétaire de cette fiche. Pour faire le transfer, vous devez cliquer sur le lien en étant connecté en tant que {resource_owner_email}"
+NOT_OWNER_MESSAGE = "Erreur : Vous n'êtes pas le propriétaire de cette fiche. Pour faire le transfert, vous devez cliquer sur le lien en étant connecté en tant que le propriétaire de la fiche."
 TARGET_BASE_DOES_NOT_EXIST = (
     "Erreur : La Base cible n'existe pas ou plus. Vous pouvez ignorer cette demande."
 )
