@@ -11,7 +11,7 @@ from main.query_changes.permissions import resources_queryset_for_user
 
 SUGGESTION_BODY = """Bonjour,
 
-{name} ({email}) a une suggestion à faire concernant la fiche ressource {resource_title} que vous avez publié sur La Base, voici son message :
+{name} ({email}) a une suggestion à faire concernant la fiche ressource {resource_title} que vous avez publiée sur La Base, voici son message :
 
 {message}
 
@@ -24,7 +24,7 @@ L’équipe de La Base
 """
 CONTRIBUTOR_BODY = """Bonjour,
 
-{name} ({email}) voudrait être contributeur de votre fiche ressource {resource_title} que vous avez publié sur La Base, voici son message :
+{name} ({email}) voudrait être contributeur de votre fiche ressource {resource_title} que vous avez publiée sur La Base, voici son message :
 
 {message}
 
@@ -37,7 +37,7 @@ L’équipe de La Base
 """
 ADMINISTRATOR_BODY = """Bonjour,
 
-{name} ({email}) voudrait être administrateur de votre fiche ressource {resource_title} que vous avez publié sur La Base, voici son message :
+{name} ({email}) voudrait être administrateur de votre fiche ressource {resource_title} que vous avez publiée sur La Base, voici son message :
 
 {message}
 
