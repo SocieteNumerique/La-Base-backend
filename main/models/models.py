@@ -38,6 +38,11 @@ TAG_CATEGORY_RELATES_TO = [
     ("Content", "Contenus"),
 ]
 
+BASE_SECTION_TYPE = [
+    ("resources", "Ressources"),
+    ("collections", "Collections"),
+]
+
 
 class Base(TimeStampedModel):
     title = models.CharField(max_length=100, verbose_name="titre")
@@ -131,11 +136,15 @@ class Base(TimeStampedModel):
     pinned_resources_count = models.PositiveSmallIntegerField(default=0)
     visit_count = models.PositiveSmallIntegerField(default=0)
     own_resource_count = models.PositiveSmallIntegerField(default=0)
+    bookmarked_count = models.PositiveSmallIntegerField(default=0)
+    show_latest_additions = models.BooleanField(
+        default=True, verbose_name="Afficher les derniers ajouts"
+    )
 
     def __str__(self):
         return self.title
 
-    def resources_for_user(self, user: User):
+    def resources_for_user(self, user: User, include_drafts=True):
         """Resources pinned on base or rooted on base accessible for user."""
         from main.query_changes.permissions import resources_queryset_for_user
         from main.query_changes.stats_annotations import resources_queryset_with_stats
@@ -144,6 +153,7 @@ class Base(TimeStampedModel):
             resources_queryset_for_user(
                 user,
                 self.pinned_resources.prefetch_related("root_base__pk"),
+                include_drafts=include_drafts,
             )
         )
         annotated_qs = resources_queryset_with_stats(
@@ -164,6 +174,7 @@ class Base(TimeStampedModel):
             "pinned_resources_count": self.pinned_resources.count(),
             "visit_count": self.visits.count(),
             "own_resource_count": self.resources.count(),
+            "bookmarked_count": self.bookmarks.count(),
         }
         # update without changing modified auto-field
         Base.objects.filter(pk=self.pk).update(**update_kwargs)
@@ -380,6 +391,8 @@ class Resource(TimeStampedModel):
         null=True,
         blank=True,
     )
+    ignored_duplicates = models.ManyToManyField("self", blank=True)
+    confirmed_duplicates = models.ManyToManyField("self", blank=True)
 
     def save(self, *args, **kwargs):
         """
@@ -416,6 +429,33 @@ class Resource(TimeStampedModel):
         return self.visits.count()
 
     instance_visit_count.fget.short_description = "Nombre de vues"
+
+
+class BaseSection(TimeStampedModel):
+    title = models.CharField(max_length=100, verbose_name="titre")
+    description = models.CharField(
+        max_length=240, verbose_name="description", null=True, blank=True
+    )
+    type = models.CharField(
+        max_length=32,
+        verbose_name="type",
+        choices=BASE_SECTION_TYPE,
+    )
+    position = models.PositiveSmallIntegerField(verbose_name="position")
+    base = models.ForeignKey(Base, on_delete=models.CASCADE, related_name="sections")
+    resources = models.ManyToManyField(
+        Resource, verbose_name="Resource", related_name="resource_sections", blank=True
+    )
+    collections = models.ManyToManyField(
+        Collection,
+        verbose_name="Collection",
+        related_name="collection_sections",
+        blank=True,
+    )
+
+    class Meta:
+        verbose_name = "Rubrique"
+        ordering = ["position"]
 
 
 class ExternalProducer(TimeStampedModel):

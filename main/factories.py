@@ -5,7 +5,7 @@ import factory
 
 from main.models import TextContent, ContentSection, Intro
 from main.models.user import User
-from main.models.models import Collection, LicenseText
+from main.models.models import Collection, LicenseText, BaseSection
 
 from main.models.models import Tag, TagCategory, Base, Resource
 from main.models.user import UserGroup
@@ -82,6 +82,22 @@ class ResourceFactory(DjangoModelFactory):
     root_base = factory.SubFactory(BaseFactory)
     description = factory.Faker("text", max_nb_chars=60)
 
+    @factory.post_generation
+    def ignored_duplicates(self, create, extracted, **kwargs):
+        if not create:
+            return
+
+        if extracted:
+            self.ignored_duplicates.add(*extracted)
+
+    @factory.post_generation
+    def confirmed_duplicates(self, create, extracted, **kwargs):
+        if not create:
+            return
+
+        if extracted:
+            self.confirmed_duplicates.add(*extracted)
+
 
 class CollectionFactory(DjangoModelFactory):
     class Meta:
@@ -89,6 +105,14 @@ class CollectionFactory(DjangoModelFactory):
 
     name = factory.Faker("text", max_nb_chars=25)
     base = factory.SubFactory(BaseFactory)
+
+    @factory.post_generation
+    def resources(self, create, extracted, **kwargs):
+        if not create:
+            return
+
+        if extracted:
+            self.resources.add(*extracted)
 
 
 class UserGroupFactory(DjangoModelFactory):
@@ -141,4 +165,29 @@ class IntroFactory(DjangoModelFactory):
     title = factory.Faker("text", max_nb_chars=30)
     slug = factory.Faker("text", max_nb_chars=30)
     order = 0
-    page = factory.Faker("text", max_nb_chars=30)
+
+
+class BaseSectionFactory(DjangoModelFactory):
+    class Meta:
+        model = BaseSection
+
+    title = factory.Faker("text", max_nb_chars=30)
+    description = factory.Faker("text", max_nb_chars=30)
+    base = factory.SubFactory(BaseFactory)
+    position = 0
+
+    @factory.post_generation
+    def resources(self, create, extracted, **kwargs):
+        if not create:
+            return
+
+        if extracted:
+            self.resources.add(*extracted)
+
+    @factory.post_generation
+    def collections(self, create, extracted, **kwargs):
+        if not create:
+            return
+
+        if extracted:
+            self.collections.add(*extracted)

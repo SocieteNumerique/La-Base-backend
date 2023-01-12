@@ -1,4 +1,6 @@
-from django.db.models import Q, When, Case, Value
+from django.db.models import Q, When, Case, Value, Exists, OuterRef
+
+from main.models import BaseBookmark
 from main.models.user import User
 
 from main.models.models import Base, Resource
@@ -10,15 +12,20 @@ def bases_queryset_for_user(user: User, init_queryset=Base.objects, full=True):
         .prefetch_related("tags")
         .prefetch_related("profile_image")
         .prefetch_related("cover_image")
+        .prefetch_related("collections__resources")
     )
-    if user.is_superuser:
-        return init_queryset.annotate(
-            can_write=Value(True), can_add_resources=Value(True)
-        )
-
     if user.is_anonymous:
         return init_queryset.filter(state="public").annotate(
             can_write=Value(False), can_add_resources=Value(False)
+        )
+
+    init_queryset = init_queryset.annotate(
+        bookmarked=Exists(BaseBookmark.objects.filter(base=OuterRef("pk"), user=user))
+    )
+
+    if user.is_superuser:
+        return init_queryset.annotate(
+            can_write=Value(True), can_add_resources=Value(True)
         )
 
     user_tags = user.tags.all()
@@ -69,6 +76,7 @@ def resources_queryset_for_user(
     user: User,
     init_queryset=Resource.objects,
     restrict_to_base_id=None,
+    include_drafts=True,
 ):
     if restrict_to_base_id:
         base = Base.objects.get(pk=restrict_to_base_id)
@@ -89,6 +97,9 @@ def resources_queryset_for_user(
             .prefetch_related("profile_image")
             .prefetch_related("creator")
         )
+
+    if not include_drafts:
+        init_queryset = init_queryset.exclude(state="draft")
 
     if user.is_superuser:
         return init_queryset.annotate(can_write=Value(True))

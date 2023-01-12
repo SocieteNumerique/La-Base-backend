@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.urls import reverse
 
-from main.factories import BaseFactory, ResourceFactory
+from main.factories import BaseFactory, ResourceFactory, CollectionFactory
 from main.models.models import Collection
 from main.tests.test_utils import authenticate
 
@@ -106,4 +106,42 @@ class TestResourceView(TestCase):
         self.assertEqual(
             [resource["id"] for resource in res.data["collections"][0]["resources"]],
             [resource.pk],
+        )
+
+    @authenticate
+    def test_add_resource_on_collection(self):
+        base = BaseFactory.create(owner=authenticate.user)
+        collection = Collection.objects.create(base=base, name="collection")
+        resource = ResourceFactory.create(root_base=base)
+
+        url = reverse("collection-resources", args=[collection.pk])
+        res = self.client.patch(
+            url,
+            {"resourceId": resource.id, "action": "add"},
+            content_type="application/json",
+        )
+        response_json = res.json()
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(
+            response_json["resources"],
+            [resource.pk],
+        )
+
+    @authenticate
+    def test_remove_resource_on_collection(self):
+        base = BaseFactory.create(owner=authenticate.user)
+        resource = ResourceFactory.create(root_base=base)
+        collection = CollectionFactory.create(base=base, resources=[resource.pk])
+
+        url = reverse("collection-resources", args=[collection.pk])
+        res = self.client.patch(
+            url,
+            {"resourceId": resource.id, "action": "remove"},
+            content_type="application/json",
+        )
+        response_json = res.json()
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(
+            response_json["resources"],
+            [],
         )

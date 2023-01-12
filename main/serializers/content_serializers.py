@@ -170,7 +170,11 @@ class TextContentSerializer(BaseContentSerializer):
 
 class FileContentSerializer(BaseContentSerializer):
     class Meta(BaseContentSerializer.Meta):
-        fields = BaseContentSerializer.Meta.fields + ["file", "with_preview"]
+        fields = BaseContentSerializer.Meta.fields + [
+            "file",
+            "with_preview",
+            "image_alt",
+        ]
         model = FileContent
 
     file = Base64FileField(required=False, allow_null=True)

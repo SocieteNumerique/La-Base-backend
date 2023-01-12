@@ -111,5 +111,6 @@ class FileContent(ContentBlock):
         verbose_name = "Contenu : Fichier importé"
         verbose_name_plural = "Contenus : Fichiers importés"
 
+    image_alt = models.CharField(null=True, blank=True, max_length=100)
     file = models.FileField()
     with_preview = models.BooleanField(default=False)

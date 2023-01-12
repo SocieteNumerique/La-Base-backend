@@ -90,6 +90,46 @@ class TestResourceView(TestCase):
         self.assertEqual(response.json()["creatorBases"], [])
 
     @authenticate
+    def test_can_create_resource_with_external_producers(self):
+        base1 = BaseFactory.create(owner=authenticate.user)
+        url = reverse("resource-list")
+        response = self.client.post(
+            url,
+            {
+                "rootBase": base1.pk,
+                "title": "my title",
+                "externalProducers": [
+                    {"name": "Name", "emailContact": "bla@mail.com"},
+                    {"name": "Name2", "emailContact": "bla@mail.com"},
+                    {"name": "Name3", "emailContact": "bla@mail.com"},
+                ],
+            },
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(len(response.json()["externalProducers"]), 3)
+
+    @authenticate
+    def test_can_update_resource_multiple_external_producers(self):
+        base1 = BaseFactory.create(owner=authenticate.user)
+        resource = ResourceFactory.create(root_base=base1)
+        url = reverse("resource-detail", args=[resource.pk])
+        response = self.client.patch(
+            url,
+            {
+                "external_producers": [
+                    {"name": "Name"},
+                    {"name": "Name2"},
+                    {"name": "Name3"},
+                ],
+                "title": "new title",
+            },
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()["externalProducers"]), 3)
+
+    @authenticate
     def test_can_edit_external_producers(self):
         base1 = BaseFactory.create(owner=authenticate.user)
         resource = ResourceFactory.create(root_base=base1)
@@ -106,7 +146,6 @@ class TestResourceView(TestCase):
         producer = res_producers[0]
         self.assertEqual(producer["name"], new_data["name"])
         self.assertEqual(producer["emailContact"], new_data["emailContact"])
-        self.assertEqual(producer["resource"], resource.pk)
 
         # removing the producer
         response = self.client.patch(
@@ -132,7 +171,6 @@ class TestResourceView(TestCase):
         producer = res_producers[0]
         self.assertEqual(producer["name"], new_data2["name"])
         self.assertEqual(producer["emailContact"], new_data2["emailContact"])
-        self.assertEqual(producer["resource"], resource.pk)
         self.assertEqual(ExternalProducer.objects.count(), 1)
 
         # can add a producer with a tag
@@ -168,6 +206,28 @@ class TestResourceView(TestCase):
         self.assertEqual(response.status_code, 200)
         res_producers = response.json()["externalProducers"]
         self.assertEqual(len(res_producers), 1)
+        producer = res_producers[0]
+        self.assertEqual(producer["occupation"], tag2.pk)
+        self.assertEqual(producer["name"], new_data["name"])
+
+        # can have two external producers
+        second_producer = {
+            "name": "Next lever producer",
+            "emailContact": "bla@mail.com",
+            "occupation": tag2.pk,
+        }
+        response = self.client.patch(
+            url,
+            {"externalProducers": [new_data, second_producer]},
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        res_producers = response.json()["externalProducers"]
+        self.assertEqual(len(res_producers), 2)
+        self.assertSetEqual(
+            {producer["name"] for producer in res_producers},
+            {new_data["name"], second_producer["name"]},
+        )
         producer = res_producers[0]
         self.assertEqual(producer["occupation"], tag2.pk)
         self.assertEqual(producer["name"], new_data["name"])
@@ -218,3 +278,68 @@ class TestResourceView(TestCase):
         self.checkPinCount(url, 2, 1)
         private_base.pinned_resources.remove(resource)
         self.checkPinCount(url, 1, 1)
+
+    @authenticate
+    def test_resource_duplicate(self):
+        similar_title = "test"
+        base1 = BaseFactory.create(owner=authenticate.user)
+        resource_ignored_duplicates = ResourceFactory.create(
+            root_base=base1, title=similar_title
+        )
+        resource_confirmed_duplicates = ResourceFactory.create(
+            root_base=base1, title=similar_title
+        )
+        resource_to_find = ResourceFactory.create(root_base=base1, title=similar_title)
+        ResourceFactory.create(
+            root_base=base1, title="Title too different to be similar"
+        )
+        resource_to_test = ResourceFactory.create(
+            root_base=base1,
+            title=similar_title,
+            ignored_duplicates=[resource_ignored_duplicates],
+            confirmed_duplicates=[resource_confirmed_duplicates],
+        )
+
+        url = reverse("resource-duplicates", args=[resource_to_test.pk])
+
+        response = self.client.post(
+            url,
+            {
+                "title": resource_to_test.title,
+                "description": resource_to_test.description,
+            },
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), [resource_to_find.pk])
+
+    @authenticate
+    def test_resource_duplicate_answers(self):
+        base1 = BaseFactory.create(owner=authenticate.user)
+        resource_already_ignored = ResourceFactory.create(root_base=base1)
+        resource1 = ResourceFactory.create(
+            root_base=base1, ignored_duplicates=[resource_already_ignored]
+        )
+        resource2 = ResourceFactory.create(root_base=base1)
+        resource3 = ResourceFactory.create(root_base=base1)
+        resource4 = ResourceFactory.create(root_base=base1)
+        url = reverse("resource-mark-duplicates", args=[resource1.pk])
+
+        ignored_duplicates = [resource2.pk, resource3.pk]
+        confirmed_duplicates = [resource4.pk]
+
+        response = self.client.patch(
+            url,
+            {
+                "ignoredDuplicates": ignored_duplicates,
+                "confirmedDuplicates": confirmed_duplicates,
+            },
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        json_response = response.json()
+        self.assertListEqual(
+            json_response["ignoredDuplicates"],
+            [resource_already_ignored.pk, *ignored_duplicates],
+        )
+        self.assertListEqual(json_response["confirmedDuplicates"], confirmed_duplicates)

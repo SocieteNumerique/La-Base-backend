@@ -9,6 +9,7 @@ from main.models.models import (
     ExternalProducer,
     Tag,
     Collection,
+    BaseSection,
 )
 from main.query_changes.permissions import resources_queryset_for_user
 from main.query_changes.stats_annotations import resources_queryset_with_stats
@@ -46,15 +47,38 @@ class PrimaryKeyOccupationTagField(serializers.PrimaryKeyRelatedField):
 class ExternalProducerSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExternalProducer
-        fields = "__all__"
+        fields = [
+            "id",
+            "name",
+            "email_contact",
+            "website_url",
+            "occupation",
+        ]
 
-    occupation = PrimaryKeyOccupationTagField()
+    # id = serializers.ReadOnlyField()
+    occupation = PrimaryKeyOccupationTagField(required=False)
 
 
 class PrimaryKeyBaseField(serializers.PrimaryKeyRelatedField):
     def get_queryset(self):
         # request = self.context.get('request', None)
         return Base.objects.all()
+
+
+class BaseSectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BaseSection
+        read_only_fields = ["position"]
+        fields = [
+            "id",
+            "type",
+            "title",
+            "description",
+            "position",
+            "base",
+            "resources",
+            "collections",
+        ]
 
 
 class BaseIsInstancePinnedSerializer(serializers.ModelSerializer):
@@ -85,6 +109,8 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
             "can_write",
             "label_state",
             "label_details",
+            "ignored_duplicates",
+            "confirmed_duplicates",
         ]
 
     authorized_users = NestedUserSerializer(many=True, required=False, allow_null=True)
@@ -157,6 +183,9 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
         ).data
 
     def create(self, validated_data):
+        external_producers_data = []
+        if "external_producers" in validated_data:
+            external_producers_data = validated_data.pop("external_producers")
         try:
             image = create_or_update_resizable_image(validated_data, "profile_image")
             instance = super().create(validated_data)
@@ -170,9 +199,12 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
             instance.creator = request.user
             instance.save()
         instance.can_write = True
+        for external_producer_data in external_producers_data:
+            ExternalProducer.objects.create(resource=instance, **external_producer_data)
         return instance
 
     def update(self, instance: Resource, validated_data):
+        # update of external_producers is handled in FullResourceSerializer.update
         set_nested_user_fields(instance, validated_data, "authorized_users")
         set_nested_license_data(validated_data, instance)
         try:
@@ -253,6 +285,8 @@ class FullResourceSerializer(BaseResourceSerializer):
             "access_price_tags",
             "can_write",
             "pinned_in_bases",
+            "ignored_duplicates",
+            "confirmed_duplicates",
         ]
         abstract = False
 
@@ -263,27 +297,44 @@ class FullResourceSerializer(BaseResourceSerializer):
         Handle external producers
         """
         if "external_producers" in validated_data:
-            ext_producers = validated_data.pop("external_producers")
-            new_producers = []
-            for producer in ext_producers:
-                email_contact = producer.pop("email_contact")
-                producer["resource"] = instance
-                new_producer, _ = ExternalProducer.objects.update_or_create(
-                    email_contact=email_contact,
-                    defaults=producer,
-                )
-                new_producers.append(new_producer)
+            external_producers_data = validated_data.pop("external_producers")
 
-            new_producers_ids = {producer.pk for producer in new_producers}
+            new_producer_ids = set()
+            for external_producer_data in external_producers_data:
+                if producer_id := external_producer_data.pop("id", None):
+                    # update producer
+                    try:
+                        external_producer = instance.external_producers.get(
+                            pk=producer_id
+                        )
+                    except ExternalProducer.DoesNotExist:
+                        pass
+                    else:
+                        for k, v in external_producer_data.items():
+                            setattr(external_producer, k, v)
+                        new_producer_ids.add(producer_id)
+                else:
+                    producer = ExternalProducer.objects.create(
+                        resource=instance, **external_producer_data
+                    )
+                    new_producer_ids.add(producer.pk)
+
             # remove old producers
             for producer in instance.external_producers.all():
-                if producer.pk not in new_producers_ids:
+                if producer.pk not in new_producer_ids:
                     producer.delete()
+
         return super().update(instance, validated_data)
 
     @staticmethod
     def get_contents(obj):
         pass
+
+
+class MarkDuplicatesResourceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Resource
+        fields = ["id", "ignored_duplicates", "confirmed_duplicates"]
 
 
 class PrimaryKeyResourcesForCollectionField(serializers.PrimaryKeyRelatedField):
@@ -299,6 +350,14 @@ class PrimaryKeyResourcesForCollectionField(serializers.PrimaryKeyRelatedField):
         return Resource.objects.filter(
             Q(root_base=base) | Q(pinned_in_bases=base)
         ).distinct()
+
+
+class ShortCollectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Collection
+        fields = ["id", "name", "is_short", "resources"]
+
+    is_short = serializers.ReadOnlyField(default=True)
 
 
 class BaseCollectionSerializer(serializers.ModelSerializer):
@@ -382,6 +441,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
         abstract = True
         fields = [
             "id",
+            "bookmarked",
             "title",
             "owner",
             "can_write",
@@ -398,6 +458,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
             "social_media_twitter",
             "social_media_mastodon",
             "social_media_linkedin",
+            "collection_choices",
         ]
 
     owner = UserSerializerForSearch(required=False, read_only=True)
@@ -411,8 +472,10 @@ class BaseBaseSerializer(serializers.ModelSerializer):
     resource_choices = serializers.SerializerMethodField()
     can_write = serializers.SerializerMethodField()
     stats = serializers.SerializerMethodField()
+    bookmarked = serializers.SerializerMethodField()
     can_add_resources = serializers.SerializerMethodField()
     collections = serializers.SerializerMethodField()
+    collection_choices = serializers.SerializerMethodField()
     contributor_tags = serializers.PrimaryKeyRelatedField(
         many=True, queryset=Tag.objects.all(), required=False, allow_null=True
     )
@@ -486,6 +549,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
     @staticmethod
     def get_stats(obj: Base):
         res = {
+            "bookmarked_count": getattr(obj, "bookmarked_count", 0),
             "visit_count": getattr(obj, "visit_count", 0),
             "resource_count": getattr(obj, "own_resource_count", 0)
             + getattr(obj, "pinned_resources_count", 0),
@@ -498,11 +562,17 @@ class BaseBaseSerializer(serializers.ModelSerializer):
 
     def get_resources(self, obj: Base):
         user = self.context["request"].user
-        return paginated_resources_from_base(obj, user, 1, context=self.context)
+        return paginated_resources_from_base(
+            obj, user, 1, context=self.context, include_drafts=False
+        )
 
     def get_resource_choices(self, obj: Base):
         user = self.context["request"].user
         return VeryShortResourceSerializer(obj.resources_for_user(user), many=True).data
+
+    @staticmethod
+    def get_collection_choices(obj: Base):
+        return ShortCollectionSerializer(obj.collections, many=True).data
 
     def get_collections(self, obj: Base):
         pinned_collections_qs = obj.pinned_collections.prefetch_related("base__pk")
@@ -534,6 +604,12 @@ class BaseBaseSerializer(serializers.ModelSerializer):
         else:
             return []
 
+    def get_bookmarked(self, obj: Base):
+        user = self.context["request"].user
+        if user.is_anonymous:
+            return False
+        return getattr(obj, "bookmarked", False)
+
 
 class ShortBaseSerializer(BaseBaseSerializer):
     class Meta(BaseBaseSerializer.Meta):
@@ -544,6 +620,34 @@ class ShortBaseSerializer(BaseBaseSerializer):
 
 
 class FullNoContactBaseSerializer(BaseBaseSerializer):
+
+    latest_additions = serializers.SerializerMethodField()
+    sections = BaseSectionSerializer(many=True, read_only=True)
+    section_resources = serializers.SerializerMethodField()
+
+    def get_latest_additions(self, obj: Base):
+        user = self.context.get("request").user
+        return FullResourceSerializer(
+            resources_queryset_for_user(
+                user,
+                obj.resources,
+                include_drafts=False,
+            ).order_by("-created")[:3],
+            many=True,
+        ).data
+
+    def get_section_resources(self, obj: Base):
+        user = self.context.get("request").user
+        resource_queryset = Resource.objects.filter(resource_sections__base_id=obj.id)
+        return FullResourceSerializer(
+            resources_queryset_for_user(
+                user,
+                init_queryset=resource_queryset,
+                include_drafts=False,
+            ),
+            many=True,
+        ).data
+
     class Meta(BaseBaseSerializer.Meta):
         abstract = False
         fields = BaseBaseSerializer.Meta.fields + [
@@ -559,6 +663,10 @@ class FullNoContactBaseSerializer(BaseBaseSerializer):
             "state",
             "tags",
             "admins",
+            "show_latest_additions",
+            "latest_additions",
+            "sections",
+            "section_resources",
         ]
 
 

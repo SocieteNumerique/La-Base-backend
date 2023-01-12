@@ -32,11 +32,6 @@ class Intro(models.Model):
             f"<b>Confirmer avec les devs avant changement ou ajout !</b> Si plusieurs bulles s'appliquent au même contenu, mettre deux fois le même identifiant. {IGNORED}"
         ),
     )
-    page = models.CharField(
-        verbose_name="s'applique à la page",
-        max_length=30,
-        help_text=mark_safe(f"Demander aux développeurs quoi remplir ici ; {IGNORED}"),
-    )
     image = models.ImageField(
         blank=True,
         null=True,
