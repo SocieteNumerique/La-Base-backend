@@ -381,6 +381,13 @@ class Resource(TimeStampedModel):
         related_name="authorized_tags_in_resources",
         verbose_name="Tags d'utilisateurs avec accès en lecture",
     )
+    contributors = models.ManyToManyField(
+        User,
+        blank=True,
+        related_name="contributor_in_resources",
+        verbose_name="Contributeurs",
+    )
+
     has_global_license = models.BooleanField(
         verbose_name="Les contenus ont globalement la même licence", default=False
     )
