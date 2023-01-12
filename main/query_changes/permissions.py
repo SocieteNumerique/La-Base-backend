@@ -124,6 +124,7 @@ def resources_queryset_for_user(
     ).values_list("pk", flat=True)
     resources_with_read_access_pks = init_queryset.filter(
         necessary_state_query
+        | Q(contributors=user)
         | Q(authorized_users=user)
         | Q(authorized_user_tags__in=user_tags)
         | Q(root_base__authorized_users=user)
