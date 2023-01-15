@@ -91,6 +91,7 @@ def resources_queryset_for_user(
             init_queryset.filter(root_base_id__isnull=False)
             .prefetch_related("root_base")
             .prefetch_related("tags")
+            .prefetch_related("contributors")
             .prefetch_related("root_base__contributor_tags")
             .prefetch_related("pinned_in_bases")
             .prefetch_related("tags")
@@ -115,6 +116,7 @@ def resources_queryset_for_user(
         Q(root_base__owner=user)
         | Q(root_base__admins=user)
         | Q(creator=user)
+        | Q(contributors=user)
         | (
             Q(root_base__contributor_tags__in=user_tags)
             | Q(root_base__contributors=user)
@@ -122,6 +124,7 @@ def resources_queryset_for_user(
     ).values_list("pk", flat=True)
     resources_with_read_access_pks = init_queryset.filter(
         necessary_state_query
+        | Q(contributors=user)
         | Q(authorized_users=user)
         | Q(authorized_user_tags__in=user_tags)
         | Q(root_base__authorized_users=user)
