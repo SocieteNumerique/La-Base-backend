@@ -292,37 +292,52 @@ class FullResourceSerializer(BaseResourceSerializer):
 
     is_short = serializers.ReadOnlyField(default=False)
 
+    def update_external_productors(self, instance, external_producers_data):
+        new_producer_ids = set()
+        for external_producer_data in external_producers_data:
+            if producer_id := external_producer_data.pop("id", None):
+                # update producer
+                try:
+                    external_producer = instance.external_producers.get(pk=producer_id)
+                except ExternalProducer.DoesNotExist:
+                    pass
+                else:
+                    for k, v in external_producer_data.items():
+                        setattr(external_producer, k, v)
+                    new_producer_ids.add(producer_id)
+            else:
+                producer = ExternalProducer.objects.create(
+                    resource=instance, **external_producer_data
+                )
+                new_producer_ids.add(producer.pk)
+
+        # remove old producers
+        for producer in instance.external_producers.all():
+            if producer.pk not in new_producer_ids:
+                producer.delete()
+
+    def update_contributors(self, instance, contributors_data):
+        new_contributor_ids = set()
+        for contributor_data in contributors_data:
+            new_contributor_ids.add(contributor_data["id"])
+            instance.contributors.add(contributor_data["id"])
+
+        # remove old contributors
+        for contributor in instance.contributors.all():
+            if contributor.pk not in new_contributor_ids:
+                contributor.delete()
+
     def update(self, instance: Resource, validated_data):
         """
-        Handle external producers
+        Handle external producers and contributors
         """
         if "external_producers" in validated_data:
-            external_producers_data = validated_data.pop("external_producers")
+            self.update_external_productors(
+                instance, validated_data.pop("external_producers")
+            )
 
-            new_producer_ids = set()
-            for external_producer_data in external_producers_data:
-                if producer_id := external_producer_data.pop("id", None):
-                    # update producer
-                    try:
-                        external_producer = instance.external_producers.get(
-                            pk=producer_id
-                        )
-                    except ExternalProducer.DoesNotExist:
-                        pass
-                    else:
-                        for k, v in external_producer_data.items():
-                            setattr(external_producer, k, v)
-                        new_producer_ids.add(producer_id)
-                else:
-                    producer = ExternalProducer.objects.create(
-                        resource=instance, **external_producer_data
-                    )
-                    new_producer_ids.add(producer.pk)
-
-            # remove old producers
-            for producer in instance.external_producers.all():
-                if producer.pk not in new_producer_ids:
-                    producer.delete()
+        if "contributors" in validated_data:
+            self.update_contributors(instance, validated_data.pop("contributors"))
 
         return super().update(instance, validated_data)
 
