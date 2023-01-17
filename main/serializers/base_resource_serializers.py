@@ -657,10 +657,12 @@ class FullNoContactBaseSerializer(BaseBaseSerializer):
         user = self.context.get("request").user
         resource_queryset = Resource.objects.filter(resource_sections__base_id=obj.id)
         return FullResourceSerializer(
-            resources_queryset_for_user(
-                user,
-                init_queryset=resource_queryset,
-                include_drafts=False,
+            resources_queryset_with_stats(
+                resources_queryset_for_user(
+                    user,
+                    init_queryset=resource_queryset,
+                    include_drafts=False,
+                )
             ),
             many=True,
         ).data
