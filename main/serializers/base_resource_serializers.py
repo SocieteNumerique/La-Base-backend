@@ -628,10 +628,12 @@ class FullNoContactBaseSerializer(BaseBaseSerializer):
     def get_latest_additions(self, obj: Base):
         user = self.context.get("request").user
         return FullResourceSerializer(
-            resources_queryset_for_user(
-                user,
-                obj.resources,
-                include_drafts=False,
+            resources_queryset_with_stats(
+                resources_queryset_for_user(
+                    user,
+                    obj.resources,
+                    include_drafts=False,
+                )
             ).order_by("-created")[:3],
             many=True,
         ).data
