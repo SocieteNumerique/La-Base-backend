@@ -7,8 +7,9 @@ from main.factories import (
     TagFactory,
     TagCategoryFactory,
     UserFactory,
+    CollectionFactory,
 )
-from main.models import Resource
+from main.models import Resource, Collection
 from main.models.models import ExternalProducer
 from main.serializers.utils import reset_specific_categories
 from main.tests.test_utils import authenticate, snake_to_camel_case
@@ -343,3 +344,40 @@ class TestResourceView(TestCase):
             [resource_already_ignored.pk, *ignored_duplicates],
         )
         self.assertListEqual(json_response["confirmedDuplicates"], confirmed_duplicates)
+
+
+class TestResourceCollections(TestCase):
+    @authenticate
+    def test_edit_collection_resources(self):
+        base = BaseFactory.create(owner=authenticate.user)
+        resource = ResourceFactory.create(root_base=base)
+        collection = CollectionFactory.create(base=base)
+        url = reverse("resource-detail", args=[resource.pk])
+
+        # add the resource to another collection in another base
+        # we need to make sure changing collections with the patch
+        # has no effect to the collection from another base
+        base2 = BaseFactory.create(owner=authenticate.user)
+        collection2: Collection = CollectionFactory.create(base=base2)
+        collection2.resources.add(resource)
+
+        # add the resource to collection 1
+        res = self.client.patch(
+            url,
+            {"collections": [collection.pk]},
+            content_type="application/json",
+        )
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(collection.resources.count(), 1)
+        self.assertEqual(collection2.resources.count(), 1)
+
+        # remove the resource from collection 1
+        res = self.client.patch(
+            url,
+            {"collections": []},
+            content_type="application/json",
+        )
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(collection.resources.count(), 0)
+        # make sure the resource hasn't moved from collection2
+        self.assertEqual(collection2.resources.count(), 1)

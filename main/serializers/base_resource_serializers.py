@@ -1,3 +1,5 @@
+from typing import Iterable
+
 from django.db.models import Q
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -42,6 +44,16 @@ class PrimaryKeyOccupationTagField(serializers.PrimaryKeyRelatedField):
             )
         else:
             return Tag.objects.none()
+
+
+class PrimaryKeyCollectionsForResourceField(serializers.PrimaryKeyRelatedField):
+    def get_queryset(self):
+        """Limit to collections that are linked to the base the resource belongs to."""
+        request = self.context["request"]
+        resource_pk = request.parser_context["kwargs"]["pk"]
+        resource = Resource.objects.get(pk=resource_pk)
+        base_id = resource.root_base_id
+        return Collection.objects.filter(base_id=base_id)
 
 
 class ExternalProducerSerializer(serializers.ModelSerializer):
@@ -118,6 +130,12 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
         many=True, queryset=Tag.objects.all(), required=False, allow_null=True
     )
     can_write = serializers.SerializerMethodField()
+    collections = PrimaryKeyCollectionsForResourceField(
+        many=True,
+        required=False,
+        allow_null=True,
+        write_only=True,
+    )
     content_stats = serializers.SerializerMethodField(read_only=True)
     contributors = NestedUserSerializer(many=True, required=False, allow_null=True)
     profile_image = ResizableImageBase64Serializer(
@@ -203,10 +221,22 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
             ExternalProducer.objects.create(resource=instance, **external_producer_data)
         return instance
 
+    def set_collections(self, instance: Resource, collections: Iterable[Collection]):
+        if collections is None:
+            return
+
+        # only update collections that belong to the base the resource is linked to
+        for collection in instance.root_base.collections.all():
+            if collection in collections:
+                collection.resources.add(instance)
+            else:
+                collection.resources.remove(instance)
+
     def update(self, instance: Resource, validated_data):
         # update of external_producers is handled in FullResourceSerializer.update
         set_nested_user_fields(instance, validated_data, "authorized_users")
         set_nested_license_data(validated_data, instance)
+        self.set_collections(instance, validated_data.pop("collections", None))
         try:
             image = create_or_update_resizable_image(
                 validated_data, "profile_image", instance
