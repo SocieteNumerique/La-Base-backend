@@ -8,7 +8,9 @@ class Page(TimeStampedModel):
     class Meta:
         ordering = ("order",)
 
-    content = QuillField()
+    content = QuillField(
+        help_text="Pour ajouter des champs ALT aux images, ajouter du texte commençant par ALT juste en-dessous de l'image."
+    )
     description = models.CharField(verbose_name="description (SEO)", max_length=180)
     icon = models.CharField(
         max_length=50,
