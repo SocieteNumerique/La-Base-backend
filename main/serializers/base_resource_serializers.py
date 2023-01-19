@@ -1,3 +1,5 @@
+from typing import Iterable
+
 from django.db.models import Q
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -219,10 +221,16 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
             ExternalProducer.objects.create(resource=instance, **external_producer_data)
         return instance
 
-    def set_collections(self, instance: Resource, collections):
+    def set_collections(self, instance: Resource, collections: Iterable[Collection]):
         if collections is None:
             return
-        instance.collections.set(collections)
+
+        # only update collections that belong to the base the resource is linked to
+        for collection in instance.root_base.collections.all():
+            if collection in collections:
+                collection.resources.add(instance)
+            else:
+                collection.resources.remove(instance)
 
     def update(self, instance: Resource, validated_data):
         # update of external_producers is handled in FullResourceSerializer.update
