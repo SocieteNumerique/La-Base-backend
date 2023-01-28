@@ -5,6 +5,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.fields import SkipField
 
+from main.models import Criterion
 from main.models.models import (
     Resource,
     Base,
@@ -167,6 +168,11 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
             "pin_count": getattr(obj, "pin_count", 0),
             "public_pin_count": getattr(obj, "public_pin_count", 0),
         }
+        for criterion in Criterion.objects.all():
+            res[f"{criterion.slug}_count"] = getattr(obj, f"{criterion.slug}_count", 0)
+            res[f"{criterion.slug}_mean"] = (
+                getattr(obj, f"{criterion.slug}_sum", 0) or 0
+            ) / (getattr(obj, f"{criterion.slug}_count", 1) or 1)
         return res
 
     @staticmethod

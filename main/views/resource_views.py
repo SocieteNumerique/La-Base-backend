@@ -1,3 +1,5 @@
+import collections
+
 from django.contrib.postgres.search import TrigramSimilarity
 from django.db.models import Q
 from django.http import HttpRequest
@@ -7,6 +9,7 @@ from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from main.models import Criterion
 from main.models.models import Resource
 from main.models.contents import ContentBlock, ContentSection
 from main.query_changes.permissions import (
@@ -26,6 +29,7 @@ from main.serializers.content_serializers import (
     ContentBySectionSerializer,
     ContentSectionSerializer,
 )
+from main.serializers.evaluation_serializers import EvaluationSerializer
 from main.views.base_views import generic_pin_action
 from moine_back import settings
 
@@ -121,6 +125,42 @@ class ResourceView(
         serializer = MarkDuplicatesResourceSerializer(resource)
 
         return Response(serializer.data)
+
+    @action(detail=True, methods=["GET"], url_path="evaluations")
+    def list_evaluations(self, request, pk):
+        """List evaluations with stats per criterion."""
+        evaluation_grades = range(0, 5)
+        reco_grades = range(0, 2)
+        resource: Resource = self.get_object()
+        if resource.can_evaluate:
+            evaluations = list(resource.evaluations.all())
+        else:
+            evaluations = []
+        criterions = Criterion.objects.all()
+        to_return = {}
+        for criterion in criterions:
+            evaluations_for_criterion = [
+                evaluation
+                for evaluation in evaluations
+                if evaluation.criterion_id == criterion.slug
+            ]
+            grades = collections.Counter()
+            for grade in (
+                reco_grades if criterion.slug == "recommendation" else evaluation_grades
+            ):
+                grades[grade] = 0
+            for evaluation in evaluations_for_criterion:
+                grades[evaluation.evaluation] += 1
+            to_return[criterion.slug] = {
+                "evaluations": [
+                    EvaluationSerializer(evaluation, context={"request": request}).data
+                    for evaluation in evaluations
+                    if evaluation.criterion_id == criterion.slug
+                ],
+                "stats": {"grades": grades, "count": len(evaluations_for_criterion)},
+            }
+
+        return Response(to_return)
 
 
 class RessourceDuplicatesValidatorViews(APIView):
