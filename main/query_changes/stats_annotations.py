@@ -1,4 +1,5 @@
-from django.db.models import Q, Count, Prefetch, Sum
+from django.db.models import Q, Count, Prefetch, Sum, FloatField
+from django.db.models.functions import Cast
 
 from main.models.evaluations import get_all_criteria
 from main.models.models import Resource, Tag, Base
@@ -40,7 +41,9 @@ def resources_queryset_with_stats(init_queryset=Resource.objects):
         qs = qs.annotate(
             **{
                 f"{criterion.slug}_count": Count(
-                    "evaluations", filter=Q(evaluations__criterion__slug=criterion.slug)
+                    "evaluations",
+                    distinct=True,
+                    filter=Q(evaluations__criterion__slug=criterion.slug),
                 )
             }
         )
@@ -48,8 +51,15 @@ def resources_queryset_with_stats(init_queryset=Resource.objects):
             **{
                 f"{criterion.slug}_sum": Sum(
                     "evaluations__evaluation",
+                    distinct=True,
                     filter=Q(evaluations__criterion__slug=criterion.slug),
                 )
+            }
+        )
+        qs = qs.annotate(
+            **{
+                f"{criterion.slug}_mean": Cast(f"{criterion.slug}_sum", FloatField())
+                / Cast(f"{criterion.slug}_count", FloatField())
             }
         )
 

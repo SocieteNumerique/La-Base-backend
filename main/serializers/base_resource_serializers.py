@@ -170,9 +170,8 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
         }
         for criterion in get_all_criteria():
             res[f"{criterion.slug}_count"] = getattr(obj, f"{criterion.slug}_count", 0)
-            res[f"{criterion.slug}_mean"] = (
-                getattr(obj, f"{criterion.slug}_sum", 0) or 0
-            ) / (getattr(obj, f"{criterion.slug}_count", 1) or 1)
+            res[f"{criterion.slug}_mean"] = getattr(obj, f"{criterion.slug}_mean", 0)
+            res[f"{criterion.slug}_sum"] = getattr(obj, f"{criterion.slug}_sum", 0)
         return res
 
     @staticmethod
