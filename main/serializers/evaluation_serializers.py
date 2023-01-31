@@ -7,11 +7,10 @@ from main.query_changes.permissions import resources_queryset_for_user
 class PrimaryKeyResourcesForEvaluations(serializers.PrimaryKeyRelatedField):
     def get_queryset(self):
         """Limit to resources that we have access to."""
-        request = self.context["request"]
-        user = request.user
-        if user.is_anonymous:
+        request = self.context.get("request")
+        if not request or request.user.is_anonymous:
             return Resource.objects.none()
-        return resources_queryset_for_user(user)
+        return resources_queryset_for_user(request.user)
 
 
 class EvaluationSerializer(serializers.ModelSerializer):

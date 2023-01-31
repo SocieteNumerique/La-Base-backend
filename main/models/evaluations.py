@@ -1,3 +1,5 @@
+import datetime
+
 from django.db import models
 
 from main.models.user import User
@@ -44,3 +46,20 @@ class Evaluation(TimeStampedModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     evaluation = models.PositiveSmallIntegerField(choices=EVALUATIONS)
     comment = models.TextField()
+
+
+def get_all_criteria():
+    """
+    Fetch criteria with 1 minute cache to avoid criteria being
+    fetched mutliple times per request.
+    """
+    now = datetime.datetime.now()
+    if hasattr(get_all_criteria, "criteria") and (
+        (now - getattr(get_all_criteria, "last_fetched", now)).total_seconds() < 60
+    ):
+        return get_all_criteria.criteria
+
+    get_all_criteria.criteria = Criterion.objects.all()
+    get_all_criteria.last_fetched = now
+
+    return get_all_criteria.criteria

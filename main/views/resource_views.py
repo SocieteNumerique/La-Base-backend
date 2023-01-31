@@ -136,9 +136,9 @@ class ResourceView(
             evaluations = list(resource.evaluations.all())
         else:
             evaluations = []
-        criterions = Criterion.objects.all()
+        criteria = Criterion.objects.all()
         to_return = {}
-        for criterion in criterions:
+        for criterion in criteria:
             evaluations_for_criterion = [
                 evaluation
                 for evaluation in evaluations

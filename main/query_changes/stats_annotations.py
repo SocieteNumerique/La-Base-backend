@@ -1,6 +1,6 @@
 from django.db.models import Q, Count, Prefetch, Sum
 
-from main.models import Criterion
+from main.models.evaluations import get_all_criteria
 from main.models.models import Resource, Tag, Base
 from main.serializers.utils import SPECIFIC_CATEGORY_SLUGS
 
@@ -36,7 +36,7 @@ def resources_queryset_with_stats(init_queryset=Resource.objects):
         .prefetch_related("evaluations")
     )
 
-    for criterion in Criterion.objects.all():
+    for criterion in get_all_criteria():
         qs = qs.annotate(
             **{
                 f"{criterion.slug}_count": Count(

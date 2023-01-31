@@ -7,6 +7,7 @@ from main.factories import (
     BaseFactory,
     CriterionFactory,
 )
+from main.models.evaluations import get_all_criteria
 from main.tests.test_utils import authenticate
 
 
@@ -80,6 +81,8 @@ class TestEvaluations(TestCase):
     def test_resource_evaluation_stats(self):
         resource = ResourceFactory.create(state="public")
         criterion = CriterionFactory.create()
+        # refresh cache
+        get_all_criteria.__delattr__("criteria")
         EvaluationFactory.create(resource=resource, evaluation=4, criterion=criterion)
         stats = self.get_resource_stats(resource)
         self.assertEqual(stats[f"{criterion.slug}_count"], 1)
