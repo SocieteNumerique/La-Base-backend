@@ -101,7 +101,14 @@ class User(AbstractBaseUser):
     objects = UserManager()
 
     def __str__(self):
-        return self.email
+        names = []
+        if self.first_name:
+            names.append(self.first_name)
+        if self.last_name:
+            names.append(self.last_name)
+        if not len(names):
+            return self.email
+        return " ".join(names)
 
     def has_perm(self, perm, obj=None):
         "Does the user have a specific permission?"

@@ -3,12 +3,19 @@ from typing import Optional
 from factory.django import DjangoModelFactory
 import factory
 
-from main.models import TextContent, ContentSection, Intro
-from main.models.user import User
-from main.models.models import Collection, LicenseText, BaseSection
+from main.models import (
+    Collection,
+    ContentSection,
+    Intro,
+    TextContent,
+    User,
+    UserGroup,
+    Criterion,
+    Evaluation,
+)
+from main.models.models import LicenseText, BaseSection
 
 from main.models.models import Tag, TagCategory, Base, Resource
-from main.models.user import UserGroup
 
 factory.Faker._DEFAULT_LOCALE = "fr_FR"
 
@@ -191,3 +198,24 @@ class BaseSectionFactory(DjangoModelFactory):
 
         if extracted:
             self.collections.add(*extracted)
+
+
+class CriterionFactory(DjangoModelFactory):
+    class Meta:
+        model = Criterion
+
+    name = factory.Faker("text", max_nb_chars=15)
+    description = factory.Faker("paragraph")
+    slug = factory.Faker("word")
+    order = factory.Sequence(order)
+
+
+class EvaluationFactory(DjangoModelFactory):
+    class Meta:
+        model = Evaluation
+
+    comment = factory.Faker("text", max_nb_chars=80)
+    criterion = factory.SubFactory(CriterionFactory)
+    evaluation = factory.Faker("pyint", min_value=0, max_value=4)
+    resource = factory.SubFactory(ResourceFactory)
+    user = factory.SubFactory(UserFactory)

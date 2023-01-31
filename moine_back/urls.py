@@ -20,19 +20,20 @@ from django.urls import include, path
 from rest_framework import routers
 
 from main.views import (
-    main_views,
+    base_section_views,
     base_views,
     collection_views,
-    resource_views,
-    index_views,
-    tag_views,
-    search_view,
-    user_views,
-    page_views,
     intro_views,
+    index_views,
+    main_views,
+    page_views,
+    evaluations_views,
+    resource_views,
+    search_view,
+    tag_views,
     text_block_views,
+    user_views,
     user_search_views,
-    base_section_views,
 )
 from main.views.credits_view import CreditsView
 from main.views.contribute_transfer_views import ContributeView, TransferView
@@ -45,7 +46,13 @@ from moine_back.settings import IS_LOCAL_DEV
 router = routers.DefaultRouter()
 router.register(r"bases", base_views.BaseView, basename="base")
 router.register(r"collections", collection_views.CollectionView, basename="collection")
+router.register(r"criteria", evaluations_views.CriterionView, basename="criterion")
 router.register(r"contents", resource_views.ContentView, basename="content")
+router.register(
+    r"evaluations",
+    evaluations_views.EvaluationView,
+    basename="evaluation",
+)
 router.register(r"index", index_views.IndexView, basename="index")
 router.register(r"intros", intro_views.IntroView, basename="intro")
 router.register(r"text_blocks", text_block_views.TextBlockView, basename="text_block")

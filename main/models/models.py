@@ -400,6 +400,7 @@ class Resource(TimeStampedModel):
     )
     ignored_duplicates = models.ManyToManyField("self", blank=True)
     confirmed_duplicates = models.ManyToManyField("self", blank=True)
+    can_evaluate = models.BooleanField(verbose_name="Évaluation activées", default=True)
 
     def save(self, *args, **kwargs):
         """
