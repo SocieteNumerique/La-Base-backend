@@ -10,7 +10,7 @@ class PrimaryKeyResourcesForEvaluations(serializers.PrimaryKeyRelatedField):
         request = self.context.get("request")
         if not request or request.user.is_anonymous:
             return Resource.objects.none()
-        return resources_queryset_for_user(request.user)
+        return resources_queryset_for_user(request.user).filter(can_evaluate=True)
 
 
 class EvaluationSerializer(serializers.ModelSerializer):
