@@ -18,6 +18,10 @@ from .models import (  # noqa: F401
     ExternalProducer,
 )
 from .page import Page  # noqa: F401
+from .evaluations import (  # noqa: F401
+    Evaluation,
+    Criterion,
+)  # noqa: F401
 from .seen_page_intros import SeenIntroSlug  # noqa: F401
 from .text_block import TextBlock  # noqa: F401
 from .user import User, UserGroup  # noqa: F401

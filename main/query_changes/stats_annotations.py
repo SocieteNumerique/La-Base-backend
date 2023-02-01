@@ -1,11 +1,13 @@
-from django.db.models import Q, Count, Prefetch
+from django.db.models import Q, Count, Prefetch, Sum, FloatField
+from django.db.models.functions import Cast
 
+from main.models.evaluations import get_all_criteria
 from main.models.models import Resource, Tag, Base
 from main.serializers.utils import SPECIFIC_CATEGORY_SLUGS
 
 
 def resources_queryset_with_stats(init_queryset=Resource.objects):
-    return (
+    qs = (
         init_queryset.annotate(
             nb_files=Count(
                 "contents", distinct=True, filter=Q(contents__filecontent__isnull=False)
@@ -32,7 +34,36 @@ def resources_queryset_with_stats(init_queryset=Resource.objects):
                 filter=Q(pinned_in_bases__state="public"),
             ),
         )
+        .prefetch_related("evaluations")
     )
+
+    for criterion in get_all_criteria():
+        qs = qs.annotate(
+            **{
+                f"{criterion.slug}_count": Count(
+                    "evaluations",
+                    distinct=True,
+                    filter=Q(evaluations__criterion__slug=criterion.slug),
+                )
+            }
+        )
+        qs = qs.annotate(
+            **{
+                f"{criterion.slug}_sum": Sum(
+                    "evaluations__evaluation",
+                    distinct=True,
+                    filter=Q(evaluations__criterion__slug=criterion.slug),
+                )
+            }
+        )
+        qs = qs.annotate(
+            **{
+                f"{criterion.slug}_mean": Cast(f"{criterion.slug}_sum", FloatField())
+                / Cast(f"{criterion.slug}_count", FloatField())
+            }
+        )
+
+    return qs
 
 
 def bases_queryset_with_stats(init_queryset=Base.objects):
