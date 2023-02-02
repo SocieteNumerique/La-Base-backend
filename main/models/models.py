@@ -363,7 +363,11 @@ class Resource(TimeStampedModel):
         limit_choices_to=query_my_related_tags("Resource"),
     )
     label_state = models.CharField(
-        max_length=10, default="", blank=True, choices=RESOURCE_LABEL_CHOICES
+        max_length=10,
+        default="",
+        blank=True,
+        choices=RESOURCE_LABEL_CHOICES,
+        verbose_name="État de la labélisation",
     )
     label_details = models.TextField(blank=True, null=True)
     is_grid_view_enabled = models.BooleanField(default=False)
