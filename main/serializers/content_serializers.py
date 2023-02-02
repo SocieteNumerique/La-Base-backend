@@ -29,18 +29,25 @@ CONTENT_FIELDS = [
     "section",
     "created",
     "modified",
-    "type",
     "nb_col",
     "order",
-    "license_tags",
-    "access_price_tags",
     "use_resource_license_and_access",
     "license_text",
     "license_knowledge",
     "tags",
 ]
+SPECIALISED_CONTENT_FIELDS = [
+    "type",
+    "license_tags",
+    "access_price_tags",
+]
 CONTENT_READ_ONLY_FIELDS = ["id", "created", "modified"]
-POSSIBLE_CONTENT_TYPES = ["text", "link", "linkedResource", "file"]
+POSSIBLE_CONTENT_TYPES = [
+    "text",
+    "link",
+    "linkedResource",
+    "file",
+]
 
 ALLOWED_TAGS = [
     HTMLTags.A.value,
@@ -128,13 +135,17 @@ class BaseContentSerializer(serializers.ModelSerializer):
 
 class LinkContentSerializer(BaseContentSerializer):
     class Meta(BaseContentSerializer.Meta):
-        fields = BaseContentSerializer.Meta.fields + [
-            "link",
-            "with_preview",
-            "target_image",
-            "target_description",
-            "target_title",
-        ]
+        fields = (
+            BaseContentSerializer.Meta.fields
+            + SPECIALISED_CONTENT_FIELDS
+            + [
+                "link",
+                "with_preview",
+                "target_image",
+                "target_description",
+                "target_title",
+            ]
+        )
         model = LinkContent
 
     @staticmethod
@@ -144,7 +155,11 @@ class LinkContentSerializer(BaseContentSerializer):
 
 class LinkedResourceContentSerializer(BaseContentSerializer):
     class Meta(BaseContentSerializer.Meta):
-        fields = BaseContentSerializer.Meta.fields + ["linked_resource"]
+        fields = (
+            BaseContentSerializer.Meta.fields
+            + SPECIALISED_CONTENT_FIELDS
+            + ["linked_resource"]
+        )
         model = LinkedResourceContent
 
     @staticmethod
@@ -154,7 +169,9 @@ class LinkedResourceContentSerializer(BaseContentSerializer):
 
 class TextContentSerializer(BaseContentSerializer):
     class Meta(BaseContentSerializer.Meta):
-        fields = BaseContentSerializer.Meta.fields + ["text"]
+        fields = (
+            BaseContentSerializer.Meta.fields + SPECIALISED_CONTENT_FIELDS + ["text"]
+        )
         model = TextContent
 
     @staticmethod
@@ -170,11 +187,15 @@ class TextContentSerializer(BaseContentSerializer):
 
 class FileContentSerializer(BaseContentSerializer):
     class Meta(BaseContentSerializer.Meta):
-        fields = BaseContentSerializer.Meta.fields + [
-            "file",
-            "with_preview",
-            "image_alt",
-        ]
+        fields = (
+            BaseContentSerializer.Meta.fields
+            + SPECIALISED_CONTENT_FIELDS
+            + [
+                "file",
+                "with_preview",
+                "image_alt",
+            ]
+        )
         model = FileContent
 
     file = Base64FileField(required=False, allow_null=True)
@@ -213,7 +234,7 @@ def content_type_to_child_model(content_type):
 
 class ReadContentSerializer(serializers.ModelSerializer):
     class Meta:
-        fields = CONTENT_FIELDS + ["link", "with_preview", "linked_resource", "text"]
+        fields = CONTENT_FIELDS
         read_only_fields = CONTENT_READ_ONLY_FIELDS
         model = ContentBlock
 

@@ -16,8 +16,10 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import include, path
-from rest_framework import routers
+from django.urls import include, path, re_path
+from drf_yasg import openapi
+from drf_yasg.views import get_schema_view
+from rest_framework import routers, permissions
 
 from main.views import (
     base_section_views,
@@ -42,6 +44,21 @@ from main.views.resource_views import RessourceDuplicatesValidatorViews
 from main.views.seen_page_intros_views import mark_intros_seen_for_slugs
 from main.views.visit_counts import increment_visit_count
 from moine_back.settings import IS_LOCAL_DEV
+
+
+schema_view = get_schema_view(
+    openapi.Info(
+        title="API de La Base",
+        default_version="v1",
+        description="Accès direct aux informations de La Base",
+        terms_of_service="https://labase.anct.gouv.fr/page/a-propos",
+        contact=openapi.Contact(email="labase@anct.gouv.fr"),
+        # license=openapi.License(name="BSD License"),
+    ),
+    public=True,
+    permission_classes=[permissions.AllowAny],
+)
+
 
 router = routers.DefaultRouter()
 router.register(r"bases", base_views.BaseView, basename="base")
@@ -71,6 +88,19 @@ router.register(
 )
 
 urlpatterns = [
+    re_path(
+        r"^swagger(?P<format>\.json|\.yaml)$",
+        schema_view.without_ui(cache_timeout=0),
+        name="schema-json",
+    ),
+    re_path(
+        r"^swagger/$",
+        schema_view.with_ui("swagger", cache_timeout=0),
+        name="schema-swagger-ui",
+    ),
+    re_path(
+        r"^redoc/$", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"
+    ),
     path("admin/", admin.site.urls),
     path("hijack/", include("hijack.urls")),
     path("api/version", main_views.version),
