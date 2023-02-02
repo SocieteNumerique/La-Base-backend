@@ -1,6 +1,6 @@
 from django.db import models
 
-from main.models import User
+from main.models.user import User
 
 DATA_TYPE_CHOICES = [
     ("resources", "ressources"),

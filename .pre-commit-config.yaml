@@ -67,6 +67,7 @@ repos:
   - id: python-safety-dependencies-check
   repo: https://github.com/Lucas-C/pre-commit-hooks-safety
   rev: v1.3.0
+  always_run: true
 - hooks:
   - id: beautysh
   repo: https://github.com/bemeurer/beautysh.git

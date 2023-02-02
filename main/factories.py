@@ -9,7 +9,6 @@ from main.models import (
     Intro,
     TextContent,
     User,
-    UserGroup,
     Criterion,
     Evaluation,
 )
@@ -120,13 +119,6 @@ class CollectionFactory(DjangoModelFactory):
 
         if extracted:
             self.resources.add(*extracted)
-
-
-class UserGroupFactory(DjangoModelFactory):
-    class Meta:
-        model = UserGroup
-
-    name = factory.Faker("text", max_nb_chars=30)
 
 
 class LicenseTextFactory(DjangoModelFactory):

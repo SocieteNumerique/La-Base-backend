@@ -3,7 +3,7 @@ from django.db.models import Count
 from multiselectfield import MultiSelectField
 
 from main.constants import ALLOWED_TAGS_WITHOUT_HEADING
-from main.models.user import User, UserGroup
+from main.models.user import User
 from main.models.utils import (
     TimeStampedModel,
     ResizableImage,
@@ -353,8 +353,6 @@ class Resource(TimeStampedModel):
     description = models.CharField(
         max_length=560, null=True, blank=True
     )  # only if not in base, first
-    zip_code = models.IntegerField(null=True, blank=True)
-    url = models.URLField(null=True, blank=True)
     internal_producers = models.ManyToManyField(
         User, blank=True, related_name="internal_producers"
     )
@@ -368,9 +366,6 @@ class Resource(TimeStampedModel):
         max_length=10, default="", blank=True, choices=RESOURCE_LABEL_CHOICES
     )
     label_details = models.TextField(blank=True, null=True)
-    groups = models.ManyToManyField(
-        "UserGroup", blank=True, through="ResourceUserGroup"
-    )
     is_grid_view_enabled = models.BooleanField(default=False)
     authorized_users = models.ManyToManyField(
         User, blank=True, related_name="authorized_resources"
@@ -484,18 +479,3 @@ class ExternalProducer(TimeStampedModel):
 
     def __str__(self):
         return f"EXT - ${self.name}"
-
-
-class ResourceUserGroup(TimeStampedModel):
-    """
-    We have it in a separate model instead of M2M
-    so that we can handle write access.
-    """
-
-    resource = models.ForeignKey(
-        Resource, on_delete=models.CASCADE, related_name="resource_user_groups"
-    )
-    group = models.ForeignKey(
-        UserGroup, on_delete=models.CASCADE, related_name="resource_user_groups"
-    )
-    can_write = models.BooleanField(default=False, verbose_name="accès en écriture")

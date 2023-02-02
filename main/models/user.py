@@ -1,7 +1,6 @@
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.db import models
 
-from main.models.utils import TimeStampedModel
 from main.query_changes.utils import query_my_related_tags
 
 
@@ -123,8 +122,3 @@ class User(AbstractBaseUser):
         "Is the user a member of staff?"
         # Simplest possible answer: All admins are staff
         return self.is_admin
-
-
-class UserGroup(TimeStampedModel):
-    name = models.CharField(max_length=100, verbose_name="nom du groupe")
-    users = models.ManyToManyField(User)
