@@ -206,7 +206,6 @@ class ContentView(
     mixins.CreateModelMixin,
     mixins.UpdateModelMixin,
     viewsets.GenericViewSet,
-    mixins.ListModelMixin,
 ):
     def get_queryset(self):
         return ContentBlock.objects.filter(
