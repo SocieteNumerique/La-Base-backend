@@ -132,9 +132,15 @@ légèrement différent dans le front, avec des raccourcis vers les bases CnFS.
 
 ### Importer les comptes CnFS
 
-Les CnFS peuvent être importés en lançant la commande
-`python manage.py import_cnfs_accounts`, lorsqu'un fichier `cnfs_accounts.csv` est
-présent à la racine du projet back. Ce fichier est obtenu avec un compte administrateur
+Les CnFS peuvent être importés directement dans l'admin, à l'adresse
+`/admin/main/user/`. En haut à droite, un bouton "MAJ CnFS" dirige vers l'adresse
+`/admin/update-cnfs` qui permet de téléverser un fichier `cnfs_accounts.csv`.
+
+Ce fichier est obtenu avec un compte administrateur
 sur l'espace Co-Op. Depuis la
 [page d'accueil](https://coop.conseiller-numerique.gouv.fr/accueil), cliquer sur le
 bouton "Exporter les données".
+
+Une autre alternative est de lancer la commande
+`python manage.py import_cnfs_accounts`, lorsqu'un fichier `cnfs_accounts.csv` est
+présent à la racine du projet back.

@@ -42,6 +42,7 @@ from main.views.contribute_transfer_views import ContributeView, TransferView
 from main.views.report_view import ReportView
 from main.views.resource_views import RessourceDuplicatesValidatorViews
 from main.views.seen_page_intros_views import mark_intros_seen_for_slugs
+from main.views.update_cnfs_accounts import UpdateCnfsAccountsView
 from main.views.visit_counts import increment_visit_count
 from moine_back.settings import IS_LOCAL_DEV
 
@@ -101,6 +102,7 @@ urlpatterns = [
     re_path(
         r"^redoc/$", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"
     ),
+    path("admin/update-cnfs", UpdateCnfsAccountsView.as_view(), name="update-cnfs"),
     path("admin/", admin.site.urls),
     path("hijack/", include("hijack.urls")),
     path("api/version", main_views.version),
