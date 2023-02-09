@@ -1,6 +1,18 @@
-from django.db.models import Q, Count, Prefetch, Sum, FloatField
-from django.db.models.functions import Cast
+from django.db.models import (
+    Q,
+    Count,
+    Prefetch,
+    FloatField,
+    Subquery,
+    OuterRef,
+    Func,
+    F,
+    Case,
+    When,
+)
+from django.db.models.functions import Coalesce
 
+from main.models import Evaluation
 from main.models.evaluations import get_all_criteria
 from main.models.models import Resource, Tag, Base
 from main.serializers.utils import SPECIFIC_CATEGORY_SLUGS
@@ -47,19 +59,30 @@ def resources_queryset_with_stats(init_queryset=Resource.objects):
                 )
             }
         )
-        qs = qs.annotate(
-            **{
-                f"{criterion.slug}_sum": Sum(
-                    "evaluations__evaluation",
-                    distinct=True,
-                    filter=Q(evaluations__criterion__slug=criterion.slug),
+
+        mean_subquery = (
+            Evaluation.objects.filter(
+                resource=OuterRef("id"), criterion__slug=criterion.slug
+            )
+            .annotate(
+                total=Coalesce(
+                    Func("evaluation", function="Sum", output_field=FloatField()), 0.0
+                ),
+                count=Func("evaluation", function="Count", output_field=FloatField()),
+            )
+            .values("total", "count")
+            .annotate(
+                mean=Case(
+                    When(count=0, then=None),
+                    default=(1.0 * F("total")) / (1.0 * F("count")),
                 )
-            }
+            )
+            .values("mean")
         )
+
         qs = qs.annotate(
             **{
-                f"{criterion.slug}_mean": Cast(f"{criterion.slug}_sum", FloatField())
-                / Cast(f"{criterion.slug}_count", FloatField())
+                f"{criterion.slug}_mean": Subquery(mean_subquery),
             }
         )
 

@@ -79,19 +79,38 @@ class TestEvaluations(TestCase):
 
     @authenticate
     def test_resource_evaluation_stats(self):
-        resource = ResourceFactory.create(state="public")
         criterion = CriterionFactory.create()
         # refresh cache
-        get_all_criteria.__delattr__("criteria")
-        EvaluationFactory.create(resource=resource, evaluation=4, criterion=criterion)
-        stats = self.get_resource_stats(resource)
-        self.assertEqual(stats[f"{criterion.slug}_count"], 1)
-        self.assertEqual(stats[f"{criterion.slug}_mean"], 4)
-        EvaluationFactory.create(resource=resource, evaluation=2, criterion=criterion)
-        stats = self.get_resource_stats(resource)
-        self.assertEqual(stats[f"{criterion.slug}_count"], 2)
-        self.assertEqual(stats[f"{criterion.slug}_mean"], 3)
-        EvaluationFactory.create(resource=resource, evaluation=0, criterion=criterion)
-        stats = self.get_resource_stats(resource)
-        self.assertEqual(stats[f"{criterion.slug}_count"], 3)
-        self.assertEqual(stats[f"{criterion.slug}_mean"], 2)
+        if hasattr(get_all_criteria, "criteria"):
+            get_all_criteria.__delattr__("criteria")
+
+        # testing on two resources to make sure evaluations on one resource
+        # doesn't mess up other resources
+        for i in range(2):
+            resource = ResourceFactory.create(state="public")
+            EvaluationFactory.create(
+                resource=resource, evaluation=4, criterion=criterion
+            )
+            stats = self.get_resource_stats(resource)
+            self.assertEqual(stats[f"{criterion.slug}_count"], 1)
+            self.assertEqual(stats[f"{criterion.slug}_mean"], 4)
+            EvaluationFactory.create(
+                resource=resource, evaluation=2, criterion=criterion
+            )
+            stats = self.get_resource_stats(resource)
+            self.assertEqual(stats[f"{criterion.slug}_count"], 2)
+            self.assertEqual(stats[f"{criterion.slug}_mean"], 3)
+            EvaluationFactory.create(
+                resource=resource, evaluation=0, criterion=criterion
+            )
+            stats = self.get_resource_stats(resource)
+            self.assertEqual(stats[f"{criterion.slug}_count"], 3)
+            self.assertEqual(stats[f"{criterion.slug}_mean"], 2)
+            # giving twice same grades, there have been issues when
+            # multiple grades are equal
+            EvaluationFactory.create(
+                resource=resource, evaluation=4, criterion=criterion
+            )
+            stats = self.get_resource_stats(resource)
+            self.assertEqual(stats[f"{criterion.slug}_count"], 4)
+            self.assertEqual(stats[f"{criterion.slug}_mean"], 2.5)
