@@ -388,7 +388,7 @@ class Resource(TimeStampedModel):
     )
 
     has_global_license = models.BooleanField(
-        verbose_name="Les contenus ont globalement la même licence", default=False
+        verbose_name="Les contenus ont globalement la même licence", default=True
     )
     license_text = models.OneToOneField(
         "LicenseText",
