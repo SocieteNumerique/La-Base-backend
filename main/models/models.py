@@ -173,7 +173,7 @@ class Base(TimeStampedModel):
         update_kwargs = {
             "pinned_resources_count": self.pinned_resources.count(),
             "visit_count": self.visits.count(),
-            "own_resource_count": self.resources.count(),
+            "own_resource_count": self.resources.exclude(state="draft").count(),
             "bookmarked_count": self.bookmarks.count(),
         }
         # update without changing modified auto-field
