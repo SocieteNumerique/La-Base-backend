@@ -1,5 +1,5 @@
 from django.db import models
-from django.db.models import Count
+from django.db.models import Count, Q
 from multiselectfield import MultiSelectField
 
 from main.constants import ALLOWED_TAGS_WITHOUT_HEADING
@@ -264,7 +264,9 @@ class TagCategory(TimeStampedModel):
 
 class TagManager(models.Manager):
     def get_queryset(self):
-        return Tag.default_manager.all().annotate(count=Count("resources"))
+        return Tag.default_manager.all().annotate(
+            count=Count("resources", filter=~Q(resources__state="draft"))
+        )
 
 
 class Tag(TimeStampedModel):
