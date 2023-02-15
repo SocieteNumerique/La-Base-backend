@@ -184,7 +184,7 @@ class Collection(TimeStampedModel):
     class Meta:
         unique_together = ("name", "base")
 
-    name = models.CharField(max_length=50, verbose_name="nom")
+    name = models.CharField(max_length=100, verbose_name="nom")
     description = models.CharField(
         max_length=100, verbose_name="description", default="", blank=True
     )
