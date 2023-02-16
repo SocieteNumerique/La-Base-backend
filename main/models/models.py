@@ -265,7 +265,10 @@ class TagCategory(TimeStampedModel):
 class TagManager(models.Manager):
     def get_queryset(self):
         return Tag.default_manager.all().annotate(
-            count=Count("resources", filter=~Q(resources__state="draft"))
+            resource_count=Count(
+                "resources", filter=~Q(resources__state="draft"), distinct=True
+            ),
+            base_count=Count("bases", filter=~Q(bases__state="draft"), distinct=True),
         )
 
 
