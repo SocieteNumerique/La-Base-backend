@@ -22,7 +22,7 @@ class Criterion(models.Model):
         verbose_name = "critère d'évaluation"
 
     name = models.CharField(max_length=50, verbose_name="nom")
-    description = models.CharField(max_length=200, verbose_name="description")
+    description = models.TextField(verbose_name="description")
     order = models.IntegerField(verbose_name="ordre du critère")
     slug = models.CharField(
         max_length=30,
