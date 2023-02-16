@@ -36,6 +36,7 @@ else:
     ALLOWED_HOSTS = config.getlist("security.allowed_hosts")
 
 INSTALLED_APPS = [
+    "main",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -46,10 +47,10 @@ INSTALLED_APPS = [
     "hijack",
     "hijack.contrib.admin",
     "telescoop_auth",
-    "main",
     "rest_framework",
     "telescoop_backup",
     "django_quill",
+    "drf_yasg",
 ]
 if IS_LOCAL_DEV:
     INSTALLED_APPS.append("debug_toolbar")

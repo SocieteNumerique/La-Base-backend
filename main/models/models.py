@@ -1,9 +1,9 @@
 from django.db import models
-from django.db.models import Count
+from django.db.models import Count, Q
 from multiselectfield import MultiSelectField
 
 from main.constants import ALLOWED_TAGS_WITHOUT_HEADING
-from main.models.user import User, UserGroup
+from main.models.user import User
 from main.models.utils import (
     TimeStampedModel,
     ResizableImage,
@@ -173,7 +173,7 @@ class Base(TimeStampedModel):
         update_kwargs = {
             "pinned_resources_count": self.pinned_resources.count(),
             "visit_count": self.visits.count(),
-            "own_resource_count": self.resources.count(),
+            "own_resource_count": self.resources.exclude(state="draft").count(),
             "bookmarked_count": self.bookmarks.count(),
         }
         # update without changing modified auto-field
@@ -184,7 +184,7 @@ class Collection(TimeStampedModel):
     class Meta:
         unique_together = ("name", "base")
 
-    name = models.CharField(max_length=50, verbose_name="nom")
+    name = models.CharField(max_length=100, verbose_name="nom")
     description = models.CharField(
         max_length=100, verbose_name="description", default="", blank=True
     )
@@ -264,7 +264,12 @@ class TagCategory(TimeStampedModel):
 
 class TagManager(models.Manager):
     def get_queryset(self):
-        return Tag.default_manager.all().annotate(count=Count("resources"))
+        return Tag.default_manager.all().annotate(
+            resource_count=Count(
+                "resources", filter=~Q(resources__state="draft"), distinct=True
+            ),
+            base_count=Count("bases", filter=~Q(bases__state="draft"), distinct=True),
+        )
 
 
 class Tag(TimeStampedModel):
@@ -353,8 +358,6 @@ class Resource(TimeStampedModel):
     description = models.CharField(
         max_length=560, null=True, blank=True
     )  # only if not in base, first
-    zip_code = models.IntegerField(null=True, blank=True)
-    url = models.URLField(null=True, blank=True)
     internal_producers = models.ManyToManyField(
         User, blank=True, related_name="internal_producers"
     )
@@ -365,12 +368,13 @@ class Resource(TimeStampedModel):
         limit_choices_to=query_my_related_tags("Resource"),
     )
     label_state = models.CharField(
-        max_length=10, default="", blank=True, choices=RESOURCE_LABEL_CHOICES
+        max_length=10,
+        default="",
+        blank=True,
+        choices=RESOURCE_LABEL_CHOICES,
+        verbose_name="État de la labélisation",
     )
     label_details = models.TextField(blank=True, null=True)
-    groups = models.ManyToManyField(
-        "UserGroup", blank=True, through="ResourceUserGroup"
-    )
     is_grid_view_enabled = models.BooleanField(default=False)
     authorized_users = models.ManyToManyField(
         User, blank=True, related_name="authorized_resources"
@@ -381,8 +385,15 @@ class Resource(TimeStampedModel):
         related_name="authorized_tags_in_resources",
         verbose_name="Tags d'utilisateurs avec accès en lecture",
     )
+    contributors = models.ManyToManyField(
+        User,
+        blank=True,
+        related_name="contributor_in_resources",
+        verbose_name="Contributeurs",
+    )
+
     has_global_license = models.BooleanField(
-        verbose_name="Les contenus ont globalement la même licence", default=False
+        verbose_name="Les contenus ont globalement la même licence", default=True
     )
     license_text = models.OneToOneField(
         "LicenseText",
@@ -393,6 +404,7 @@ class Resource(TimeStampedModel):
     )
     ignored_duplicates = models.ManyToManyField("self", blank=True)
     confirmed_duplicates = models.ManyToManyField("self", blank=True)
+    can_evaluate = models.BooleanField(verbose_name="Évaluation activées", default=True)
 
     def save(self, *args, **kwargs):
         """
@@ -476,18 +488,3 @@ class ExternalProducer(TimeStampedModel):
 
     def __str__(self):
         return f"EXT - ${self.name}"
-
-
-class ResourceUserGroup(TimeStampedModel):
-    """
-    We have it in a separate model instead of M2M
-    so that we can handle write access.
-    """
-
-    resource = models.ForeignKey(
-        Resource, on_delete=models.CASCADE, related_name="resource_user_groups"
-    )
-    group = models.ForeignKey(
-        UserGroup, on_delete=models.CASCADE, related_name="resource_user_groups"
-    )
-    can_write = models.BooleanField(default=False, verbose_name="accès en écriture")

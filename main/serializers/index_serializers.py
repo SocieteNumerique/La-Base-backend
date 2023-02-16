@@ -55,11 +55,16 @@ class TagSerializer(BaseTagSerializer):
     class Meta(BaseTagSerializer.Meta):
         abstract = False
 
-    count = SerializerMethodField()
+    resource_count = SerializerMethodField()
+    base_count = SerializerMethodField()
 
     @staticmethod
-    def get_count(obj: Tag):
-        return getattr(obj, "count", None)
+    def get_resource_count(obj: Tag):
+        return getattr(obj, "resource_count", None)
+
+    @staticmethod
+    def get_base_count(obj: Tag):
+        return getattr(obj, "base_count", None)
 
 
 class IndexSerializer(BaseIndexSerializer):

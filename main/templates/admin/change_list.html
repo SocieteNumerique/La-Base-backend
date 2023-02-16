@@ -1,0 +1,12 @@
+{% extends "admin/change_list.html" %}
+{% load i18n %}
+
+{% block object-tools-items %}
+{{ block.super }}
+{% if opts.model_name == "user"%}
+<li>
+    <a href="{% url 'update-cnfs' %}" class="btn btn-high btn-success">MAJ CnFS</a>
+</li>
+{% endif %}
+
+{% endblock %}

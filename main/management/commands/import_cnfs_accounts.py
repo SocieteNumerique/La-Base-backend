@@ -107,9 +107,9 @@ def import_accounts(limit_to_emails=None, max_n_accounts=None):
         except Tag.DoesNotExist:
             cnfs_tag = None
 
-        n_accounts_created = 0
+        created_account_emails = []
         for line in reader:
-            if max_n_accounts and n_accounts_created >= max_n_accounts:
+            if max_n_accounts and len(created_account_emails) >= max_n_accounts:
                 print(f"already created {max_n_accounts} accounts")
                 break
 
@@ -143,10 +143,10 @@ def import_accounts(limit_to_emails=None, max_n_accounts=None):
                 cnfs_id=cnfs_id,
                 is_active=True,
             )
-            n_accounts_created += 1
             user = User.objects.create_user(**user_data)
             if cnfs_tag:
                 user.tags.add(cnfs_tag)
+            created_account_emails.append(user.email)
 
             # send custom password forgotten email
             form = MyPasswordResetForm(dict(email=email))
@@ -164,6 +164,8 @@ def import_accounts(limit_to_emails=None, max_n_accounts=None):
                 )
 
             print(f"utilisateur {email} - {private_email} ajouté")
+
+    return created_account_emails
 
 
 def import_cnfs_organizations(limit_to_emails=None, max_n_accounts=None):

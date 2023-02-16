@@ -39,5 +39,6 @@ TEXT_BLOCKS = [
     "homeBasesBlockContentMore",
     "homeIntroLeft",
     "homeIntroRight",
+    "homeIntroFarRight",
     "baseCertificationModal",
 ]

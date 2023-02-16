@@ -1,8 +1,11 @@
+from typing import Iterable
+
 from django.db.models import Q
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.fields import SkipField
 
+from main.models.evaluations import get_all_criteria
 from main.models.models import (
     Resource,
     Base,
@@ -42,6 +45,16 @@ class PrimaryKeyOccupationTagField(serializers.PrimaryKeyRelatedField):
             )
         else:
             return Tag.objects.none()
+
+
+class PrimaryKeyCollectionsForResourceField(serializers.PrimaryKeyRelatedField):
+    def get_queryset(self):
+        """Limit to collections that are linked to the base the resource belongs to."""
+        request = self.context["request"]
+        resource_pk = request.parser_context["kwargs"]["pk"]
+        resource = Resource.objects.get(pk=resource_pk)
+        base_id = resource.root_base_id
+        return Collection.objects.filter(base_id=base_id)
 
 
 class ExternalProducerSerializer(serializers.ModelSerializer):
@@ -118,6 +131,12 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
         many=True, queryset=Tag.objects.all(), required=False, allow_null=True
     )
     can_write = serializers.SerializerMethodField()
+    collections = PrimaryKeyCollectionsForResourceField(
+        many=True,
+        required=False,
+        allow_null=True,
+        write_only=True,
+    )
     content_stats = serializers.SerializerMethodField(read_only=True)
     contributors = NestedUserSerializer(many=True, required=False, allow_null=True)
     profile_image = ResizableImageBase64Serializer(
@@ -149,6 +168,9 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
             "pin_count": getattr(obj, "pin_count", 0),
             "public_pin_count": getattr(obj, "public_pin_count", 0),
         }
+        for criterion in get_all_criteria():
+            res[f"{criterion.slug}_count"] = getattr(obj, f"{criterion.slug}_count", 0)
+            res[f"{criterion.slug}_mean"] = getattr(obj, f"{criterion.slug}_mean", 0)
         return res
 
     @staticmethod
@@ -203,10 +225,22 @@ class BaseResourceSerializer(MoreFieldsModelSerializer):
             ExternalProducer.objects.create(resource=instance, **external_producer_data)
         return instance
 
+    def set_collections(self, instance: Resource, collections: Iterable[Collection]):
+        if collections is None:
+            return
+
+        # only update collections that belong to the base the resource is linked to
+        for collection in instance.root_base.collections.all():
+            if collection in collections:
+                collection.resources.add(instance)
+            else:
+                collection.resources.remove(instance)
+
     def update(self, instance: Resource, validated_data):
         # update of external_producers is handled in FullResourceSerializer.update
         set_nested_user_fields(instance, validated_data, "authorized_users")
         set_nested_license_data(validated_data, instance)
+        self.set_collections(instance, validated_data.pop("collections", None))
         try:
             image = create_or_update_resizable_image(
                 validated_data, "profile_image", instance
@@ -265,6 +299,7 @@ class ShortResourceSerializer(BaseResourceSerializer):
             "root_base_title",
             "pinned_in_bases",
             "can_write",
+            "can_evaluate",
             "creator",
             "profile_image",
         ]
@@ -292,37 +327,52 @@ class FullResourceSerializer(BaseResourceSerializer):
 
     is_short = serializers.ReadOnlyField(default=False)
 
+    def update_external_productors(self, instance, external_producers_data):
+        new_producer_ids = set()
+        for external_producer_data in external_producers_data:
+            if producer_id := external_producer_data.pop("id", None):
+                # update producer
+                try:
+                    external_producer = instance.external_producers.get(pk=producer_id)
+                except ExternalProducer.DoesNotExist:
+                    pass
+                else:
+                    for k, v in external_producer_data.items():
+                        setattr(external_producer, k, v)
+                    new_producer_ids.add(producer_id)
+            else:
+                producer = ExternalProducer.objects.create(
+                    resource=instance, **external_producer_data
+                )
+                new_producer_ids.add(producer.pk)
+
+        # remove old producers
+        for producer in instance.external_producers.all():
+            if producer.pk not in new_producer_ids:
+                producer.delete()
+
+    def update_contributors(self, instance, contributors_data):
+        new_contributor_ids = set()
+        for contributor_data in contributors_data:
+            new_contributor_ids.add(contributor_data["id"])
+            instance.contributors.add(contributor_data["id"])
+
+        # remove old contributors
+        for contributor in instance.contributors.all():
+            if contributor.pk not in new_contributor_ids:
+                contributor.delete()
+
     def update(self, instance: Resource, validated_data):
         """
-        Handle external producers
+        Handle external producers and contributors
         """
         if "external_producers" in validated_data:
-            external_producers_data = validated_data.pop("external_producers")
+            self.update_external_productors(
+                instance, validated_data.pop("external_producers")
+            )
 
-            new_producer_ids = set()
-            for external_producer_data in external_producers_data:
-                if producer_id := external_producer_data.pop("id", None):
-                    # update producer
-                    try:
-                        external_producer = instance.external_producers.get(
-                            pk=producer_id
-                        )
-                    except ExternalProducer.DoesNotExist:
-                        pass
-                    else:
-                        for k, v in external_producer_data.items():
-                            setattr(external_producer, k, v)
-                        new_producer_ids.add(producer_id)
-                else:
-                    producer = ExternalProducer.objects.create(
-                        resource=instance, **external_producer_data
-                    )
-                    new_producer_ids.add(producer.pk)
-
-            # remove old producers
-            for producer in instance.external_producers.all():
-                if producer.pk not in new_producer_ids:
-                    producer.delete()
+        if "contributors" in validated_data:
+            self.update_contributors(instance, validated_data.pop("contributors"))
 
         return super().update(instance, validated_data)
 

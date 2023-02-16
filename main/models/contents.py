@@ -13,7 +13,7 @@ class ContentSection(TimeStampedModel):
         unique_together = ("resource", "order")
 
     resource = models.ForeignKey(Resource, models.CASCADE, related_name="sections")
-    title = models.CharField(max_length=25, null=True, blank=True)
+    title = models.CharField(max_length=100, null=True, blank=True)
     is_foldable = models.BooleanField(default=False)
     order = models.BigIntegerField()
 

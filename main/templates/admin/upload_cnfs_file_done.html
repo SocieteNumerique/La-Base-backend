@@ -1,0 +1,17 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+    <h2>Import de nouveaux comptes CnFS</h2>
+
+    {% if created %}
+      Import terminé. Les comptes suivants ont été créés :
+      <ul>
+        {% for email in created %}
+          <li>{{ email }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      Aucun nouveau compte n'a été ajouté.
+    {% endif %}
+{% endblock %}

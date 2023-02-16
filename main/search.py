@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.db.models import Q
+from django.db.models import Q, F
 
 from main.models import Tag
 from main.query_changes.permissions import (
@@ -16,6 +16,14 @@ BASES_SEARCH_FIELDS = ["title"]
 RESOURCES_SEARCH_FIELDS = ["title", "description"]
 USERS_SEARCH_FIELDS = ["first_name", "last_name", "email"]
 SEARCH_KEY_PARAM = "unaccent__icontains" if IS_POSTGRESQL_DB else "icontains"
+
+
+def order_by_from_parameter(parameter):
+    """Adds nulls last to query, needed at least when ordering per recommendation."""
+    func = "desc" if parameter.startswith("-") else "asc"
+    if parameter.startswith("-"):
+        parameter = parameter[1:]
+    return getattr(F(parameter), func)(nulls_last=True)
 
 
 def filter_queryset(qs, text, search_fields, tag_operator, tags):
@@ -38,7 +46,7 @@ def search_bases(user, text, tag_operator="OR", tags=None, order_by="-modified")
         tags = []
     qs = bases_queryset_with_stats(bases_queryset_for_user(user, full=False))
     qs = filter_queryset(qs, text, BASES_SEARCH_FIELDS, tag_operator, tags)
-    qs = qs.order_by(order_by)
+    qs = qs.order_by(order_by_from_parameter(order_by))
     possible_tags = (
         Tag.objects.filter(bases__in=qs).values_list("pk", flat=True).distinct()
     )
@@ -71,7 +79,7 @@ def search_resources(
             qs = qs.filter(~Q(state="draft"))
         else:
             qs = qs.filter(Q(state="draft"))
-    qs = qs.order_by(order_by)
+    qs = qs.order_by(order_by_from_parameter(order_by))
     possible_tags = (
         Tag.objects.filter(resources__in=qs).values_list("pk", flat=True).distinct()
     )
