@@ -14,6 +14,7 @@ from main.serializers.base_resource_serializers import (
     FullBaseSerializer,
     ShortBaseSerializer,
     FullNoContactBaseSerializer,
+    FullBaseWithAllResourcesSerializer,
 )
 from main.serializers.index_serializers import IndexAdminSerializer
 from main.serializers.pagination import paginated_resources_from_base
@@ -68,6 +69,13 @@ class BaseView(
     def index(self, request, pk=None):
         index = TagCategory.objects.filter(base_id=pk)
         serializer = IndexAdminSerializer(index, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["get"], url_path="full")
+    def full_base_with_all_resources(self, request, pk=None):
+        instance = self.get_object()
+        serializer_class = FullBaseWithAllResourcesSerializer
+        serializer = serializer_class(instance, context=self.get_serializer_context())
         return Response(serializer.data)
 
     @action(detail=True, methods=["get"])

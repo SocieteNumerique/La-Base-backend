@@ -518,7 +518,8 @@ class BaseBaseSerializer(serializers.ModelSerializer):
         many=True, queryset=Tag.objects.all(), required=False, allow_null=True
     )
     contributors = NestedUserSerializer(many=True, required=False, allow_null=True)
-    resources = serializers.SerializerMethodField()
+    resources = FullResourceSerializer(many=True, read_only=True)
+    paginated_resources = serializers.SerializerMethodField()
     resource_choices = serializers.SerializerMethodField()
     can_write = serializers.SerializerMethodField()
     stats = serializers.SerializerMethodField()
@@ -610,7 +611,7 @@ class BaseBaseSerializer(serializers.ModelSerializer):
     def get_can_add_resources(obj: Base):
         return getattr(obj, "can_add_resources", False)
 
-    def get_resources(self, obj: Base):
+    def get_paginated_resources(self, obj: Base):
         user = self.context["request"].user
         return paginated_resources_from_base(
             obj, user, 1, context=self.context, include_drafts=False
@@ -707,7 +708,7 @@ class FullNoContactBaseSerializer(BaseBaseSerializer):
         fields = BaseBaseSerializer.Meta.fields + [
             "contact_state",
             "description",
-            "resources",
+            "paginated_resources",
             "resource_choices",
             "collections",
             "contributors",
@@ -729,4 +730,16 @@ class FullBaseSerializer(FullNoContactBaseSerializer):
         abstract = False
         fields = FullNoContactBaseSerializer.Meta.fields + [
             "contact",
+        ]
+
+
+class FullBaseWithAllResourcesSerializer(FullNoContactBaseSerializer):
+    class Meta(FullNoContactBaseSerializer.Meta):
+        abstract = False
+        fields = [
+            field
+            for field in FullBaseSerializer.Meta.fields
+            if field != "paginated_resources"
+        ] + [
+            "resources",
         ]
