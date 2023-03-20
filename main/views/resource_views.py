@@ -1,8 +1,10 @@
 import collections
+import shutil
+import tempfile
 
 from django.contrib.postgres.search import TrigramSimilarity
 from django.db.models import Q
-from django.http import HttpRequest
+from django.http import HttpRequest, HttpResponse
 from rest_framework import mixins, viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.permissions import BasePermission
@@ -125,6 +127,34 @@ class ResourceView(
         serializer = MarkDuplicatesResourceSerializer(resource)
 
         return Response(serializer.data)
+
+    @action(detail=True, methods=["GET"], url_path="files")
+    def export_files(self, request, pk):
+        """Download all files from resources locally, create zip file and serve it."""
+        resource: Resource = self.get_object()
+        errors = []
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            # saving files in temporary dir
+            for file in resource.contents.filter(filecontent__isnull=False):
+                with open(f"{tmp_dir}/{file.filecontent.file.name}", "wb") as write_fh:
+                    try:
+                        with file.filecontent.file.open() as read_fh:
+                            write_fh.write(read_fh.read())
+                    except Exception:
+                        errors.append(file.filecontent.file.name)
+
+            # creating zip
+            with tempfile.NamedTemporaryFile() as tmp_file:
+                shutil.make_archive(tmp_file.name, "zip", tmp_dir)
+
+                # serve archive
+                with open(f"{tmp_file.name}.zip", "rb") as fh:
+                    data = fh.read()
+                response = HttpResponse(data, content_type="application/zip")
+                response[
+                    "Content-Disposition"
+                ] = f"attachment; filename={resource.title} - fichiers.zip"
+                return response
 
     @action(detail=True, methods=["GET"], url_path="evaluations")
     def list_evaluations(self, request, pk):
