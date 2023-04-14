@@ -254,6 +254,7 @@ PASSWORD_RESET_TIMEOUT = 3600 * 24 * 7
 BACKUP_ACCESS = config.getstr("db_backup.access")
 BACKUP_SECRET = config.getstr("db_backup.secret")
 BACKUP_BUCKET = config.getstr("db_backup.bucket")
+BACKUP_HOST = config.getstr("db_backup.host")
 
 # pagination
 BASE_PAGE_SIZE = 12
